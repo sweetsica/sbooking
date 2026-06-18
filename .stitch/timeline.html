@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+
+<html class="light" lang="vi"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Quản lý Đặt lịch Dịch vụ YHCT</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-bright": "#f7f9fb",
+                        "surface-tint": "#565e74",
+                        "on-surface": "#191c1e",
+                        "primary-fixed": "#dae2fd",
+                        "secondary-fixed-dim": "#89ceff",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-primary-container": "#7c839b",
+                        "on-primary": "#ffffff",
+                        "tertiary": "#000000",
+                        "tertiary-fixed": "#6ffbbe",
+                        "background": "#f7f9fb",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary-fixed-dim": "#4edea3",
+                        "surface-container-highest": "#e0e3e5",
+                        "surface-container-lowest": "#ffffff",
+                        "error": "#ba1a1a",
+                        "on-tertiary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "primary": "#000000",
+                        "on-secondary-fixed": "#001e2f",
+                        "error-container": "#ffdad6",
+                        "surface-variant": "#e0e3e5",
+                        "on-tertiary-container": "#009668",
+                        "primary-container": "#131b2e",
+                        "tertiary-container": "#002113",
+                        "surface": "#f7f9fb",
+                        "primary-fixed-dim": "#bec6e0",
+                        "on-primary-fixed-variant": "#3f465c",
+                        "secondary": "#006591",
+                        "surface-container": "#eceef0",
+                        "outline-variant": "#c6c6cd",
+                        "on-tertiary-fixed": "#002113",
+                        "secondary-container": "#39b8fd",
+                        "inverse-primary": "#bec6e0",
+                        "on-surface-variant": "#45464d",
+                        "on-primary-fixed": "#131b2e",
+                        "on-secondary-fixed-variant": "#004c6e",
+                        "surface-dim": "#d8dadc",
+                        "on-background": "#191c1e",
+                        "on-error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#005236",
+                        "on-secondary": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "on-secondary-container": "#004666",
+                        "surface-container-low": "#f2f4f6",
+                        "secondary-fixed": "#c9e6ff",
+                        "outline": "#76777d"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.125rem",
+                        "lg": "0.25rem",
+                        "xl": "0.5rem",
+                        "full": "0.75rem"
+                    },
+                    "spacing": {
+                        "row-height-standard": "56px",
+                        "unit": "4px",
+                        "container-margin": "24px",
+                        "row-height-compact": "40px",
+                        "gutter": "12px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "label-caps": ["JetBrains Mono"],
+                        "time-slot": ["JetBrains Mono"],
+                        "headline-lg": ["Manrope"],
+                        "body-sm": ["Inter"],
+                        "headline-md": ["Manrope"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                        "label-caps": ["11px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "time-slot": ["12px", {"lineHeight": "16px", "fontWeight": "500"}],
+                        "headline-lg": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "body-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}],
+                        "headline-md": ["18px", {"lineHeight": "24px", "fontWeight": "600"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .timeline-grid {
+            display: grid;
+            grid-template-columns: 80px repeat(3, 1fr);
+            grid-auto-rows: 64px;
+        }
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+        .active-tab {
+            @apply border-b-2 border-secondary text-secondary;
+        }
+    </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface">
+<!-- Top Navigation Bar -->
+<header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center px-container-margin z-50">
+<div class="flex items-center gap-8 w-full max-w-[1600px] mx-auto">
+<!-- Brand Identity -->
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary text-[20px]">spa</span>
+</div>
+<h1 class="text-headline-md font-bold text-on-surface leading-tight">Precision Wellness</h1>
+</div>
+<!-- Navigation Links -->
+<nav class="flex items-center gap-1 ml-4"><a class="px-4 py-2 text-body-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface rounded-lg transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+    Tổng quan
+</a>
+<a class="px-4 py-2 text-body-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface rounded-lg transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]">medical_services</span>
+    Bác sĩ
+</a>
+<a class="px-4 py-2 text-body-md font-bold bg-secondary-container text-on-secondary-container rounded-lg flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">calendar_month</span>
+    Lịch hẹn
+</a>
+<a class="px-4 py-2 text-body-md text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface rounded-lg transition-colors flex items-center gap-2" href="#">
+<span class="material-symbols-outlined text-[20px]">meeting_room</span>
+    Phòng bệnh
+</a></nav>
+<!-- Search and Actions -->
+<div class="ml-auto flex items-center gap-4"><div class="relative w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-xl pl-10 pr-4 py-1.5 text-body-sm focus:ring-2 focus:ring-secondary/20 transition-all" placeholder="Tìm kiếm..." type="text"/>
+</div>
+<div class="flex items-center gap-2 border-l border-outline-variant pl-4">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="flex items-center gap-2 ml-2 pl-2 border-l border-outline-variant">
+<img alt="User" class="w-8 h-8 rounded-full bg-surface-variant object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCLqKgMd1Fp_Mfk4Szxfef8UB6dXq1D1Xdu3gyTAzRhfxkvKw0FXIrrQMWowYDvWAYbn_GvkqnoyDKOtas6_IQfNLDnt7WRN-4sQPODhWNqtsv2edmfrhIVSNT2wsDXvEiAN7t-x9RUe91DPf2yR_i1JyoekLEjSDscv4UcPBU4Cw5CfkXBXF3VipMW1BVAbkcCJ4PpzUro60q-orFo8Q9Gb8h5RVQm2fvRrZ-JT3IE1I21F6kPaXxCz15drRAXXuVu-gq_R8oXQxc"/>
+</div>
+</div></div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="min-h-screen pt-24 pb-12 px-container-margin">
+<div class="max-w-[1600px] mx-auto">
+<!-- Header with View Switcher -->
+<div class="flex flex-wrap justify-between items-center mb-8 gap-4">
+<h2 class="text-headline-lg font-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Quản lý Đặt lịch</h2>
+<div class="flex bg-surface-container-low rounded-xl p-1">
+<button class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all bg-surface-container-lowest shadow-sm text-secondary" id="btn-timeline" onclick="switchView('timeline')">Timeline</button>
+<button class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface" id="btn-list" onclick="switchView('list')">Danh sách</button>
+</div>
+</div>
+<!-- Filters Bar -->
+<div class="flex flex-wrap items-end gap-4 mb-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<div class="space-y-1.5">
+<label class="text-label-caps text-on-surface-variant block">THÁNG</label>
+<select class="form-select w-32 border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
+<option>Tháng 6</option>
+<option>Tháng 7</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-label-caps text-on-surface-variant block">NĂM</label>
+<select class="form-select w-32 border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
+<option>2026</option>
+<option>2027</option>
+</select>
+</div>
+<div class="space-y-1.5">
+<label class="text-label-caps text-on-surface-variant block">NGÀY</label>
+<input class="form-input border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date" value="2026-06-12"/>
+</div>
+<div class="space-y-1.5 flex-1 min-w-[240px]">
+<label class="text-label-caps text-on-surface-variant block">PHÒNG / KHU VỰC</label>
+<select class="form-select w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
+<option>Phòng trị liệu YHCT VIP 1</option>
+<option>Phòng trị liệu YHCT VIP 2</option>
+<option>Khu vực xoa bóp bấm huyệt</option>
+</select>
+</div>
+<div class="flex items-center gap-2 ml-auto">
+<button class="h-[42px] px-4 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">restart_alt</span>
+<span class="">Đặt lại</span>
+</button>
+<button class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span class="">Tạo Booking</span>
+</button>
+</div>
+</div>
+<!-- View Container: Timeline -->
+<div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm transition-all duration-300 opacity-100" id="view-timeline">
+<div class="p-4 border-b border-outline-variant bg-surface-container-low flex justify-between items-center">
+<h3 class="font-headline-md text-on-surface">Lịch biểu Phòng VIP 1 — <span class="text-secondary font-bold">Thứ Sáu, 12/06/2026</span></h3>
+<div class="flex gap-4">
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-tertiary-fixed-dim"></div>
+<span class="text-body-sm text-on-surface-variant">Đã duyệt</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="w-3 h-3 rounded-full bg-secondary-fixed"></div>
+<span class="text-body-sm text-on-surface-variant">Chờ duyệt</span>
+</div>
+</div>
+</div>
+<div class="relative overflow-auto max-h-[600px] hide-scroll">
+<!-- Timeline Grid -->
+<div class="timeline-grid min-w-[1000px]">
+<!-- Header Row -->
+<div class="sticky top-0 z-20 bg-surface-container-low border-b border-r border-outline-variant flex items-center justify-center">
+<span class="text-label-caps text-on-surface-variant">GIỜ</span>
+</div>
+<div class="sticky top-0 z-20 bg-surface-container-low border-b border-r border-outline-variant px-4 flex items-center justify-center font-bold">Giường 1</div>
+<div class="sticky top-0 z-20 bg-surface-container-low border-b border-r border-outline-variant px-4 flex items-center justify-center font-bold text-on-surface-variant">Giường 2</div>
+<div class="sticky top-0 z-20 bg-surface-container-low border-b border-outline-variant px-4 flex items-center justify-center font-bold text-on-surface-variant">Giường 3</div>
+<!-- 08:00 -->
+<div class="border-b border-r border-outline-variant flex items-center justify-center">
+<span class="text-time-slot text-on-surface-variant">08:00</span>
+</div>
+<div class="relative border-b border-r border-outline-variant group hover:bg-surface-container-low transition-colors">
+<div class="absolute inset-x-gutter top-gutter h-[116px] z-10 bg-tertiary-fixed-dim/20 border-l-4 border-tertiary-fixed-dim rounded-lg p-3 shadow-sm hover:scale-[1.01] transition-transform cursor-pointer overflow-hidden">
+<div class="flex justify-between items-start mb-1">
+<span class="font-bold text-body-md text-tertiary-container">Quốc Anh</span>
+<span class="material-symbols-outlined text-[16px] text-on-tertiary-container" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+</div>
+<div class="text-[12px] italic text-on-tertiary-fixed-variant mb-2">AP (60 phút)</div>
+<div class="flex flex-col gap-0.5">
+<div class="flex items-center gap-1.5 text-[11px] text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">person</span>
+<span class="font-label-caps uppercase">KTV YHCT VI</span>
+</div>
+<div class="flex items-center gap-1.5 text-[11px] font-time-slot text-on-surface-variant">
+<span class="material-symbols-outlined text-[14px]">schedule</span>
+<span class="">08:10 - 09:45</span>
+</div>
+</div>
+</div>
+</div>
+<div class="border-b border-r border-outline-variant hover:bg-surface-container-low transition-colors"></div>
+<div class="border-b border-outline-variant hover:bg-surface-container-low transition-colors"></div>
+<!-- 09:00 -->
+<div class="border-b border-r border-outline-variant flex items-center justify-center">
+<span class="text-time-slot text-on-surface-variant">09:00</span>
+</div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="relative border-b border-r border-outline-variant">
+<div class="absolute inset-x-gutter top-gutter h-[52px] z-10 bg-secondary-fixed/30 border-l-4 border-secondary-container rounded-lg p-2 shadow-sm hover:scale-[1.01] transition-transform cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-bold text-body-sm">Khách Walk-in</span>
+<span class="text-[10px] bg-secondary-container text-on-secondary-container px-1.5 rounded uppercase font-bold">Chờ</span>
+</div>
+<div class="text-[11px] font-time-slot text-on-surface-variant">09:15 - 10:00</div>
+</div>
+</div>
+<div class="border-b border-outline-variant"></div>
+<!-- 10:00 -->
+<div class="border-b border-r border-outline-variant flex items-center justify-center">
+<span class="text-time-slot text-on-surface-variant">10:00</span>
+</div>
+<div class="border-b border-r border-outline-variant hover:bg-surface-container-low transition-colors"></div>
+<div class="border-b border-r border-outline-variant hover:bg-surface-container-low transition-colors"></div>
+<div class="border-b border-outline-variant hover:bg-surface-container-low transition-colors"></div>
+<!-- 11:00 -->
+<div class="border-b border-r border-outline-variant flex items-center justify-center">
+<span class="text-time-slot text-on-surface-variant">11:00</span>
+</div>
+<div class="border-b border-r border-outline-variant relative">
+<div class="absolute inset-x-gutter top-gutter h-[52px] z-10 bg-tertiary-fixed-dim/20 border-l-4 border-tertiary-fixed-dim rounded-lg p-2 shadow-sm hover:scale-[1.01] transition-transform cursor-pointer">
+<div class="flex justify-between items-center">
+<span class="font-bold text-body-sm">Trần Văn B</span>
+<span class="material-symbols-outlined text-[16px] text-on-tertiary-container">check_circle</span>
+</div>
+<div class="text-[11px] font-time-slot text-on-surface-variant">11:00 - 12:00</div>
+</div>
+</div>
+<div class="border-b border-r border-outline-variant"></div>
+<div class="border-b border-outline-variant"></div>
+<!-- 12:00 -->
+<div class="border-b border-r border-outline-variant flex items-center justify-center bg-surface-container">
+<span class="text-time-slot text-on-surface-variant">12:00</span>
+</div>
+<div class="border-b border-outline-variant bg-surface-container/50 flex items-center px-6 italic text-body-sm text-on-surface-variant" colspan="3">Giờ nghỉ trưa</div>
+<div class="border-b border-r border-outline-variant bg-surface-container/50"></div>
+<div class="border-b border-outline-variant bg-surface-container/50"></div>
+</div>
+<!-- Current Time Indicator -->
+<div class="absolute left-0 right-0 h-[2px] bg-error/40 z-30 pointer-events-none" id="current-time-line" style="top: 192px; opacity: 1;">
+<div class="absolute -left-2 -top-1.5 w-3 h-3 bg-error rounded-full ring-4 ring-error/20"></div>
+</div>
+</div>
+</div>
+<!-- View Container: List (Hidden by default) -->
+<div class="hidden bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm opacity-0 transition-all duration-300" id="view-list">
+<div class="p-6 border-b border-outline-variant flex justify-between items-center">
+<h3 class="font-headline-md text-on-surface">Danh sách Đặt lịch chi tiết</h3>
+<div class="flex gap-2">
+<button class="px-4 py-2 text-body-sm border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+                            Lọc bảng
+                        </button>
+<button class="px-4 py-2 text-body-sm border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">download</span>
+                            Xuất Excel
+                        </button>
+</div>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface-container-low text-label-caps text-on-surface-variant">
+<th class="px-6 py-4 font-semibold">THỜI GIAN ĐẶT</th>
+<th class="px-6 py-4 font-semibold">KHÁCH HÀNG</th>
+<th class="px-6 py-4 font-semibold">PHÒNG</th>
+<th class="px-6 py-4 font-semibold">DỊCH VỤ</th>
+<th class="px-6 py-4 font-semibold">SALE PHỤ TRÁCH</th>
+<th class="px-6 py-4 font-semibold">KTV / BÁC SĨ</th>
+<th class="px-6 py-4 font-semibold text-center">TRẠNG THÁI</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant">
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 text-body-sm font-time-slot">12/06/2026 08:03</td>
+<td class="px-6 py-4">
+<div class="font-semibold">Quốc Anh</div>
+<div class="text-body-sm text-on-surface-variant">03267688...</div>
+</td>
+<td class="px-6 py-4 text-body-sm">VIP 1 (Giường 1)</td>
+<td class="px-6 py-4 text-body-sm">AP (60 phút)</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">Trần Thị Thu Giang</td>
+<td class="px-6 py-4 text-body-sm">KTV YHCT VI</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-tertiary-fixed-dim/20 text-on-tertiary-container">
+                                        ĐÃ DUYỆT
+                                    </span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors group">
+<td class="px-6 py-4 text-body-sm font-time-slot">12/06/2026 08:18</td>
+<td class="px-6 py-4">
+<div class="font-semibold">Test 1</div>
+<div class="text-body-sm text-on-surface-variant">03267688...</div>
+</td>
+<td class="px-6 py-4 text-body-sm">VIP 1 (Giường 2)</td>
+<td class="px-6 py-4 text-body-sm">AP (60 phút)</td>
+<td class="px-6 py-4 text-body-sm text-on-surface-variant">Trần Thị Thu Giang</td>
+<td class="px-6 py-4 text-body-sm">KTV YHCT</td>
+<td class="px-6 py-4 text-center">
+<span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary-fixed text-on-secondary-container">
+                                        CHỜ DUYỆT
+                                    </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<!-- Stats & Reports Cards -->
+<div class="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-4 shadow-sm">
+<div class="flex items-center justify-between">
+<span class="text-label-caps text-on-surface-variant">TỶ LỆ LẤY ĐẦY PHÒNG</span>
+<span class="text-headline-md font-bold text-secondary">68%</span>
+</div>
+<div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
+<div class="bg-secondary h-full w-[68%]"></div>
+</div>
+<p class="text-[11px] text-on-surface-variant italic">Phòng VIP 1 đang có hiệu suất cao nhất trong ngày hôm nay.</p>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col justify-between shadow-sm">
+<div class="flex items-center justify-between mb-4">
+<span class="text-label-caps text-on-surface-variant">TỔNG LỊCH HẸN TRONG NGÀY</span>
+<span class="text-headline-md font-bold text-on-surface">24</span>
+</div>
+<div class="flex gap-2">
+<span class="px-3 py-1 rounded bg-tertiary-fixed-dim/20 text-on-tertiary-container text-[11px] font-bold">18 ĐÃ DUYỆT</span>
+<span class="px-3 py-1 rounded bg-secondary-fixed text-on-secondary-container text-[11px] font-bold">6 CHỜ</span>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex items-center gap-4 group cursor-pointer hover:bg-surface-container-low transition-colors shadow-sm">
+<div class="w-12 h-12 rounded-xl bg-tertiary-container flex items-center justify-center text-tertiary-fixed shadow-sm">
+<span class="material-symbols-outlined text-[28px]">assessment</span>
+</div>
+<div>
+<h4 class="font-bold text-body-md">Báo cáo chi tiết</h4>
+<p class="text-body-sm text-on-surface-variant">Xem phân tích doanh thu dịch vụ</p>
+</div>
+<span class="material-symbols-outlined ml-auto text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
+</div>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
+<span class="material-symbols-outlined text-[28px]">add</span>
+<span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Tạo nhanh booking</span>
+</button>
+<script>
+        function switchView(view) {
+            const timelineView = document.getElementById('view-timeline');
+            const listView = document.getElementById('view-list');
+            const btnTimeline = document.getElementById('btn-timeline');
+            const btnList = document.getElementById('btn-list');
+
+            if (view === 'timeline') {
+                timelineView.classList.remove('hidden');
+                setTimeout(() => timelineView.classList.replace('opacity-0', 'opacity-100'), 10);
+                listView.classList.add('hidden');
+                listView.classList.replace('opacity-100', 'opacity-0');
+
+                btnTimeline.classList.add('bg-surface-container-lowest', 'shadow-sm', 'text-secondary');
+                btnTimeline.classList.remove('text-on-surface-variant');
+                btnList.classList.remove('bg-surface-container-lowest', 'shadow-sm', 'text-secondary');
+                btnList.classList.add('text-on-surface-variant');
+            } else {
+                listView.classList.remove('hidden');
+                setTimeout(() => listView.classList.replace('opacity-0', 'opacity-100'), 10);
+                timelineView.classList.add('hidden');
+                timelineView.classList.replace('opacity-100', 'opacity-0');
+
+                btnList.classList.add('bg-surface-container-lowest', 'shadow-sm', 'text-secondary');
+                btnList.classList.remove('text-on-surface-variant');
+                btnTimeline.classList.remove('bg-surface-container-lowest', 'shadow-sm', 'text-secondary');
+                btnTimeline.classList.add('text-on-surface-variant');
+            }
+        }
+
+        // Pulse effect for the current time line
+        setInterval(() => {
+            const line = document.getElementById('current-time-line');
+            if (line) {
+                line.style.opacity = line.style.opacity === '0.5' ? '1' : '0.5';
+            }
+        }, 1000);
+    </script>
+</body></html>

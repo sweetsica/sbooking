@@ -5,6 +5,7 @@ namespace App\Models;
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
@@ -20,9 +21,23 @@ class User extends Authenticatable
      */
     protected $fillable = [
         'name',
+        'username',
         'email',
         'password',
+        'co_so_id',
+        'phong_ban_id',
+        'is_admin',
     ];
+
+    public function coSo(): BelongsTo
+    {
+        return $this->belongsTo(CoSo::class, 'co_so_id');
+    }
+
+    public function phongBan(): BelongsTo
+    {
+        return $this->belongsTo(PhongBan::class, 'phong_ban_id');
+    }
 
     /**
      * The attributes that should be hidden for serialization.
@@ -44,6 +59,7 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'is_admin' => 'boolean',
         ];
     }
 }
