@@ -54,7 +54,7 @@ class PageController extends Controller
             ];
         });
 
-        return view('yhct.rooms', [
+        return view('longevity.rooms', [
             'coSo' => $co_so,
             'danhSachCoSo' => $danhSachCoSo,
             'roomData' => $roomData,
@@ -98,7 +98,7 @@ class PageController extends Controller
         $approved = $bookings->where('trang_thai', 'da_duyet')->count();
         $capacity = max(1, $slots->count() * $beds);
 
-        return view('yhct.timeline', [
+        return view('longevity.timeline', [
             'coSo' => $co_so,
             'rooms' => $rooms,
             'room' => $room,
@@ -135,7 +135,7 @@ class PageController extends Controller
 
         $bookings = $query->paginate(20)->withQueryString();
 
-        return view('yhct.bookings', [
+        return view('longevity.bookings', [
             'coSo' => $co_so,
             'bookings' => $bookings,
             'phongs' => $co_so->phongs()->get(),

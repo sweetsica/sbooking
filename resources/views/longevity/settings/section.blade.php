@@ -1,4 +1,4 @@
-@extends('yhct.settings.layout')
+@extends('longevity.settings.layout')
 @section('title', $meta[0])
 
 @section('content')
@@ -102,7 +102,7 @@
 @foreach ($config['fields'] as $fn => $ff)
 <div class="flex flex-col gap-1 {{ $ff['type'] === 'toggle' ? 'justify-end pb-2' : 'min-w-[150px]' }}">
 @if ($ff['type'] !== 'toggle')<label class="text-label-caps font-label-caps text-on-surface-variant">{{ $ff['label'] }}</label>@endif
-@include('yhct.settings._field', ['name' => $fn, 'f' => $ff, 'value' => old($fn, $defaults[$fn] ?? '')])
+@include('longevity.settings._field', ['name' => $fn, 'f' => $ff, 'value' => old($fn, $defaults[$fn] ?? '')])
 </div>
 @endforeach
 <button type="submit" class="px-5 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2">
@@ -178,7 +178,7 @@
 @foreach ($config['fields'] as $fn => $ff)
 <div class="flex flex-col gap-1 {{ $ff['type'] === 'toggle' ? 'justify-end pb-2' : 'min-w-[150px]' }}">
 @if ($ff['type'] !== 'toggle')<label class="text-label-caps font-label-caps text-on-surface-variant">{{ $ff['label'] }}</label>@endif
-@include('yhct.settings._field', ['name' => $fn, 'f' => $ff, 'value' => old($fn, $vals[$fn])])
+@include('longevity.settings._field', ['name' => $fn, 'f' => $ff, 'value' => old($fn, $vals[$fn])])
 </div>
 @endforeach
 <button type="submit" class="px-5 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">save</span> Cập nhật</button>

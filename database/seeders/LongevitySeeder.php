@@ -17,7 +17,7 @@ use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
-class YhctSeeder extends Seeder
+class LongevitySeeder extends Seeder
 {
     public function run(): void
     {
@@ -37,10 +37,11 @@ class YhctSeeder extends Seeder
         ]);
 
         // ---- Admin toàn hệ thống (xuất hiện ở tất cả cơ sở) ----
-        User::updateOrCreate(['email' => 'admin@sweetsica'], [
+        User::updateOrCreate(['email' => 'admin@sweetsica.com'], [
             'name' => 'Admin',
             'username' => 'admin',
-            'password' => Hash::make('tieuhoa195'),
+            'password' => Hash::make('59ntn'),
+
             'co_so_id' => null,
             'phong_ban_id' => $pbAdmin->id,
             'is_admin' => true,
@@ -51,7 +52,7 @@ class YhctSeeder extends Seeder
             // Nhân viên Sales (cho mục "Sale phụ trách")
             foreach ($opts['sales'] as $i => $ten) {
                 User::firstOrCreate(
-                    ['email' => $cs->slug . '.sale' . ($i + 1) . '@yhct.test'],
+                    ['email' => $cs->slug . '.sale' . ($i + 1) . '@longevity.test'],
                     ['name' => $ten, 'password' => Hash::make('password'),
                      'co_so_id' => $cs->id, 'phong_ban_id' => $pbSales->id, 'is_admin' => false]
                 );

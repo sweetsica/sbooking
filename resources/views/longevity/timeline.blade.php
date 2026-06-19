@@ -3,7 +3,7 @@
 <html class="light" lang="vi"><head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Quản lý Đặt lịch Dịch vụ YHCT</title>
+<title>Quản lý Đặt lịch Dịch vụ Longevity</title>
 <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
@@ -255,7 +255,7 @@
 <td class="px-6 py-4 text-body-sm">VIP 1 (Giường 1)</td>
 <td class="px-6 py-4 text-body-sm">AP (60 phút)</td>
 <td class="px-6 py-4 text-body-sm text-on-surface-variant">Trần Thị Thu Giang</td>
-<td class="px-6 py-4 text-body-sm">KTV YHCT VI</td>
+<td class="px-6 py-4 text-body-sm">KTV Longevity VI</td>
 <td class="px-6 py-4 text-center">
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-tertiary-fixed-dim/20 text-on-tertiary-container">
                                         ĐÃ DUYỆT
@@ -271,7 +271,7 @@
 <td class="px-6 py-4 text-body-sm">VIP 1 (Giường 2)</td>
 <td class="px-6 py-4 text-body-sm">AP (60 phút)</td>
 <td class="px-6 py-4 text-body-sm text-on-surface-variant">Trần Thị Thu Giang</td>
-<td class="px-6 py-4 text-body-sm">KTV YHCT</td>
+<td class="px-6 py-4 text-body-sm">KTV Longevity</td>
 <td class="px-6 py-4 text-center">
 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-secondary-fixed text-on-secondary-container">
                                         CHỜ DUYỆT

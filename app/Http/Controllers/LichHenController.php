@@ -6,12 +6,28 @@ use App\Models\BacSiTuVan;
 use App\Models\CoSo;
 use App\Models\KhachHang;
 use App\Models\LichHen;
+use App\Models\PhanQuyen;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
 class LichHenController extends Controller
 {
     public function create(CoSo $co_so)
+    {
+        return view('longevity.lich-hen.create', $this->formData($co_so) + ['lh' => null]);
+    }
+
+    public function edit(CoSo $co_so, LichHen $lich_hen)
+    {
+        abort_unless($lich_hen->co_so_id === $co_so->id, 404);
+
+        $lich_hen->load('khachHang');
+
+        return view('longevity.lich-hen.create', $this->formData($co_so) + ['lh' => $lich_hen]);
+    }
+
+    /** Dữ liệu dùng chung cho form tạo / sửa. */
+    private function formData(CoSo $co_so): array
     {
         $bacSis = $co_so->bacSiTuVans()
             ->where('active', true)
@@ -31,12 +47,12 @@ class LichHenController extends Controller
             ])->values(),
         ]);
 
-        return view('yhct.lich-hen.create', [
+        return [
             'coSo' => $co_so,
             'bacSis' => $bacSis,
             'sales' => $sales,
             'caKhamMap' => $caKhamMap,
-        ]);
+        ];
     }
 
     public function caKham(CoSo $co_so, Request $request)
@@ -51,9 +67,11 @@ class LichHenController extends Controller
 
         $ngay = $request->date('ngay') ?? now();
 
+        $except = $request->query('except');
         $counts = LichHen::where('co_so_id', $co_so->id)
             ->where('bac_si_tu_van_id', $bs->id)
             ->whereDate('ngay_hen', $ngay)
+            ->when($except, fn ($q) => $q->where('id', '!=', $except))
             ->selectRaw('ca_kham_id, COUNT(*) as c')
             ->groupBy('ca_kham_id')
             ->pluck('c', 'ca_kham_id');
@@ -139,43 +157,171 @@ class LichHenController extends Controller
             ->with('ok', 'Đã tạo lịch tư vấn cho ' . $kh->ho_ten . '.');
     }
 
+    public function update(CoSo $co_so, LichHen $lich_hen, Request $request)
+    {
+        abort_unless($lich_hen->co_so_id === $co_so->id, 404);
+
+        $data = $request->validate([
+            'ho_ten'            => ['required', 'string', 'max:255'],
+            'so_dien_thoai'     => ['required', 'string', 'max:30'],
+            'email'             => ['nullable', 'email', 'max:255'],
+            'ngay_hen'          => ['required', 'date'],
+            'bac_si_tu_van_id'  => ['required', Rule::exists('bac_si_tu_van', 'id')->where('co_so_id', $co_so->id)],
+            'ca_kham_id'        => ['required', Rule::exists('ca_kham', 'id')],
+            'sale_id'           => ['required', Rule::exists('users', 'id')],
+            'nguon'             => ['nullable', 'string', 'max:100'],
+            'ghi_chu'           => ['nullable', 'string'],
+        ], [
+            'ho_ten.required'           => 'Vui lòng nhập họ tên khách hàng.',
+            'so_dien_thoai.required'    => 'Vui lòng nhập số điện thoại.',
+            'bac_si_tu_van_id.required' => 'Vui lòng chọn bác sĩ tư vấn.',
+            'ca_kham_id.required'       => 'Vui lòng chọn ca khám.',
+            'sale_id.required'          => 'Vui lòng chọn sale phụ trách.',
+        ]);
+
+        // Ca khám đã có người đặt (trừ chính lịch đang sửa)?
+        $booked = LichHen::where('co_so_id', $co_so->id)
+            ->where('bac_si_tu_van_id', $data['bac_si_tu_van_id'])
+            ->where('ca_kham_id', $data['ca_kham_id'])
+            ->whereDate('ngay_hen', $data['ngay_hen'])
+            ->where('id', '!=', $lich_hen->id)
+            ->exists();
+
+        if ($booked) {
+            return back()->withInput()->withErrors([
+                'ca_kham_id' => 'Ca khám này đã có người đặt cho ngày đã chọn.',
+            ]);
+        }
+
+        $sdt = preg_replace('/\s+/', '', $data['so_dien_thoai']);
+        $kh = KhachHang::firstOrNew(['co_so_id' => $co_so->id, 'so_dien_thoai' => $sdt]);
+        $kh->ho_ten = $data['ho_ten'];
+        $kh->email = $data['email'] ?? $kh->email;
+        $kh->save();
+
+        $lich_hen->update([
+            'khach_hang_id'    => $kh->id,
+            'bac_si_tu_van_id' => $data['bac_si_tu_van_id'],
+            'ca_kham_id'       => $data['ca_kham_id'],
+            'sale_id'          => $data['sale_id'],
+            'ngay_hen'         => $data['ngay_hen'],
+            'nguon'            => $data['nguon'] ?? null,
+            'ghi_chu'          => $data['ghi_chu'] ?? null,
+        ]);
+
+        return redirect("/{$co_so->slug}/ds-tu-van")
+            ->with('ok', 'Đã cập nhật lịch tư vấn của ' . $kh->ho_ten . '.');
+    }
+
+    public function destroy(CoSo $co_so, LichHen $lich_hen)
+    {
+        abort_unless($lich_hen->co_so_id === $co_so->id, 404);
+
+        $user = auth()->user();
+        $ok = $user->is_admin || ($user->phong_ban_id
+            && PhanQuyen::where('phong_ban_id', $user->phong_ban_id)
+                ->where('truong', 'xoa_lich_tu_van')->exists());
+        abort_unless($ok, 403, 'Bạn không có quyền xóa.');
+
+        $ten = $lich_hen->khachHang?->ho_ten ?? 'khách';
+        $lich_hen->delete();
+
+        return redirect("/{$co_so->slug}/ds-tu-van")
+            ->with('ok', 'Đã xóa lịch tư vấn của ' . $ten . '.');
+    }
+
+    /** Duyệt / bỏ duyệt 1 cấp (1..3) của lịch tư vấn. Duyệt tuần tự. */
+    public function duyet(CoSo $co_so, LichHen $lich_hen, Request $request)
+    {
+        abort_unless($lich_hen->co_so_id === $co_so->id, 404);
+
+        $level = (int) $request->input('level');
+        abort_unless(in_array($level, [1, 2, 3], true), 422, 'Cấp duyệt không hợp lệ.');
+
+        $user = auth()->user();
+        $ok = $user->is_admin || ($user->phong_ban_id
+            && PhanQuyen::where('phong_ban_id', $user->phong_ban_id)
+                ->where('truong', 'duyet_tu_van_' . $level)->exists());
+        abort_unless($ok, 403, 'Bạn không có quyền duyệt cấp ' . $level . '.');
+
+        $field = 'xac_nhan_duyet_' . $level;
+        $approve = ! $lich_hen->{$field};
+
+        if ($approve) {
+            for ($i = 1; $i < $level; $i++) {
+                abort_if(! $lich_hen->{'xac_nhan_duyet_' . $i}, 422, 'Phải duyệt cấp ' . $i . ' trước.');
+            }
+        } else {
+            for ($i = $level + 1; $i <= 3; $i++) {
+                abort_if((bool) $lich_hen->{'xac_nhan_duyet_' . $i}, 422, 'Phải bỏ duyệt cấp ' . $i . ' trước.');
+            }
+        }
+
+        $lich_hen->{$field} = $approve;
+        $lich_hen->trang_thai = ($lich_hen->xac_nhan_duyet_1 && $lich_hen->xac_nhan_duyet_2 && $lich_hen->xac_nhan_duyet_3)
+            ? 'da_duyet' : 'cho_duyet';
+        $lich_hen->save();
+
+        $ten = $lich_hen->khachHang?->ho_ten ?? 'khách';
+
+        return back()->with('ok', ($approve ? 'Đã duyệt cấp ' . $level : 'Đã bỏ duyệt cấp ' . $level)
+            . ' cho lịch tư vấn của ' . $ten . '.');
+    }
+
     public function manage(CoSo $co_so, Request $request)
     {
-        $bacSis = $co_so->bacSiTuVans()->where('active', true)->with('caKhams')->get();
+        $bacSis = $co_so->bacSiTuVans()->with('caKhams')->orderBy('id')->get();
         $danhSachCoSo = CoSo::where('active', true)->orderBy('id')->get();
         $date = $request->date('ngay') ?? now();
 
-        $bs = $bacSis->firstWhere('id', (int) $request->query('bac_si_id'))
-            ?? $bacSis->first();
+        $lichHens = LichHen::where('co_so_id', $co_so->id)
+            ->whereDate('ngay_hen', $date)
+            ->with(['khachHang', 'sale'])
+            ->orderBy('id')->get()
+            ->groupBy('bac_si_tu_van_id');
 
-        $slots = $bs ? $bs->caKhams()->orderBy('thu_tu')->get() : collect();
+        // Một thẻ cho mỗi bác sĩ, kèm timeline ca khám theo trạng thái.
+        $cards = $bacSis->map(function ($bs) use ($lichHens) {
+            $byCa = ($lichHens[$bs->id] ?? collect())->keyBy('ca_kham_id');
+            $slots = $bs->caKhams->sortBy('thu_tu')->values();
 
-        $lichHens = collect();
-        if ($bs) {
-            $lichHens = LichHen::where('co_so_id', $co_so->id)
-                ->where('bac_si_tu_van_id', $bs->id)
-                ->whereDate('ngay_hen', $date)
-                ->with(['khachHang', 'caKham', 'sale'])
-                ->orderBy('id')->get();
-        }
+            $booked = 0;
+            $timeline = $slots->map(function ($ck) use ($byCa, &$booked) {
+                $lh = $byCa->get($ck->id);
+                $tt = $lh && $lh->trang_thai !== 'tu_choi' ? $lh->trang_thai : null;
+                if ($tt) {
+                    $booked++;
+                }
 
-        $byCa = $lichHens->keyBy('ca_kham_id');
-        $grid = $slots->map(fn ($ck) => [
-            'slot' => $ck,
-            'lichHen' => $byCa->get($ck->id),
-        ]);
+                return [
+                    'ck' => $ck,
+                    'lh' => $tt ? $lh : null,
+                    'state' => $tt === 'da_duyet' ? 'dang_kham' : ($tt ? 'co_lich' : 'trong'),
+                ];
+            });
 
-        return view('yhct.lich-hen.manage', [
+            $total = $slots->count();
+
+            return [
+                'bs' => $bs,
+                'timeline' => $timeline,
+                'total' => $total,
+                'booked' => $booked,
+                'rate' => $total > 0 ? (int) round($booked / $total * 100) : 0,
+            ];
+        });
+
+        $allLich = $lichHens->flatten();
+
+        return view('longevity.lich-hen.manage', [
             'coSo' => $co_so,
             'danhSachCoSo' => $danhSachCoSo,
-            'bacSis' => $bacSis,
-            'bs' => $bs,
+            'cards' => $cards,
             'date' => $date,
-            'grid' => $grid,
             'stats' => [
-                'total' => $lichHens->count(),
-                'approved' => $lichHens->where('trang_thai', 'da_duyet')->count(),
-                'pending' => $lichHens->where('trang_thai', 'cho_duyet')->count(),
+                'total' => $allLich->count(),
+                'approved' => $allLich->where('trang_thai', 'da_duyet')->count(),
+                'pending' => $allLich->where('trang_thai', 'cho_duyet')->count(),
             ],
         ]);
     }
@@ -202,7 +348,7 @@ class LichHenController extends Controller
         $lichHens = $query->paginate(20)->withQueryString();
         $bacSis = $co_so->bacSiTuVans()->where('active', true)->get();
 
-        return view('yhct.lich-hen.list', [
+        return view('longevity.lich-hen.list', [
             'coSo' => $co_so,
             'lichHens' => $lichHens,
             'bacSis' => $bacSis,

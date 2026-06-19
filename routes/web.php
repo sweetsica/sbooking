@@ -5,6 +5,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExcelController;
 use App\Http\Controllers\LichHenController;
 use App\Http\Controllers\PageController;
+use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
 use App\Models\CoSo;
 use Illuminate\Support\Facades\Route;
@@ -42,6 +43,23 @@ Route::prefix('{co_so:slug}')->group(function () {
 
         Route::get('/lich-tu-van', [LichHenController::class, 'manage'])->name('lichhen.manage');
         Route::get('/ds-tu-van',   [LichHenController::class, 'list'])->name('lichhen.list');
+
+        // Tìm kiếm lịch đặt theo tên/SĐT + xem chi tiết (chỉ đọc)
+        Route::get('/tim-kiem',                [SearchController::class, 'index'])->name('search');
+        Route::get('/xem-tu-van/{lich_hen}',   [SearchController::class, 'showLichHen'])->name('lichhen.show');
+        Route::get('/xem-dat-phong/{booking}', [SearchController::class, 'showBooking'])->name('booking.show');
+
+        // Sửa / Xóa / Duyệt lịch đặt phòng
+        Route::get('/sua-dat-phong/{booking}',    [BookingController::class, 'edit'])->name('booking.edit');
+        Route::put('/sua-dat-phong/{booking}',    [BookingController::class, 'update'])->name('booking.update');
+        Route::delete('/xoa-dat-phong/{booking}', [BookingController::class, 'destroy'])->name('booking.destroy');
+        Route::patch('/duyet-dat-phong/{booking}', [BookingController::class, 'duyet'])->name('booking.approve');
+
+        // Sửa / Xóa / Duyệt lịch tư vấn
+        Route::get('/sua-tu-van/{lich_hen}',    [LichHenController::class, 'edit'])->name('lichhen.edit');
+        Route::put('/sua-tu-van/{lich_hen}',    [LichHenController::class, 'update'])->name('lichhen.update');
+        Route::delete('/xoa-tu-van/{lich_hen}', [LichHenController::class, 'destroy'])->name('lichhen.destroy');
+        Route::patch('/duyet-tu-van/{lich_hen}', [LichHenController::class, 'duyet'])->name('lichhen.approve');
 
         Route::get('/xuat-booking',  [ExcelController::class, 'exportBooking'])->name('excel.exportBooking');
         Route::get('/xuat-tu-van',   [ExcelController::class, 'exportLichHen'])->name('excel.exportLichHen');

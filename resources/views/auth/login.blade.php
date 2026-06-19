@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8"/>
 <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>Đăng nhập — Precision Wellness</title>
+<title>Đăng nhập — Longevity Booking</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Manrope:wght@600;700;800&amp;family=JetBrains+Mono:wght@500;600&amp;display=swap" rel="stylesheet"/>
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
@@ -34,12 +34,12 @@ tailwind.config = {
 <div class="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
 <span class="material-symbols-outlined text-on-primary">spa</span>
 </div>
-<span class="text-2xl font-headline font-extrabold">Precision Wellness</span>
+<span class="text-2xl font-headline font-extrabold">Longevity Booking</span>
 </div>
 
 <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-sm p-8">
 <h1 class="text-xl font-headline font-bold mb-1">Đăng nhập hệ thống</h1>
-<p class="text-sm text-on-surface-variant mb-6">Quản lý đặt lịch YHCT — nhập tài khoản để tiếp tục.</p>
+<p class="text-sm text-on-surface-variant mb-6">Quản lý đặt lịch Longevity — nhập tài khoản để tiếp tục.</p>
 
 @if ($errors->any())
 <div class="mb-5 px-4 py-3 rounded-xl bg-error-container text-on-error-container text-sm flex items-center gap-2">
@@ -77,7 +77,7 @@ Ghi nhớ đăng nhập
 </form>
 </div>
 
-<p class="text-center text-xs text-on-surface-variant mt-6">© Precision Wellness · Hệ thống quản lý đặt lịch YHCT</p>
+<p class="text-center text-xs text-on-surface-variant mt-6">© Longevity Booking · Hệ thống quản lý đặt lịch Longevity</p>
 </div>
 </body>
 </html>

@@ -107,18 +107,23 @@
             vertical-align: middle;
         }
         .custom-scrollbar::-webkit-scrollbar {
-            width: 8px;
-            height: 8px;
+            width: 10px;
+            height: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
             background: #f1f1f1;
+            border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #d1d5db;
+            background: #c6c6cd;
             border-radius: 10px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
             background: #9ca3af;
+        }
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #c6c6cd #f1f1f1;
         }
         .sticky-col {
             position: sticky;
@@ -140,9 +145,9 @@
 @include('partials.topnav', ['active' => 'lich-hen'])
 <!-- Main Content -->
 <main class="pt-24 pb-12 px-container-margin">
-<div class="max-w-[1600px] mx-auto space-y-6">
+<div class="max-w-[1600px] mx-auto">
 <!-- Header & View Switcher -->
-<div class="flex items-center justify-between">
+<div class="flex items-center justify-between mb-6">
 <h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Quản lý Đặt lịch</h2>
 <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl w-fit">
 <a href="/{{ $coSo->slug }}/lich-hen" class="px-6 py-2 text-body-md font-semibold text-on-surface-variant hover:text-on-surface transition-all inline-block">Lịch trình</a>
@@ -153,7 +158,7 @@
 </div>
 </div>
 <!-- Advanced Filters -->
-<form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4">
+<form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4 mb-8">
 <div class="flex flex-wrap items-end gap-4">
 <div class="flex flex-col gap-1.5">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">KHOẢNG THỜI GIAN</label>
@@ -181,38 +186,48 @@
 @endforeach
 </select>
 </div>
+@php
+    $pbId = auth()->user()->phong_ban_id;
+    $isAdmin = auth()->user()->is_admin;
+    $canExportBooking = $isAdmin || \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->where('truong', 'xuat_lich_dat_phong')->exists();
+    $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->where('truong', 'xoa_lich_dat_phong')->exists();
+    // Quyền duyệt theo từng cấp (1/2/3) — dùng các trường Xác nhận duyệt có sẵn
+    $duyetGranted = $isAdmin ? ['xac_nhan_duyet_1','xac_nhan_duyet_2','xac_nhan_duyet_3']
+        : \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->pluck('truong')->all();
+    $canDuyet = [
+        1 => $isAdmin || in_array('xac_nhan_duyet_1', $duyetGranted, true),
+        2 => $isAdmin || in_array('xac_nhan_duyet_2', $duyetGranted, true),
+        3 => $isAdmin || in_array('xac_nhan_duyet_3', $duyetGranted, true),
+    ];
+@endphp
 <div class="ml-auto flex items-center gap-2">
-<a href="/{{ $coSo->slug }}/danh-sach" class="flex items-center gap-2 px-4 py-2 text-on-surface-variant border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
-<span class="material-symbols-outlined text-[18px]">restart_alt</span>
-                        Đặt lại
-                    </a>
-<button type="submit" class="flex items-center gap-2 px-6 py-2 bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity font-semibold">
-<span class="material-symbols-outlined text-[18px]">filter_list</span>
-                        Lọc dữ liệu
-                    </button>
-</div>
-</div>
-</div>
-</div>
-</form>
-@if (auth()->user()->is_admin || \App\Models\PhanQuyen::where('phong_ban_id', auth()->user()->phong_ban_id)->where('truong', 'xuat_lich_dat_phong')->exists())
-<div class="flex items-center gap-3">
-<a href="/{{ $coSo->slug }}/xuat-booking" class="flex items-center gap-2 px-4 py-2 bg-on-tertiary-container text-on-primary rounded-lg text-body-sm font-semibold hover:opacity-90">
+<a href="/{{ $coSo->slug }}/danh-sach" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">restart_alt</span> Đặt lại
+</a>
+<button type="submit" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[18px]">filter_list</span> Lọc dữ liệu
+</button>
+@if ($canExportBooking)
+<a href="/{{ $coSo->slug }}/xuat-booking" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-on-tertiary-container text-on-primary rounded-lg hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[18px]">download</span> Xuất Excel
 </a>
-<form method="POST" action="/{{ $coSo->slug }}/nhap-booking" enctype="multipart/form-data" class="flex items-center gap-2">
-@csrf
-<label class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-body-sm font-semibold cursor-pointer hover:bg-surface-variant transition-colors">
+<label class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-variant transition-colors">
 <span class="material-symbols-outlined text-[18px]">upload</span> Chọn file
-<input type="file" name="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="this.form.submit()"/>
+<input type="file" name="file" form="import-booking" accept=".xlsx,.xls,.csv" class="hidden" onchange="this.form.submit()"/>
 </label>
-</form>
+@endif
 </div>
+</div>
+</div>
+</div>
+</form>
+@if ($canExportBooking)
+<form id="import-booking" method="POST" action="/{{ $coSo->slug }}/nhap-booking" enctype="multipart/form-data" class="hidden">@csrf</form>
 @endif
 <!-- Data Table Container -->
 <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
 <div class="overflow-x-auto custom-scrollbar">
-<table class="w-full text-left border-collapse table-auto min-w-[1800px]">
+<table class="w-full text-left border-collapse table-auto min-w-[1800px] whitespace-nowrap">
 <thead>
 <tr class="bg-surface-container-low border-b border-outline-variant">
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant sticky-col sticky-left-0 bg-surface-container-low shadow-[2px_0_5px_rgba(0,0,0,0.05)]">DẤU THỜI GIAN</th>
@@ -263,8 +278,44 @@
 <td class="px-4 py-4 text-body-sm text-on-surface-variant italic truncate max-w-[150px]" title="{{ $b->ghi_chu }}">{{ $b->ghi_chu ?: '—' }}</td>
 <td class="px-4 py-4 sticky-col sticky-right-0 bg-surface-container-lowest shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
 <div class="flex items-center justify-end gap-1">
-@php $tt = $b->trang_thai === 'da_duyet'; @endphp
-<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $tt ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-secondary-container/40 text-on-secondary-container' }}">{{ $tt ? 'Đã duyệt' : 'Chờ duyệt' }}</span>
+@php
+    $d = [1 => (bool) $b->xac_nhan_duyet_1, 2 => (bool) $b->xac_nhan_duyet_2, 3 => (bool) $b->xac_nhan_duyet_3];
+    $done = ($d[1] ? 1 : 0) + ($d[2] ? 1 : 0) + ($d[3] ? 1 : 0);
+    $full = $d[1] && $d[2] && $d[3];
+    $pending = ! $d[1] ? 1 : (! $d[2] ? 2 : (! $d[3] ? 3 : 0));
+@endphp
+<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $full ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-secondary-container/40 text-on-secondary-container' }}">{{ $full ? 'Đã duyệt' : 'Chờ duyệt ('.$pending.')' }}</span>
+<div class="flex items-center gap-0.5 mr-1">
+@foreach ([1, 2, 3] as $n)
+@php
+    $on = $d[$n];
+    $clickable = $canDuyet[$n] && (((! $full) && $n === $pending) || ($done > 0 && $n === $done));
+@endphp
+@if ($clickable)
+<form method="POST" action="/{{ $coSo->slug }}/duyet-dat-phong/{{ $b->id }}" class="inline">
+@csrf @method('PATCH')
+<input type="hidden" name="level" value="{{ $n }}"/>
+<button type="submit" title="{{ $on ? 'Bỏ duyệt cấp '.$n : 'Duyệt cấp '.$n }}" class="w-6 h-6 rounded-full text-[11px] font-bold border flex items-center justify-center transition-colors {{ $on ? 'bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error' : 'text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container' }}">{{ $n }}</button>
+</form>
+@else
+<span title="Cấp {{ $n }}{{ $on ? ' — đã duyệt' : '' }}" class="w-6 h-6 rounded-full text-[11px] font-bold border flex items-center justify-center {{ $on ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container border-transparent' : 'text-outline/40 border-outline-variant/40' }}">{{ $n }}</span>
+@endif
+@endforeach
+</div>
+<a href="/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}" title="Xem chi tiết" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</a>
+<a href="/{{ $coSo->slug }}/sua-dat-phong/{{ $b->id }}" title="Sửa" class="p-1.5 rounded-lg text-secondary hover:bg-secondary-container/30 transition-colors">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</a>
+@if ($canDeleteBooking)
+<form method="POST" action="/{{ $coSo->slug }}/xoa-dat-phong/{{ $b->id }}" class="inline" onsubmit="return confirm('Xóa lịch hẹn đặt phòng này? Hành động không thể hoàn tác.')">
+@csrf @method('DELETE')
+<button type="submit" title="Xóa" class="p-1.5 rounded-lg text-error hover:bg-error-container transition-colors">
+<span class="material-symbols-outlined text-[18px]">delete</span>
+</button>
+</form>
+@endif
 </div>
 </td>
 </tr>

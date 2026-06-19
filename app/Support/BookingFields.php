@@ -34,6 +34,11 @@ class BookingFields
             'xac_nhan_duyet_3' => 'Xác nhận duyệt 3',
             'xuat_lich_dat_phong' => 'Xuất lịch đặt phòng (Excel)',
             'xuat_lich_tu_van'   => 'Xuất lịch tư vấn (Excel)',
+            'xoa_lich_dat_phong' => 'Xóa lịch đặt phòng',
+            'xoa_lich_tu_van'    => 'Xóa lịch tư vấn',
+            'duyet_tu_van_1'     => 'Duyệt tư vấn cấp 1',
+            'duyet_tu_van_2'     => 'Duyệt tư vấn cấp 2',
+            'duyet_tu_van_3'     => 'Duyệt tư vấn cấp 3',
         ];
     }
 

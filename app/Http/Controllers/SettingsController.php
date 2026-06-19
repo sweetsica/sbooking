@@ -106,7 +106,7 @@ class SettingsController extends Controller
 
     public function index(CoSo $co_so)
     {
-        return view('yhct.settings.index', ['coSo' => $co_so, 'sections' => self::SECTIONS]);
+        return view('longevity.settings.index', ['coSo' => $co_so, 'sections' => self::SECTIONS]);
     }
 
     public function section(CoSo $co_so, string $section)
@@ -139,7 +139,7 @@ class SettingsController extends Controller
             ];
         }
 
-        return view('yhct.settings.section', [
+        return view('longevity.settings.section', [
             'coSo' => $co_so,
             'sections' => self::SECTIONS,
             'key' => $section,

@@ -1,4 +1,4 @@
-@extends('yhct.settings.layout')
+@extends('longevity.settings.layout')
 @section('title', 'Thiết lập')
 
 @section('content')
