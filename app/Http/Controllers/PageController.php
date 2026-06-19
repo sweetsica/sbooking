@@ -8,9 +8,58 @@ use Illuminate\Http\Request;
 
 class PageController extends Controller
 {
-    public function rooms(CoSo $co_so)
+    public function rooms(CoSo $co_so, Request $request)
     {
-        return view('yhct.rooms', ['coSo' => $co_so]);
+        $danhSachCoSo = CoSo::where('active', true)->orderBy('id')->get();
+        $date = $request->date('ngay') ?? now();
+        $phongs = $co_so->phongs()->with('khungGios')->orderBy('id')->get();
+
+        $bookingsByPhong = Booking::where('co_so_id', $co_so->id)
+            ->whereDate('ngay_dat', $date)
+            ->get()
+            ->groupBy('phong_id');
+
+        $roomData = $phongs->map(function ($phong) use ($bookingsByPhong, $date) {
+            $bookings = $bookingsByPhong->get($phong->id, collect());
+            $slots = $phong->khungGios;
+            $beds = max(1, (int) $phong->so_slot_toi_da);
+            $capacity = $slots->count() * $beds;
+            $occupied = $bookings->count();
+            $fill = $capacity > 0 ? (int) round($occupied / $capacity * 100) : 0;
+
+            $bySlot = $bookings->groupBy('khung_gio_id');
+            $slotStatus = $slots->map(function ($kg) use ($bySlot, $beds) {
+                $count = ($bySlot[$kg->id] ?? collect())->count();
+                if ($count >= $beds) return 'full';
+                if ($count > 0) return 'partial';
+                return 'empty';
+            });
+
+            $bedStatus = [];
+            $currentSlot = $slots->first();
+            if ($currentSlot) {
+                $currentBookings = ($bySlot[$currentSlot->id] ?? collect())->count();
+                for ($i = 0; $i < $beds; $i++) {
+                    $bedStatus[] = $i < $currentBookings ? 'occupied' : 'available';
+                }
+            }
+
+            return [
+                'phong' => $phong,
+                'beds' => $beds,
+                'occupied' => $occupied,
+                'fill' => $fill,
+                'slotStatus' => $slotStatus,
+                'bedStatus' => $bedStatus,
+            ];
+        });
+
+        return view('yhct.rooms', [
+            'coSo' => $co_so,
+            'danhSachCoSo' => $danhSachCoSo,
+            'roomData' => $roomData,
+            'date' => $date,
+        ]);
     }
 
     public function timeline(CoSo $co_so, Request $request)

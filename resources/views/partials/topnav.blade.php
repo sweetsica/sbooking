@@ -4,8 +4,9 @@
 
     $items = [
         ['key' => 'tong-quan', 'label' => 'Tổng quan',  'icon' => 'dashboard',      'href' => '/'.$coSo->slug.'/lich-hen'],
-        ['key' => 'lich-hen',  'label' => 'Lịch hẹn',   'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
+        ['key' => 'lich-hen',  'label' => 'Đặt phòng',   'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
         ['key' => 'phong',     'label' => 'Phòng bệnh', 'icon' => 'meeting_room',   'href' => '/'.$coSo->slug.'/phong'],
+        ['key' => 'tu-van',    'label' => 'Đặt lịch tư vấn', 'icon' => 'stethoscope', 'href' => '/'.$coSo->slug.'/lich-tu-van'],
     ];
     // Chỉ admin thấy "Thiết lập"
     if ($isAdmin) {

@@ -21,4 +21,9 @@ class KhachHang extends Model
     {
         return $this->hasMany(Booking::class, 'khach_hang_id');
     }
+
+    public function lichHens(): HasMany
+    {
+        return $this->hasMany(LichHen::class, 'khach_hang_id');
+    }
 }

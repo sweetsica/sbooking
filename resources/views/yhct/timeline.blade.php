@@ -104,13 +104,11 @@
             grid-template-columns: 80px repeat(3, 1fr);
             grid-auto-rows: 64px;
         }
-        .hide-scroll::-webkit-scrollbar {
-            display: none;
-        }
-        .hide-scroll {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .custom-scroll::-webkit-scrollbar { width: 10px; height: 10px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f2f4f6; border-radius: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #c6c6cd; border-radius: 5px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+        .custom-scroll::-webkit-scrollbar-corner { background: #f2f4f6; }
         .active-tab {
             @@apply border-b-2 border-secondary text-secondary;
         }
@@ -178,7 +176,7 @@
 </div>
 </div>
 </div>
-<div class="relative overflow-auto max-h-[600px] hide-scroll">
+<div class="relative overflow-auto max-h-[600px] custom-scroll">
 <!-- Timeline Grid -->
 <div class="timeline-grid min-w-[700px]" style="grid-template-columns: 80px repeat({{ max($beds,1) }}, minmax(160px,1fr));">
 <!-- Header -->

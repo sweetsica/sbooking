@@ -3,11 +3,13 @@
 namespace Database\Seeders;
 
 use App\Models\BacSi;
+use App\Models\BacSiTuVan;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\KhachHang;
 use App\Models\KhungGio;
+use App\Models\LichHen;
 use App\Models\Menu;
 use App\Models\Phong;
 use App\Models\PhongBan;
@@ -35,10 +37,10 @@ class YhctSeeder extends Seeder
         ]);
 
         // ---- Admin toàn hệ thống (xuất hiện ở tất cả cơ sở) ----
-        User::updateOrCreate(['email' => 'admin@yhct.test'], [
-            'name' => 'Admin Hoa',
-            'username' => 'adminhoa',
-            'password' => Hash::make('admin@123'),
+        User::updateOrCreate(['email' => 'admin@sweetsica'], [
+            'name' => 'Admin',
+            'username' => 'admin',
+            'password' => Hash::make('tieuhoa195'),
             'co_so_id' => null,
             'phong_ban_id' => $pbAdmin->id,
             'is_admin' => true,
@@ -111,6 +113,59 @@ class YhctSeeder extends Seeder
                 ['Phòng Trị liệu Tổng hợp B', 'cong_dong', 8, 'hoat_dong'],
             ],
         ]);
+
+        // ---- Bác sĩ tư vấn + ca khám ----
+        $seedBsTuVan = function (CoSo $cs, array $doctors) {
+            foreach ($doctors as [$chuc, $ten, $phut, $bd, $kt]) {
+                $bs = BacSiTuVan::firstOrCreate(
+                    ['co_so_id' => $cs->id, 'ten' => $ten],
+                    ['chuc_danh' => $chuc, 'thoi_gian_kham' => $phut, 'gio_bat_dau' => $bd, 'gio_ket_thuc' => $kt]
+                );
+                if ($bs->caKhams()->count() === 0) {
+                    $bs->taoCaKham();
+                }
+            }
+        };
+
+        $seedBsTuVan($cs1, [
+            ['PGS.TS.BS.', 'Nguyễn Minh Tuấn', 30, '08:00', '15:00'],
+            ['ThS.BS.', 'Lê Thị Hương', 20, '08:00', '17:00'],
+            ['BS.', 'Phạm Đức Long', 15, '09:00', '16:00'],
+        ]);
+        $seedBsTuVan($cs2, [
+            ['TS.BS.', 'Trần Văn Khoa', 20, '08:00', '12:00'],
+            ['BS.', 'Đặng Thị Mai', 30, '13:00', '17:00'],
+        ]);
+
+        // ---- Lịch hẹn tư vấn mẫu cho cơ sở 1 ----
+        $bs1 = $cs1->bacSiTuVans()->first();
+        $sale1 = $cs1->nguoiDungs()->where('phong_ban_id', $pbSales->id)->first();
+        if ($bs1 && $sale1 && LichHen::where('co_so_id', $cs1->id)->count() === 0) {
+            $kh1 = KhachHang::firstOrCreate(
+                ['co_so_id' => $cs1->id, 'so_dien_thoai' => '0912345678'],
+                ['ho_ten' => 'Trần Thị Lan', 'email' => 'lan.tran@email.com']
+            );
+            $kh2 = KhachHang::firstOrCreate(
+                ['co_so_id' => $cs1->id, 'so_dien_thoai' => '0987654321'],
+                ['ho_ten' => 'Lý Văn Hải']
+            );
+            $slots = $bs1->caKhams()->orderBy('thu_tu')->get();
+            if ($slots->count() >= 2) {
+                LichHen::create([
+                    'co_so_id' => $cs1->id, 'khach_hang_id' => $kh1->id,
+                    'bac_si_tu_van_id' => $bs1->id, 'ca_kham_id' => $slots[0]->id,
+                    'sale_id' => $sale1->id, 'ngay_hen' => now()->toDateString(),
+                    'nguon' => 'Fanpage Facebook', 'trang_thai' => 'da_duyet',
+                ]);
+                LichHen::create([
+                    'co_so_id' => $cs1->id, 'khach_hang_id' => $kh2->id,
+                    'bac_si_tu_van_id' => $bs1->id, 'ca_kham_id' => $slots[1]->id,
+                    'sale_id' => $sale1->id, 'ngay_hen' => now()->toDateString(),
+                    'nguon' => 'Hotline', 'ghi_chu' => 'Khách hỏi về liệu trình châm cứu',
+                    'trang_thai' => 'cho_duyet',
+                ]);
+            }
+        }
 
         // ---- Vài khách hàng + booking mẫu cho cơ sở 1 ----
         $kh = KhachHang::firstOrCreate(

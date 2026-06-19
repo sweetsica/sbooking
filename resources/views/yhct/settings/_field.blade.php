@@ -18,7 +18,7 @@
 <select name="{{ $name }}" class="{{ $ic }} font-time-slot">
 @for ($h = 6; $h <= 22; $h++)
 @php $hv = sprintf('%02d:00', $h); @endphp
-<option value="{{ $hv }}" @selected($value === $hv)>{{ $hv }}</option>
+<option value="{{ $hv }}" @selected(substr($value ?? '', 0, 5) === $hv)>{{ $hv }}</option>
 @endfor
 </select>
 @elseif ($type === 'number')

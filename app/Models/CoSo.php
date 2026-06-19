@@ -48,4 +48,14 @@ class CoSo extends Model
     {
         return $this->hasMany(Booking::class, 'co_so_id');
     }
+
+    public function bacSiTuVans(): HasMany
+    {
+        return $this->hasMany(BacSiTuVan::class, 'co_so_id');
+    }
+
+    public function lichHens(): HasMany
+    {
+        return $this->hasMany(LichHen::class, 'co_so_id');
+    }
 }

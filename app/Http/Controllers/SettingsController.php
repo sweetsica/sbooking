@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BacSi;
+use App\Models\BacSiTuVan;
 use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\Menu;
@@ -29,6 +30,7 @@ class SettingsController extends Controller
         'dich-vu'    => ['Dịch vụ', 'spa', 'CRUD tên dịch vụ — đưa vào form tạo mới.'],
         'dieu-duong' => ['Điều dưỡng / Bác sĩ', 'health_and_safety', 'CRUD tên Điều dưỡng/Bác sĩ — đưa vào form tạo mới.'],
         'menu'       => ['Menu', 'restaurant_menu', 'CRUD tên Menu — đưa vào form tạo mới (dạng ô tick).'],
+        'bac-si-tu-van' => ['Bác sĩ tư vấn', 'stethoscope', 'Thêm/sửa bác sĩ tư vấn + thời gian khám, giờ làm — hệ thống tự chia ca khám.'],
     ];
 
     // Cấu hình các mục có CRUD
@@ -58,6 +60,14 @@ class SettingsController extends Controller
                 'trang_thai'    => ['label' => 'Trạng thái', 'type' => 'select', 'options' => ['hoat_dong' => 'Hoạt động', 'bao_tri' => 'Bảo trì'], 'rules' => ['required', Rule::in(['hoat_dong', 'bao_tri'])]],
                 'gio_mo'        => ['label' => 'Giờ mở cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
                 'gio_dong'      => ['label' => 'Giờ đóng cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
+            ]),
+            'bac-si-tu-van' => $catalog(BacSiTuVan::class, [
+                'chuc_danh'      => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / ThS.'],
+                'ten'            => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                'thoi_gian_kham' => ['label' => 'Thời gian khám (phút)', 'type' => 'number', 'rules' => ['required', 'integer', 'min:5', 'max:120']],
+                'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:\d{2}$/']],
+                'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:\d{2}$/']],
+                'active'         => ['label' => 'Đang làm', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
             ]),
             'nguoi-dung' => [
                 'model' => User::class, 'kind' => 'user',
@@ -109,6 +119,7 @@ class SettingsController extends Controller
             'dich-vu'    => $co_so->dichVus()->get(),
             'menu'       => $co_so->menus()->get(),
             'bac-si', 'dieu-duong' => $co_so->bacSis()->get(),
+            'bac-si-tu-van' => $co_so->bacSiTuVans()->with('caKhams')->get(),
             'nguoi-dung' => $co_so->nguoiDungs()->with('phongBan')->get(),
             'co-so'      => CoSo::orderBy('id')->get(),
             'phong-ban'  => PhongBan::orderBy('id')->get(),
@@ -208,6 +219,10 @@ class SettingsController extends Controller
 
         if ($section === 'phong') {
             $this->regenSlots($record, $data['gio_mo'], $data['gio_dong']);
+        }
+
+        if ($section === 'bac-si-tu-van') {
+            $record->taoCaKham();
         }
 
         return back()->with('ok', $record->wasRecentlyCreated ? 'Đã thêm mới.' : 'Đã cập nhật.');

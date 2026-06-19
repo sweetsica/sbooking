@@ -148,7 +148,7 @@
 <div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-8">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dấu thời gian (Timestamp)</label>
-<input class="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface-variant cursor-not-allowed" readonly type="text" value="{{ now()->format('Y-m-d H:i:s') }}"/>
+<input class="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface-variant cursor-not-allowed" readonly type="text" value="{{ now()->format('d/m/Y - h:i:s') }} ({{ now()->hour < 12 ? 'sáng' : 'tối' }})"/>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn (Source)</label>
@@ -389,8 +389,8 @@ Tạo Lịch Hẹn (Create)
 
     // Gợi ý giờ kết thúc theo khung giờ; lần đầu giữ giá trị cũ (khi reload lỗi)
     function updateEnd() {
-        if (firstRun && ketThuc.dataset.old) { firstRun = false; return; }
-        firstRun = false;
+        if (firstRun) { firstRun = false; if (!ketThuc.dataset.old) return; }
+
         const opt = khung.options[khung.selectedIndex];
         const kt = opt ? (opt.getAttribute('data-kt') || '') : '';
         if (kt) { const t = ketThuc.querySelector(`option[value="${kt}"]`); if (t && !t.disabled) ketThuc.value = kt; }

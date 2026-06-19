@@ -192,7 +192,23 @@
                     </button>
 </div>
 </div>
+</div>
+</div>
 </form>
+@if (auth()->user()->is_admin || \App\Models\PhanQuyen::where('phong_ban_id', auth()->user()->phong_ban_id)->where('truong', 'xuat_lich_dat_phong')->exists())
+<div class="flex items-center gap-3">
+<a href="/{{ $coSo->slug }}/xuat-booking" class="flex items-center gap-2 px-4 py-2 bg-on-tertiary-container text-on-primary rounded-lg text-body-sm font-semibold hover:opacity-90">
+<span class="material-symbols-outlined text-[18px]">download</span> Xuất Excel
+</a>
+<form method="POST" action="/{{ $coSo->slug }}/nhap-booking" enctype="multipart/form-data" class="flex items-center gap-2">
+@csrf
+<label class="flex items-center gap-2 px-4 py-2 border border-outline-variant rounded-lg text-body-sm font-semibold cursor-pointer hover:bg-surface-variant transition-colors">
+<span class="material-symbols-outlined text-[18px]">upload</span> Chọn file
+<input type="file" name="file" accept=".xlsx,.xls,.csv" class="hidden" onchange="this.form.submit()"/>
+</label>
+</form>
+</div>
+@endif
 <!-- Data Table Container -->
 <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
 <div class="overflow-x-auto custom-scrollbar">
