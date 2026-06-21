@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\CoSo;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
@@ -45,6 +46,35 @@ class AuthController extends Controller
         $request->session()->regenerateToken();
 
         return redirect()->route('login');
+    }
+
+    public function showChangePassword()
+    {
+        return view('auth.change-password');
+    }
+
+    public function changePassword(Request $request)
+    {
+        $data = $request->validate([
+            'current_password' => ['required', 'string'],
+            'password'         => ['required', 'string', 'min:6', 'confirmed'],
+        ], [
+            'current_password.required' => 'Vui lòng nhập mật khẩu hiện tại.',
+            'password.required'         => 'Vui lòng nhập mật khẩu mới.',
+            'password.min'              => 'Mật khẩu mới tối thiểu 6 ký tự.',
+            'password.confirmed'        => 'Xác nhận mật khẩu không khớp.',
+        ]);
+
+        $user = $request->user();
+
+        if (! Hash::check($data['current_password'], $user->password)) {
+            return back()->withErrors(['current_password' => 'Mật khẩu hiện tại không đúng.']);
+        }
+
+        $user->password = $data['password']; // cast 'hashed' tự băm
+        $user->save();
+
+        return back()->with('ok', 'Đã đổi mật khẩu thành công.');
     }
 
     // Trang chủ theo người dùng: cơ sở của họ (admin -> cơ sở đầu tiên)

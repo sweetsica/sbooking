@@ -20,7 +20,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <h2 class="font-headline-lg text-headline-lg text-primary mb-1">Kết quả tìm kiếm</h2>
 <p class="text-on-surface-variant text-body-md">
 @if ($q !== '')
-Từ khóa: <span class="font-semibold text-on-surface">"{{ $q }}"</span> · {{ $bookings->count() }} đặt phòng · {{ $lichHens->count() }} lịch tư vấn
+Từ khóa: <span class="font-semibold text-on-surface">"{{ $q }}"</span> · {{ $bookings->count() }} kết quả đặt phòng
 @else
 Nhập tên hoặc số điện thoại khách hàng vào ô tìm kiếm phía trên.
 @endif

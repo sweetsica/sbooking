@@ -186,19 +186,23 @@
 @endforeach
 </select>
 </div>
+<div class="flex flex-col gap-1.5">
+<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">TRẠNG THÁI</label>
+<select name="trang_thai" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<option value="">Tất cả</option>
+<option value="cho_duyet" @selected(($filters['trang_thai'] ?? '')==='cho_duyet')>Chờ duyệt</option>
+<option value="da_duyet" @selected(($filters['trang_thai'] ?? '')==='da_duyet')>Đã duyệt</option>
+<option value="da_xong" @selected(($filters['trang_thai'] ?? '')==='da_xong')>Đã xong</option>
+</select>
+</div>
 @php
     $pbId = auth()->user()->phong_ban_id;
+    $vtId = auth()->user()->vai_tro_id;
     $isAdmin = auth()->user()->is_admin;
-    $canExportBooking = $isAdmin || \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->where('truong', 'xuat_lich_dat_phong')->exists();
-    $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->where('truong', 'xoa_lich_dat_phong')->exists();
-    // Quyền duyệt theo từng cấp (1/2/3) — dùng các trường Xác nhận duyệt có sẵn
-    $duyetGranted = $isAdmin ? ['xac_nhan_duyet_1','xac_nhan_duyet_2','xac_nhan_duyet_3']
-        : \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->pluck('truong')->all();
-    $canDuyet = [
-        1 => $isAdmin || in_array('xac_nhan_duyet_1', $duyetGranted, true),
-        2 => $isAdmin || in_array('xac_nhan_duyet_2', $duyetGranted, true),
-        3 => $isAdmin || in_array('xac_nhan_duyet_3', $duyetGranted, true),
-    ];
+    $canExportBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xuat_lich_dat_phong')->exists();
+    $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_lich_dat_phong')->exists();
+    $canEditBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_lich_dat_phong')->exists();
+    $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
 @endphp
 <div class="ml-auto flex items-center gap-2">
 <a href="/{{ $coSo->slug }}/danh-sach" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
@@ -244,7 +248,8 @@
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">LIỆU PHÁP</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">SỐ LIỆU TRÌNH</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">KẾT HỢP MEDICAL?</th>
-<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">ĐIỀU DƯỠNG/BÁC SĨ</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">BÁC SĨ</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">KTV</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">GHI CHÚ</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant sticky-col sticky-right-0 bg-surface-container-low text-right shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">THAO TÁC</th>
 </tr>
@@ -275,39 +280,45 @@
 @endif
 </td>
 <td class="px-4 py-4 text-body-sm">{{ $b->bacSi?->ten_day_du ?? '—' }}</td>
+<td class="px-4 py-4 text-body-sm">{{ $b->ktv?->ten_day_du ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant italic truncate max-w-[150px]" title="{{ $b->ghi_chu }}">{{ $b->ghi_chu ?: '—' }}</td>
 <td class="px-4 py-4 sticky-col sticky-right-0 bg-surface-container-lowest shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
 <div class="flex items-center justify-end gap-1">
 @php
-    $d = [1 => (bool) $b->xac_nhan_duyet_1, 2 => (bool) $b->xac_nhan_duyet_2, 3 => (bool) $b->xac_nhan_duyet_3];
-    $done = ($d[1] ? 1 : 0) + ($d[2] ? 1 : 0) + ($d[3] ? 1 : 0);
-    $full = $d[1] && $d[2] && $d[3];
-    $pending = ! $d[1] ? 1 : (! $d[2] ? 2 : (! $d[3] ? 3 : 0));
+    $approved = $b->trang_thai === 'da_duyet';
+    $done = $b->trang_thai === 'da_xong';
+    $badge = $done
+        ? ['Đã xong', 'bg-primary/10 text-primary']
+        : ($approved ? ['Đã duyệt', 'bg-tertiary-fixed-dim/40 text-on-tertiary-container']
+                     : ['Chờ duyệt', 'bg-secondary-container/40 text-on-secondary-container']);
 @endphp
-<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $full ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-secondary-container/40 text-on-secondary-container' }}">{{ $full ? 'Đã duyệt' : 'Chờ duyệt ('.$pending.')' }}</span>
-<div class="flex items-center gap-0.5 mr-1">
-@foreach ([1, 2, 3] as $n)
-@php
-    $on = $d[$n];
-    $clickable = $canDuyet[$n] && (((! $full) && $n === $pending) || ($done > 0 && $n === $done));
-@endphp
-@if ($clickable)
+<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $badge[1] }}">{{ $badge[0] }}</span>
+@if ($canDuyet)
+@unless ($done)
 <form method="POST" action="/{{ $coSo->slug }}/duyet-dat-phong/{{ $b->id }}" class="inline">
 @csrf @method('PATCH')
-<input type="hidden" name="level" value="{{ $n }}"/>
-<button type="submit" title="{{ $on ? 'Bỏ duyệt cấp '.$n : 'Duyệt cấp '.$n }}" class="w-6 h-6 rounded-full text-[11px] font-bold border flex items-center justify-center transition-colors {{ $on ? 'bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error' : 'text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container' }}">{{ $n }}</button>
+<button type="submit" title="{{ $approved ? 'Bỏ duyệt' : 'Duyệt' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $approved ? 'bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error' : 'text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container' }}">
+<span class="material-symbols-outlined text-[16px]">{{ $approved ? 'close' : 'check' }}</span>
+</button>
 </form>
-@else
-<span title="Cấp {{ $n }}{{ $on ? ' — đã duyệt' : '' }}" class="w-6 h-6 rounded-full text-[11px] font-bold border flex items-center justify-center {{ $on ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container border-transparent' : 'text-outline/40 border-outline-variant/40' }}">{{ $n }}</span>
+@endunless
+@if ($approved || $done)
+<form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $b->id }}" class="inline">
+@csrf @method('PATCH')
+<button type="submit" title="{{ $done ? 'Hoàn tác về Đã duyệt' : 'Đánh dấu Đã xong' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $done ? 'bg-primary text-on-primary border-primary hover:opacity-80' : 'text-outline border-outline-variant hover:border-primary hover:text-primary' }}">
+<span class="material-symbols-outlined text-[16px]">{{ $done ? 'undo' : 'task_alt' }}</span>
+</button>
+</form>
 @endif
-@endforeach
-</div>
+@endif
 <a href="/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}" title="Xem chi tiết" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
 <span class="material-symbols-outlined text-[18px]">visibility</span>
 </a>
+@if ($canEditBooking)
 <a href="/{{ $coSo->slug }}/sua-dat-phong/{{ $b->id }}" title="Sửa" class="p-1.5 rounded-lg text-secondary hover:bg-secondary-container/30 transition-colors">
 <span class="material-symbols-outlined text-[18px]">edit</span>
 </a>
+@endif
 @if ($canDeleteBooking)
 <form method="POST" action="/{{ $coSo->slug }}/xoa-dat-phong/{{ $b->id }}" class="inline" onsubmit="return confirm('Xóa lịch hẹn đặt phòng này? Hành động không thể hoàn tác.')">
 @csrf @method('DELETE')
@@ -321,7 +332,7 @@
 </tr>
 @empty
 <tr>
-<td colspan="17" class="px-4 py-16 text-center">
+<td colspan="18" class="px-4 py-16 text-center">
 <div class="flex flex-col items-center gap-2 text-on-surface-variant">
 <span class="material-symbols-outlined text-[40px] opacity-50">event_busy</span>
 <p class="text-body-md">Chưa có lịch hẹn nào khớp bộ lọc.</p>

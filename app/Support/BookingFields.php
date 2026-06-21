@@ -27,18 +27,13 @@ class BookingFields
             'dich_vu_id'      => 'Liệu pháp / Dịch vụ',
             'so_lieu_trinh'   => 'Số liệu trình',
             'ket_hop_medical' => 'Kết hợp Medical',
-            'bac_si_id'       => 'Điều dưỡng / Bác sĩ',
+            'bac_si_user_id'  => 'Bác sĩ',
+            'ktv_user_id'     => 'Kỹ thuật viên',
             'ghi_chu'         => 'Ghi chú',
-            'xac_nhan_duyet_1' => 'Xác nhận duyệt 1',
-            'xac_nhan_duyet_2' => 'Xác nhận duyệt 2',
-            'xac_nhan_duyet_3' => 'Xác nhận duyệt 3',
+            'duyet_booking'      => 'Duyệt lịch đặt phòng',
+            'sua_lich_dat_phong' => 'Sửa lịch đặt phòng',
             'xuat_lich_dat_phong' => 'Xuất lịch đặt phòng (Excel)',
-            'xuat_lich_tu_van'   => 'Xuất lịch tư vấn (Excel)',
             'xoa_lich_dat_phong' => 'Xóa lịch đặt phòng',
-            'xoa_lich_tu_van'    => 'Xóa lịch tư vấn',
-            'duyet_tu_van_1'     => 'Duyệt tư vấn cấp 1',
-            'duyet_tu_van_2'     => 'Duyệt tư vấn cấp 2',
-            'duyet_tu_van_3'     => 'Duyệt tư vấn cấp 3',
         ];
     }
 

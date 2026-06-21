@@ -9,10 +9,15 @@ class PhanQuyen extends Model
 {
     protected $table = 'phan_quyen';
 
-    protected $fillable = ['phong_ban_id', 'truong'];
+    protected $fillable = ['phong_ban_id', 'vai_tro_id', 'truong'];
 
     public function phongBan(): BelongsTo
     {
         return $this->belongsTo(PhongBan::class, 'phong_ban_id');
+    }
+
+    public function vaiTro(): BelongsTo
+    {
+        return $this->belongsTo(VaiTro::class, 'vai_tro_id');
     }
 }

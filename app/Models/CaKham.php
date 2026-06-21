@@ -9,11 +9,11 @@ class CaKham extends Model
 {
     protected $table = 'ca_kham';
 
-    protected $fillable = ['bac_si_tu_van_id', 'gio_bat_dau', 'gio_ket_thuc', 'thu_tu'];
+    protected $fillable = ['user_id', 'gio_bat_dau', 'gio_ket_thuc', 'thu_tu'];
 
-    public function bacSiTuVan(): BelongsTo
+    public function user(): BelongsTo
     {
-        return $this->belongsTo(BacSiTuVan::class, 'bac_si_tu_van_id');
+        return $this->belongsTo(User::class, 'user_id');
     }
 
     public function getNhanAttribute(): string

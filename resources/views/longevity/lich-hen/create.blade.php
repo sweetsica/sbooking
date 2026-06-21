@@ -101,9 +101,9 @@ body { background-color: #f7f9fb; }
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ tư vấn <span class="text-error">*</span></label>
-<select id="bac_si" name="bac_si_tu_van_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<select id="bac_si" name="bac_si_user_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 @foreach ($bacSis as $bs)
-<option value="{{ $bs->id }}" @selected(old('bac_si_tu_van_id', $lh?->bac_si_tu_van_id)==$bs->id)>{{ $bs->ten_day_du }} ({{ $bs->thoi_gian_kham }}p/ca)</option>
+<option value="{{ $bs->id }}" @selected(old('bac_si_user_id', $lh?->bac_si_user_id)==$bs->id)>{{ $bs->ten_day_du }} ({{ $bs->thoi_gian_kham }}p/ca)</option>
 @endforeach
 </select>
 </div>

@@ -26,7 +26,8 @@ class CoSo extends Model
 
     public function bacSis(): HasMany
     {
-        return $this->hasMany(BacSi::class, 'co_so_id');
+        return $this->hasMany(User::class, 'co_so_id')
+            ->whereHas('vaiTro', fn ($q) => $q->where('ma', 'bac_si'));
     }
 
     public function dichVus(): HasMany
@@ -51,7 +52,14 @@ class CoSo extends Model
 
     public function bacSiTuVans(): HasMany
     {
-        return $this->hasMany(BacSiTuVan::class, 'co_so_id');
+        return $this->hasMany(User::class, 'co_so_id')
+            ->whereHas('vaiTro', fn ($q) => $q->where('ma', 'bac_si_tu_van'));
+    }
+
+    public function ktvs(): HasMany
+    {
+        return $this->hasMany(User::class, 'co_so_id')
+            ->whereHas('vaiTro', fn ($q) => $q->where('ma', 'ktv'));
     }
 
     public function lichHens(): HasMany

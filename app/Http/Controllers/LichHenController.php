@@ -2,11 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BacSiTuVan;
 use App\Models\CoSo;
 use App\Models\KhachHang;
 use App\Models\LichHen;
 use App\Models\PhanQuyen;
+use App\Models\User;
+use App\Models\VaiTro;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,6 +21,7 @@ class LichHenController extends Controller
     public function edit(CoSo $co_so, LichHen $lich_hen)
     {
         abort_unless($lich_hen->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('sua_lich_tu_van');
 
         $lich_hen->load('khachHang');
 
@@ -29,14 +31,15 @@ class LichHenController extends Controller
     /** Dữ liệu dùng chung cho form tạo / sửa. */
     private function formData(CoSo $co_so): array
     {
-        $bacSis = $co_so->bacSiTuVans()
-            ->where('active', true)
-            ->with('caKhams')
-            ->get();
+        $vrBsTuVan = VaiTro::where('ma', 'bac_si_tu_van')->first();
 
-        $sales = $co_so->nguoiDungs()
-            ->whereHas('phongBan', fn ($q) => $q->where('ma', 'sales'))
+        // Bác sĩ tư vấn: thuộc cơ sở hoặc global (is_tu_van)
+        $bacSis = User::where('vai_tro_id', $vrBsTuVan?->id)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->with('caKhams')
             ->orderBy('name')->get();
+
+        $sales = $co_so->nguoiDungs()->orderBy('name')->get();
 
         $caKhamMap = $bacSis->mapWithKeys(fn ($bs) => [
             $bs->id => $bs->caKhams->map(fn ($ck) => [
@@ -57,8 +60,8 @@ class LichHenController extends Controller
 
     public function caKham(CoSo $co_so, Request $request)
     {
-        $bs = BacSiTuVan::where('co_so_id', $co_so->id)
-            ->where('id', $request->query('bac_si_id'))
+        $bs = User::where('id', $request->query('bac_si_id'))
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
             ->with('caKhams')->first();
 
         if (! $bs) {
@@ -69,7 +72,7 @@ class LichHenController extends Controller
 
         $except = $request->query('except');
         $counts = LichHen::where('co_so_id', $co_so->id)
-            ->where('bac_si_tu_van_id', $bs->id)
+            ->where('bac_si_user_id', $bs->id)
             ->whereDate('ngay_hen', $ngay)
             ->when($except, fn ($q) => $q->where('id', '!=', $except))
             ->selectRaw('ca_kham_id, COUNT(*) as c')
@@ -109,7 +112,7 @@ class LichHenController extends Controller
             'so_dien_thoai'     => ['required', 'string', 'max:30'],
             'email'             => ['nullable', 'email', 'max:255'],
             'ngay_hen'          => ['required', 'date'],
-            'bac_si_tu_van_id'  => ['required', Rule::exists('bac_si_tu_van', 'id')->where('co_so_id', $co_so->id)],
+            'bac_si_user_id'    => ['required', Rule::exists('users', 'id')],
             'ca_kham_id'        => ['required', Rule::exists('ca_kham', 'id')],
             'sale_id'           => ['required', Rule::exists('users', 'id')],
             'nguon'             => ['nullable', 'string', 'max:100'],
@@ -117,14 +120,14 @@ class LichHenController extends Controller
         ], [
             'ho_ten.required'           => 'Vui lòng nhập họ tên khách hàng.',
             'so_dien_thoai.required'    => 'Vui lòng nhập số điện thoại.',
-            'bac_si_tu_van_id.required' => 'Vui lòng chọn bác sĩ tư vấn.',
+            'bac_si_user_id.required'   => 'Vui lòng chọn bác sĩ tư vấn.',
             'ca_kham_id.required'       => 'Vui lòng chọn ca khám.',
             'sale_id.required'          => 'Vui lòng chọn sale phụ trách.',
         ]);
 
         // Check slot availability
         $booked = LichHen::where('co_so_id', $co_so->id)
-            ->where('bac_si_tu_van_id', $data['bac_si_tu_van_id'])
+            ->where('bac_si_user_id', $data['bac_si_user_id'])
             ->where('ca_kham_id', $data['ca_kham_id'])
             ->whereDate('ngay_hen', $data['ngay_hen'])
             ->exists();
@@ -144,7 +147,7 @@ class LichHenController extends Controller
         LichHen::create([
             'co_so_id'         => $co_so->id,
             'khach_hang_id'    => $kh->id,
-            'bac_si_tu_van_id' => $data['bac_si_tu_van_id'],
+            'bac_si_user_id'   => $data['bac_si_user_id'],
             'ca_kham_id'       => $data['ca_kham_id'],
             'sale_id'          => $data['sale_id'],
             'ngay_hen'         => $data['ngay_hen'],
@@ -160,13 +163,14 @@ class LichHenController extends Controller
     public function update(CoSo $co_so, LichHen $lich_hen, Request $request)
     {
         abort_unless($lich_hen->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('sua_lich_tu_van');
 
         $data = $request->validate([
             'ho_ten'            => ['required', 'string', 'max:255'],
             'so_dien_thoai'     => ['required', 'string', 'max:30'],
             'email'             => ['nullable', 'email', 'max:255'],
             'ngay_hen'          => ['required', 'date'],
-            'bac_si_tu_van_id'  => ['required', Rule::exists('bac_si_tu_van', 'id')->where('co_so_id', $co_so->id)],
+            'bac_si_user_id'    => ['required', Rule::exists('users', 'id')],
             'ca_kham_id'        => ['required', Rule::exists('ca_kham', 'id')],
             'sale_id'           => ['required', Rule::exists('users', 'id')],
             'nguon'             => ['nullable', 'string', 'max:100'],
@@ -174,14 +178,14 @@ class LichHenController extends Controller
         ], [
             'ho_ten.required'           => 'Vui lòng nhập họ tên khách hàng.',
             'so_dien_thoai.required'    => 'Vui lòng nhập số điện thoại.',
-            'bac_si_tu_van_id.required' => 'Vui lòng chọn bác sĩ tư vấn.',
+            'bac_si_user_id.required'   => 'Vui lòng chọn bác sĩ tư vấn.',
             'ca_kham_id.required'       => 'Vui lòng chọn ca khám.',
             'sale_id.required'          => 'Vui lòng chọn sale phụ trách.',
         ]);
 
         // Ca khám đã có người đặt (trừ chính lịch đang sửa)?
         $booked = LichHen::where('co_so_id', $co_so->id)
-            ->where('bac_si_tu_van_id', $data['bac_si_tu_van_id'])
+            ->where('bac_si_user_id', $data['bac_si_user_id'])
             ->where('ca_kham_id', $data['ca_kham_id'])
             ->whereDate('ngay_hen', $data['ngay_hen'])
             ->where('id', '!=', $lich_hen->id)
@@ -201,7 +205,7 @@ class LichHenController extends Controller
 
         $lich_hen->update([
             'khach_hang_id'    => $kh->id,
-            'bac_si_tu_van_id' => $data['bac_si_tu_van_id'],
+            'bac_si_user_id'   => $data['bac_si_user_id'],
             'ca_kham_id'       => $data['ca_kham_id'],
             'sale_id'          => $data['sale_id'],
             'ngay_hen'         => $data['ngay_hen'],
@@ -218,9 +222,10 @@ class LichHenController extends Controller
         abort_unless($lich_hen->co_so_id === $co_so->id, 404);
 
         $user = auth()->user();
-        $ok = $user->is_admin || ($user->phong_ban_id
-            && PhanQuyen::where('phong_ban_id', $user->phong_ban_id)
-                ->where('truong', 'xoa_lich_tu_van')->exists());
+        $ok = $user->is_admin || PhanQuyen::where(function ($q) use ($user) {
+                if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
+                if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
+            })->where('truong', 'xoa_lich_tu_van')->exists();
         abort_unless($ok, 403, 'Bạn không có quyền xóa.');
 
         $ten = $lich_hen->khachHang?->ho_ten ?? 'khách';
@@ -230,47 +235,49 @@ class LichHenController extends Controller
             ->with('ok', 'Đã xóa lịch tư vấn của ' . $ten . '.');
     }
 
-    /** Duyệt / bỏ duyệt 1 cấp (1..3) của lịch tư vấn. Duyệt tuần tự. */
-    public function duyet(CoSo $co_so, LichHen $lich_hen, Request $request)
+    /** Duyệt / bỏ duyệt lịch tư vấn (chỉ admin). */
+    public function duyet(CoSo $co_so, LichHen $lich_hen)
     {
         abort_unless($lich_hen->co_so_id === $co_so->id, 404);
 
-        $level = (int) $request->input('level');
-        abort_unless(in_array($level, [1, 2, 3], true), 422, 'Cấp duyệt không hợp lệ.');
-
         $user = auth()->user();
-        $ok = $user->is_admin || ($user->phong_ban_id
-            && PhanQuyen::where('phong_ban_id', $user->phong_ban_id)
-                ->where('truong', 'duyet_tu_van_' . $level)->exists());
-        abort_unless($ok, 403, 'Bạn không có quyền duyệt cấp ' . $level . '.');
+        $ok = $user->is_admin || PhanQuyen::where(function ($q) use ($user) {
+                if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
+                if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
+            })->where('truong', 'duyet_tu_van')->exists();
+        abort_unless($ok, 403, 'Bạn không có quyền duyệt.');
 
-        $field = 'xac_nhan_duyet_' . $level;
-        $approve = ! $lich_hen->{$field};
-
-        if ($approve) {
-            for ($i = 1; $i < $level; $i++) {
-                abort_if(! $lich_hen->{'xac_nhan_duyet_' . $i}, 422, 'Phải duyệt cấp ' . $i . ' trước.');
-            }
-        } else {
-            for ($i = $level + 1; $i <= 3; $i++) {
-                abort_if((bool) $lich_hen->{'xac_nhan_duyet_' . $i}, 422, 'Phải bỏ duyệt cấp ' . $i . ' trước.');
-            }
-        }
-
-        $lich_hen->{$field} = $approve;
-        $lich_hen->trang_thai = ($lich_hen->xac_nhan_duyet_1 && $lich_hen->xac_nhan_duyet_2 && $lich_hen->xac_nhan_duyet_3)
-            ? 'da_duyet' : 'cho_duyet';
+        $approve = $lich_hen->trang_thai !== 'da_duyet';
+        $lich_hen->trang_thai = $approve ? 'da_duyet' : 'cho_duyet';
         $lich_hen->save();
 
         $ten = $lich_hen->khachHang?->ho_ten ?? 'khách';
 
-        return back()->with('ok', ($approve ? 'Đã duyệt cấp ' . $level : 'Đã bỏ duyệt cấp ' . $level)
-            . ' cho lịch tư vấn của ' . $ten . '.');
+        return back()->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch tư vấn của ' . $ten . '.');
+    }
+
+    private function authorizePerm(string $field): void
+    {
+        $user = auth()->user();
+        if ($user->is_admin) {
+            return;
+        }
+
+        $ok = PhanQuyen::where(function ($q) use ($user) {
+                if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
+                if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
+            })->where('truong', $field)->exists();
+
+        abort_unless($ok, 403, 'Bạn không có quyền thực hiện thao tác này.');
     }
 
     public function manage(CoSo $co_so, Request $request)
     {
-        $bacSis = $co_so->bacSiTuVans()->with('caKhams')->orderBy('id')->get();
+        $vrBsTuVan = VaiTro::where('ma', 'bac_si_tu_van')->first();
+        $bacSis = User::where('vai_tro_id', $vrBsTuVan?->id)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->with('caKhams')
+            ->orderBy('id')->get();
         $danhSachCoSo = CoSo::where('active', true)->orderBy('id')->get();
         $date = $request->date('ngay') ?? now();
 
@@ -278,7 +285,7 @@ class LichHenController extends Controller
             ->whereDate('ngay_hen', $date)
             ->with(['khachHang', 'sale'])
             ->orderBy('id')->get()
-            ->groupBy('bac_si_tu_van_id');
+            ->groupBy('bac_si_user_id');
 
         // Một thẻ cho mỗi bác sĩ, kèm timeline ca khám theo trạng thái.
         $cards = $bacSis->map(function ($bs) use ($lichHens) {
@@ -339,14 +346,21 @@ class LichHenController extends Controller
             $query->whereDate('ngay_hen', '<=', $request->query('ngay_den'));
         }
         if ($request->filled('bac_si_id')) {
-            $query->where('bac_si_tu_van_id', $request->query('bac_si_id'));
+            $query->where('bac_si_user_id', $request->query('bac_si_id'));
         }
         if ($request->filled('nguon')) {
             $query->where('nguon', $request->query('nguon'));
         }
+        if ($request->filled('trang_thai')) {
+            $query->where('trang_thai', $request->query('trang_thai'));
+        }
 
         $lichHens = $query->paginate(20)->withQueryString();
-        $bacSis = $co_so->bacSiTuVans()->where('active', true)->get();
+
+        $vrBsTuVan = VaiTro::where('ma', 'bac_si_tu_van')->first();
+        $bacSis = User::where('vai_tro_id', $vrBsTuVan?->id)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->orderBy('name')->get();
 
         return view('longevity.lich-hen.list', [
             'coSo' => $co_so,
@@ -354,7 +368,7 @@ class LichHenController extends Controller
             'bacSis' => $bacSis,
             'nguons' => LichHen::where('co_so_id', $co_so->id)
                 ->whereNotNull('nguon')->distinct()->pluck('nguon'),
-            'filters' => $request->only(['ngay_tu', 'ngay_den', 'bac_si_id', 'nguon']),
+            'filters' => $request->only(['ngay_tu', 'ngay_den', 'bac_si_id', 'nguon', 'trang_thai']),
         ]);
     }
 }

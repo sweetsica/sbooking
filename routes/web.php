@@ -3,7 +3,6 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExcelController;
-use App\Http\Controllers\LichHenController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
@@ -22,18 +21,19 @@ Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 
+// Đổi mật khẩu (người dùng đã đăng nhập)
+Route::middleware('auth')->group(function () {
+    Route::get('/doi-mat-khau',  [AuthController::class, 'showChangePassword'])->name('password.change');
+    Route::post('/doi-mat-khau', [AuthController::class, 'changePassword'])->name('password.update');
+});
+
 Route::prefix('{co_so:slug}')->group(function () {
     // ----- CÔNG KHAI: form tạo lịch hẹn (không cần đăng nhập) -----
     Route::get('/tao-moi',           [BookingController::class, 'create'])->name('booking.create');
     Route::post('/tao-moi',          [BookingController::class, 'store'])->name('booking.store');
     Route::get('/tao-moi/khung-gio', [BookingController::class, 'khungGio'])->name('booking.khunggio');
     Route::get('/tao-moi/check-sdt', [BookingController::class, 'checkPhone'])->name('booking.checksdt');
-
-    // ----- CÔNG KHAI: form đặt lịch tư vấn -----
-    Route::get('/dat-kham',           [LichHenController::class, 'create'])->name('lichhen.create');
-    Route::post('/dat-kham',          [LichHenController::class, 'store'])->name('lichhen.store');
-    Route::get('/dat-kham/ca-kham',   [LichHenController::class, 'caKham'])->name('lichhen.cakham');
-    Route::get('/dat-kham/check-sdt', [LichHenController::class, 'checkPhone'])->name('lichhen.checksdt');
+    Route::get('/tao-moi/check-ktv', [BookingController::class, 'checkKtv'])->name('booking.checkktv');
 
     // ----- CẦN ĐĂNG NHẬP -----
     Route::middleware('auth')->group(function () {
@@ -41,12 +41,11 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::get('/lich-hen',  [PageController::class, 'timeline'])->name('timeline');
         Route::get('/danh-sach', [PageController::class, 'bookings'])->name('bookings');
 
-        Route::get('/lich-tu-van', [LichHenController::class, 'manage'])->name('lichhen.manage');
-        Route::get('/ds-tu-van',   [LichHenController::class, 'list'])->name('lichhen.list');
+        // Trang Bác sĩ: lịch của từng bác sĩ, dữ liệu lấy từ Booking đặt phòng
+        Route::get('/bac-si', [PageController::class, 'doctors'])->name('doctors');
 
         // Tìm kiếm lịch đặt theo tên/SĐT + xem chi tiết (chỉ đọc)
         Route::get('/tim-kiem',                [SearchController::class, 'index'])->name('search');
-        Route::get('/xem-tu-van/{lich_hen}',   [SearchController::class, 'showLichHen'])->name('lichhen.show');
         Route::get('/xem-dat-phong/{booking}', [SearchController::class, 'showBooking'])->name('booking.show');
 
         // Sửa / Xóa / Duyệt lịch đặt phòng
@@ -54,17 +53,10 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::put('/sua-dat-phong/{booking}',    [BookingController::class, 'update'])->name('booking.update');
         Route::delete('/xoa-dat-phong/{booking}', [BookingController::class, 'destroy'])->name('booking.destroy');
         Route::patch('/duyet-dat-phong/{booking}', [BookingController::class, 'duyet'])->name('booking.approve');
-
-        // Sửa / Xóa / Duyệt lịch tư vấn
-        Route::get('/sua-tu-van/{lich_hen}',    [LichHenController::class, 'edit'])->name('lichhen.edit');
-        Route::put('/sua-tu-van/{lich_hen}',    [LichHenController::class, 'update'])->name('lichhen.update');
-        Route::delete('/xoa-tu-van/{lich_hen}', [LichHenController::class, 'destroy'])->name('lichhen.destroy');
-        Route::patch('/duyet-tu-van/{lich_hen}', [LichHenController::class, 'duyet'])->name('lichhen.approve');
+        Route::patch('/xong-dat-phong/{booking}',  [BookingController::class, 'xong'])->name('booking.done');
 
         Route::get('/xuat-booking',  [ExcelController::class, 'exportBooking'])->name('excel.exportBooking');
-        Route::get('/xuat-tu-van',   [ExcelController::class, 'exportLichHen'])->name('excel.exportLichHen');
         Route::post('/nhap-booking', [ExcelController::class, 'importBooking'])->name('excel.importBooking');
-        Route::post('/nhap-tu-van',  [ExcelController::class, 'importLichHen'])->name('excel.importLichHen');
 
         // ----- CHỈ ADMIN: Thiết lập -----
         Route::middleware('admin')->prefix('thiet-lap')->name('settings.')->group(function () {

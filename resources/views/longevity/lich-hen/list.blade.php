@@ -68,18 +68,22 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 @endforeach
 </select>
 </div>
+<div class="flex flex-col gap-1.5">
+<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">TRẠNG THÁI</label>
+<select name="trang_thai" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface min-w-[160px]">
+<option value="">Tất cả</option>
+<option value="cho_duyet" @selected(($filters['trang_thai'] ?? '')==='cho_duyet')>Chờ duyệt</option>
+<option value="da_duyet" @selected(($filters['trang_thai'] ?? '')==='da_duyet')>Đã duyệt</option>
+</select>
+</div>
 @php
     $pbId = auth()->user()->phong_ban_id;
+    $vtId = auth()->user()->vai_tro_id;
     $isAdmin = auth()->user()->is_admin;
-    $canExportTuVan = $isAdmin || \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->where('truong', 'xuat_lich_tu_van')->exists();
-    $canDeleteTuVan = $isAdmin || \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->where('truong', 'xoa_lich_tu_van')->exists();
-    // Quyền duyệt theo từng cấp (1/2/3)
-    $tvGranted = $isAdmin ? [] : \App\Models\PhanQuyen::where('phong_ban_id', $pbId)->pluck('truong')->all();
-    $canDuyet = [
-        1 => $isAdmin || in_array('duyet_tu_van_1', $tvGranted, true),
-        2 => $isAdmin || in_array('duyet_tu_van_2', $tvGranted, true),
-        3 => $isAdmin || in_array('duyet_tu_van_3', $tvGranted, true),
-    ];
+    $canExportTuVan = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xuat_lich_tu_van')->exists();
+    $canDeleteTuVan = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_lich_tu_van')->exists();
+    $canEditTuVan = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_lich_tu_van')->exists();
+    $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_tu_van')->exists();
 @endphp
 <div class="ml-auto flex items-center gap-2">
 <a href="/{{ $coSo->slug }}/ds-tu-van" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
@@ -141,36 +145,24 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <td class="px-4 py-4 text-body-sm text-on-surface-variant italic truncate max-w-[150px]" title="{{ $lh->ghi_chu }}">{{ $lh->ghi_chu ?: '—' }}</td>
 <td class="px-4 py-4 sticky-col sticky-right-0 bg-surface-container-lowest shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
 <div class="flex items-center justify-end gap-1">
-@php
-    $d = [1 => (bool) $lh->xac_nhan_duyet_1, 2 => (bool) $lh->xac_nhan_duyet_2, 3 => (bool) $lh->xac_nhan_duyet_3];
-    $done = ($d[1] ? 1 : 0) + ($d[2] ? 1 : 0) + ($d[3] ? 1 : 0);
-    $full = $d[1] && $d[2] && $d[3];
-    $pending = ! $d[1] ? 1 : (! $d[2] ? 2 : (! $d[3] ? 3 : 0));
-@endphp
-<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $full ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-secondary-container/40 text-on-secondary-container' }}">{{ $full ? 'Đã duyệt' : 'Chờ duyệt ('.$pending.')' }}</span>
-<div class="flex items-center gap-0.5 mr-1">
-@foreach ([1, 2, 3] as $n)
-@php
-    $on = $d[$n];
-    $clickable = $canDuyet[$n] && (((! $full) && $n === $pending) || ($done > 0 && $n === $done));
-@endphp
-@if ($clickable)
+@php $approved = $lh->trang_thai === 'da_duyet'; @endphp
+<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $approved ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-secondary-container/40 text-on-secondary-container' }}">{{ $approved ? 'Đã duyệt' : 'Chờ duyệt' }}</span>
+@if ($canDuyet)
 <form method="POST" action="/{{ $coSo->slug }}/duyet-tu-van/{{ $lh->id }}" class="inline">
 @csrf @method('PATCH')
-<input type="hidden" name="level" value="{{ $n }}"/>
-<button type="submit" title="{{ $on ? 'Bỏ duyệt cấp '.$n : 'Duyệt cấp '.$n }}" class="w-6 h-6 rounded-full text-[11px] font-bold border flex items-center justify-center transition-colors {{ $on ? 'bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error' : 'text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container' }}">{{ $n }}</button>
+<button type="submit" title="{{ $approved ? 'Bỏ duyệt' : 'Duyệt' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $approved ? 'bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error' : 'text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container' }}">
+<span class="material-symbols-outlined text-[16px]">{{ $approved ? 'close' : 'check' }}</span>
+</button>
 </form>
-@else
-<span title="Cấp {{ $n }}{{ $on ? ' — đã duyệt' : '' }}" class="w-6 h-6 rounded-full text-[11px] font-bold border flex items-center justify-center {{ $on ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container border-transparent' : 'text-outline/40 border-outline-variant/40' }}">{{ $n }}</span>
 @endif
-@endforeach
-</div>
 <a href="/{{ $coSo->slug }}/xem-tu-van/{{ $lh->id }}" title="Xem chi tiết" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
 <span class="material-symbols-outlined text-[18px]">visibility</span>
 </a>
+@if ($canEditTuVan)
 <a href="/{{ $coSo->slug }}/sua-tu-van/{{ $lh->id }}" title="Sửa" class="p-1.5 rounded-lg text-secondary hover:bg-secondary-container/30 transition-colors">
 <span class="material-symbols-outlined text-[18px]">edit</span>
 </a>
+@endif
 @if ($canDeleteTuVan)
 <form method="POST" action="/{{ $coSo->slug }}/xoa-tu-van/{{ $lh->id }}" class="inline" onsubmit="return confirm('Xóa lịch tư vấn này? Hành động không thể hoàn tác.')">
 @csrf @method('DELETE')

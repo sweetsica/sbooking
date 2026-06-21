@@ -10,16 +10,12 @@ class LichHen extends Model
     protected $table = 'lich_hen';
 
     protected $fillable = [
-        'co_so_id', 'khach_hang_id', 'bac_si_tu_van_id', 'ca_kham_id',
+        'co_so_id', 'khach_hang_id', 'bac_si_user_id', 'ca_kham_id',
         'sale_id', 'ngay_hen', 'nguon', 'ghi_chu', 'trang_thai',
-        'xac_nhan_duyet_1', 'xac_nhan_duyet_2', 'xac_nhan_duyet_3',
     ];
 
     protected $casts = [
         'ngay_hen' => 'date',
-        'xac_nhan_duyet_1' => 'boolean',
-        'xac_nhan_duyet_2' => 'boolean',
-        'xac_nhan_duyet_3' => 'boolean',
     ];
 
     public function coSo(): BelongsTo
@@ -34,7 +30,7 @@ class LichHen extends Model
 
     public function bacSiTuVan(): BelongsTo
     {
-        return $this->belongsTo(BacSiTuVan::class, 'bac_si_tu_van_id');
+        return $this->belongsTo(User::class, 'bac_si_user_id');
     }
 
     public function caKham(): BelongsTo

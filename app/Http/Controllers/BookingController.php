@@ -7,6 +7,8 @@ use App\Models\CoSo;
 use App\Models\KhachHang;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
+use App\Models\User;
+use App\Models\VaiTro;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -20,6 +22,7 @@ class BookingController extends Controller
     public function edit(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('sua_lich_dat_phong');
 
         $booking->load(['khachHang', 'menus']);
 
@@ -32,14 +35,24 @@ class BookingController extends Controller
         $co_so->load([
             'phongs' => fn ($q) => $q->where('trang_thai', 'hoat_dong')->with('khungGios'),
             'dichVus' => fn ($q) => $q->where('active', true),
-            'bacSis' => fn ($q) => $q->where('active', true),
             'menus' => fn ($q) => $q->where('active', true),
         ]);
 
-        // Nhân viên Sales của cơ sở (+ admin toàn hệ thống)
-        $sales = $co_so->nguoiDungs()
-            ->whereHas('phongBan', fn ($q) => $q->where('ma', 'sales'))
+        $vrBacSiIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+        $vrKtv = VaiTro::where('ma', 'ktv')->first();
+
+        // Bác sĩ (gồm cả bác sĩ tư vấn): thuộc cơ sở hoặc có is_tu_van (global)
+        $bacSis = User::whereIn('vai_tro_id', $vrBacSiIds)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
             ->orderBy('name')->get();
+
+        // KTV thuộc cơ sở
+        $ktvs = User::where('vai_tro_id', $vrKtv?->id)
+            ->where('co_so_id', $co_so->id)
+            ->orderBy('name')->get();
+
+        // Nhân viên Sale / Lễ tân
+        $sales = $co_so->nguoiDungs()->orderBy('name')->get();
 
         // Khung giờ theo từng phòng -> JSON cho dropdown động
         $slots = $co_so->phongs->mapWithKeys(fn ($p) => [
@@ -55,7 +68,8 @@ class BookingController extends Controller
             'coSo' => $co_so,
             'phongs' => $co_so->phongs,
             'dichVus' => $co_so->dichVus,
-            'bacSis' => $co_so->bacSis,
+            'bacSis' => $bacSis,
+            'ktvs' => $ktvs,
             'menus' => $co_so->menus,
             'sales' => $sales,
             'slots' => $slots,
@@ -148,10 +162,13 @@ class BookingController extends Controller
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:(00|30)$/'],
             'dich_vu_id'    => ['required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => ['required', Rule::exists('users', 'id')],
-            'bac_si_id'     => ['nullable', Rule::exists('bac_si', 'id')],
+            'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
+            'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],
+            'co_tu_van'     => ['nullable', 'boolean'],
+            'co_kham_cls'   => ['nullable', 'boolean'],
             'ghi_chu'       => ['nullable', 'string'],
             'menu_ids'      => ['nullable', 'array'],
             'menu_ids.*'    => [Rule::exists('menu', 'id')],
@@ -164,6 +181,20 @@ class BookingController extends Controller
             'sale_id.required'       => 'Vui lòng chọn sale phụ trách.',
             'gio_thuc_hien.regex'    => 'Phút thực hiện chỉ được là 00 hoặc 30.',
         ]);
+
+        // KTV conflict check
+        if (! empty($data['ktv_user_id'])) {
+            $ktvBusy = Booking::where('co_so_id', $co_so->id)
+                ->where('ktv_user_id', $data['ktv_user_id'])
+                ->where('khung_gio_id', $data['khung_gio_id'])
+                ->whereDate('ngay_dat', $data['ngay_dat'])
+                ->exists();
+            if ($ktvBusy) {
+                return back()->withInput()->withErrors([
+                    'ktv_user_id' => 'KTV đã được đặt, vui lòng chọn KTV khác.',
+                ]);
+            }
+        }
 
         // Chặn đặt trùng: khung giờ đã kín chỗ thì không cho đặt nữa
         if ($this->khungGioDayCho($co_so, (int) $data['phong_id'], (int) $data['khung_gio_id'], $data['ngay_dat'])) {
@@ -192,7 +223,8 @@ class BookingController extends Controller
             'phong_id'      => $data['phong_id'],
             'khung_gio_id'  => $data['khung_gio_id'],
             'dich_vu_id'    => $data['dich_vu_id'],
-            'bac_si_id'     => $data['bac_si_id'] ?? null,
+            'bac_si_user_id' => $data['bac_si_user_id'] ?? null,
+            'ktv_user_id'   => $data['ktv_user_id'] ?? null,
             'sale_id'       => $data['sale_id'],
             'ngay_dat'      => $data['ngay_dat'],
             'gio_thuc_hien' => $gioBatDau,
@@ -200,6 +232,8 @@ class BookingController extends Controller
             'so_lieu_trinh' => $data['so_lieu_trinh'] ?? null,
             'nguon'         => $data['nguon'] ?? null,
             'ket_hop_medical' => $request->boolean('ket_hop_medical'),
+            'co_tu_van'     => $request->boolean('co_tu_van'),
+            'co_kham_cls'   => $request->boolean('co_kham_cls'),
             'ghi_chu'       => $data['ghi_chu'] ?? null,
             'trang_thai'    => 'cho_duyet',
         ]);
@@ -215,6 +249,7 @@ class BookingController extends Controller
     public function update(CoSo $co_so, Booking $booking, Request $request)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('sua_lich_dat_phong');
 
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
@@ -227,10 +262,13 @@ class BookingController extends Controller
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:(00|30)$/'],
             'dich_vu_id'    => ['required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => ['required', Rule::exists('users', 'id')],
-            'bac_si_id'     => ['nullable', Rule::exists('bac_si', 'id')],
+            'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
+            'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],
+            'co_tu_van'     => ['nullable', 'boolean'],
+            'co_kham_cls'   => ['nullable', 'boolean'],
             'ghi_chu'       => ['nullable', 'string'],
             'menu_ids'      => ['nullable', 'array'],
             'menu_ids.*'    => [Rule::exists('menu', 'id')],
@@ -243,6 +281,21 @@ class BookingController extends Controller
             'sale_id.required'       => 'Vui lòng chọn sale phụ trách.',
             'gio_thuc_hien.regex'    => 'Phút thực hiện chỉ được là 00 hoặc 30.',
         ]);
+
+        // KTV conflict check (trừ booking hiện tại)
+        if (! empty($data['ktv_user_id'])) {
+            $ktvBusy = Booking::where('co_so_id', $co_so->id)
+                ->where('ktv_user_id', $data['ktv_user_id'])
+                ->where('khung_gio_id', $data['khung_gio_id'])
+                ->whereDate('ngay_dat', $data['ngay_dat'])
+                ->where('id', '!=', $booking->id)
+                ->exists();
+            if ($ktvBusy) {
+                return back()->withInput()->withErrors([
+                    'ktv_user_id' => 'KTV đã được đặt, vui lòng chọn KTV khác.',
+                ]);
+            }
+        }
 
         // Chặn trùng khung giờ, nhưng bỏ qua chính booking đang sửa
         if ($this->khungGioDayCho($co_so, (int) $data['phong_id'], (int) $data['khung_gio_id'], $data['ngay_dat'], $booking->id)) {
@@ -262,7 +315,8 @@ class BookingController extends Controller
             'phong_id'      => $data['phong_id'],
             'khung_gio_id'  => $data['khung_gio_id'],
             'dich_vu_id'    => $data['dich_vu_id'],
-            'bac_si_id'     => $data['bac_si_id'] ?? null,
+            'bac_si_user_id' => $data['bac_si_user_id'] ?? null,
+            'ktv_user_id'   => $data['ktv_user_id'] ?? null,
             'sale_id'       => $data['sale_id'],
             'ngay_dat'      => $data['ngay_dat'],
             'gio_thuc_hien' => ! empty($data['gio_thuc_hien']) ? $data['gio_thuc_hien'] . ':00' : null,
@@ -270,6 +324,8 @@ class BookingController extends Controller
             'so_lieu_trinh' => $data['so_lieu_trinh'] ?? null,
             'nguon'         => $data['nguon'] ?? null,
             'ket_hop_medical' => $request->boolean('ket_hop_medical'),
+            'co_tu_van'     => $request->boolean('co_tu_van'),
+            'co_kham_cls'   => $request->boolean('co_kham_cls'),
             'ghi_chu'       => $data['ghi_chu'] ?? null,
         ]);
 
@@ -292,36 +348,41 @@ class BookingController extends Controller
             ->with('ok', 'Đã xóa lịch hẹn của ' . $ten . '.');
     }
 
-    /** Duyệt / bỏ duyệt 1 cấp (1..3) của lịch đặt phòng. Duyệt tuần tự. */
-    public function duyet(CoSo $co_so, Booking $booking, Request $request)
+    /** Duyệt / bỏ duyệt lịch đặt phòng (chỉ admin). */
+    public function duyet(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('duyet_booking');
 
-        $level = (int) $request->input('level');
-        abort_unless(in_array($level, [1, 2, 3], true), 422, 'Cấp duyệt không hợp lệ.');
-        $this->authorizePerm('xac_nhan_duyet_' . $level);
-
-        $field = 'xac_nhan_duyet_' . $level;
-        $approve = ! $booking->{$field};
-
-        // Duyệt tuần tự: cấp dưới phải xong trước; bỏ duyệt thì cấp trên phải chưa duyệt.
-        if ($approve) {
-            for ($i = 1; $i < $level; $i++) {
-                abort_if(! $booking->{'xac_nhan_duyet_' . $i}, 422, 'Phải duyệt cấp ' . $i . ' trước.');
-            }
-        } else {
-            for ($i = $level + 1; $i <= 3; $i++) {
-                abort_if((bool) $booking->{'xac_nhan_duyet_' . $i}, 422, 'Phải bỏ duyệt cấp ' . $i . ' trước.');
-            }
-        }
-
-        $booking->{$field} = $approve;
-        $booking->trang_thai = ($booking->xac_nhan_duyet_1 && $booking->xac_nhan_duyet_2 && $booking->xac_nhan_duyet_3)
-            ? 'da_duyet' : 'cho_duyet';
+        $approve = ! $booking->da_duyet;
+        $booking->da_duyet = $approve;
+        $booking->trang_thai = $approve ? 'da_duyet' : 'cho_duyet';
         $booking->save();
 
-        return back()->with('ok', ($approve ? 'Đã duyệt cấp ' . $level : 'Đã bỏ duyệt cấp ' . $level)
-            . ' cho lịch hẹn của ' . ($booking->khachHang?->ho_ten ?? 'khách') . '.');
+        $ten = $booking->khachHang?->ho_ten ?? 'khách';
+
+        return back()->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch hẹn của ' . $ten . '.');
+    }
+
+    /** Đánh dấu đã xong / hoàn tác về đã duyệt. */
+    public function xong(CoSo $co_so, Booking $booking)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('duyet_booking');
+
+        $done = $booking->trang_thai !== 'da_xong';
+        if ($done) {
+            $booking->trang_thai = 'da_xong';
+            $booking->da_duyet = true;
+        } else {
+            $booking->trang_thai = 'da_duyet';
+            $booking->da_duyet = true;
+        }
+        $booking->save();
+
+        $ten = $booking->khachHang?->ho_ten ?? 'khách';
+
+        return back()->with('ok', ($done ? 'Đã hoàn thành' : 'Đã chuyển lại "Đã duyệt"') . ' lịch hẹn của ' . $ten . '.');
     }
 
     private function authorizePerm(string $field): void
@@ -331,10 +392,11 @@ class BookingController extends Controller
             return;
         }
 
-        $ok = $user->phong_ban_id
-            && PhanQuyen::where('phong_ban_id', $user->phong_ban_id)
-                ->where('truong', $field)->exists();
+        $ok = PhanQuyen::where(function ($q) use ($user) {
+                if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
+                if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
+            })->where('truong', $field)->exists();
 
-        abort_unless($ok, 403, 'Bạn không có quyền xóa.');
+        abort_unless($ok, 403, 'Bạn không có quyền thực hiện thao tác này.');
     }
 }

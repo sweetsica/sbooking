@@ -122,11 +122,23 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="ro">{{ $booking->so_lieu_trinh ?? '—' }}</div>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Điều dưỡng/Bác sĩ</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ</label>
 <div class="ro">{{ $booking->bacSi?->ten_day_du ?? '—' }}</div>
 </div>
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">KTV</label>
+<div class="ro">{{ $booking->ktv?->ten_day_du ?? '—' }}</div>
 </div>
-<div class="pt-2">
+</div>
+<div class="pt-2 space-y-2">
+<div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
+<span class="text-body-md font-medium text-on-surface">Tư vấn</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->co_tu_van ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->co_tu_van ? 'Có' : 'Không' }}</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
+<span class="text-body-md font-medium text-on-surface">Thăm khám lâm sàng</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->co_kham_cls ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->co_kham_cls ? 'Có' : 'Không' }}</span>
+</div>
 <div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
 <span class="text-body-md font-medium text-on-surface">KH có SD kết hợp Medical không?</span>
 <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->ket_hop_medical ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->ket_hop_medical ? 'Có' : 'Không' }}</span>

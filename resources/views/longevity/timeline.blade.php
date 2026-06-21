@@ -164,56 +164,92 @@
 <span class="text-on-surface-variant">·</span>
 <span class="text-on-surface-variant">{{ $stats['total'] }} lịch ({{ $stats['approved'] }} duyệt / {{ $stats['pending'] }} chờ)</span>
 </div>
-<div class="flex gap-4">
-<div class="flex items-center gap-2">
-<div class="w-3 h-3 rounded-full bg-tertiary-fixed-dim"></div>
-<span class="text-body-sm text-on-surface-variant">Đã duyệt</span>
+<div class="flex flex-wrap gap-3">
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+<span class="text-body-sm text-on-surface-variant">Tư vấn</span>
 </div>
-<div class="flex items-center gap-2">
-<div class="w-3 h-3 rounded-full bg-secondary-fixed"></div>
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-sky-500"></div>
+<span class="text-body-sm text-on-surface-variant">Thăm khám lâm sàng</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-3 h-3 rounded-full bg-amber-400"></div>
 <span class="text-body-sm text-on-surface-variant">Chờ duyệt</span>
 </div>
 </div>
 </div>
 </div>
-<div class="relative overflow-auto max-h-[600px] custom-scroll">
-<!-- Timeline Grid -->
-<div class="timeline-grid min-w-[700px]" style="grid-template-columns: 80px repeat({{ max($beds,1) }}, minmax(160px,1fr));">
-<!-- Header -->
-<div class="sticky top-0 z-20 bg-surface-container-low border-b border-r border-outline-variant flex items-center justify-center">
+<div class="overflow-auto max-h-[640px] custom-scroll" id="tl-scroll">
+<div class="min-w-max">
+<!-- Header: GIỜ + các giường -->
+<div class="flex sticky top-0 z-20">
+<div class="w-[64px] shrink-0 bg-surface-container-low border-b border-r border-outline-variant flex items-center justify-center sticky left-0 z-30">
 <span class="text-label-caps text-on-surface-variant">GIỜ</span>
 </div>
-@for ($i = 1; $i <= max($beds, 1); $i++)
-<div class="sticky top-0 z-20 bg-surface-container-low border-b {{ $i < $beds ? 'border-r' : '' }} border-outline-variant px-4 flex items-center justify-center font-bold {{ $i === 1 ? '' : 'text-on-surface-variant' }}">Giường {{ $i }}</div>
-@endfor
-@forelse ($grid as $g)
-<div class="border-b border-r border-outline-variant flex items-center justify-center">
-<span class="text-time-slot text-on-surface-variant">{{ substr($g['slot']->gio_bat_dau, 0, 5) }}</span>
+@foreach ($bedColumns as $bc)
+<div class="w-[150px] shrink-0 bg-surface-container-low border-b border-r border-outline-variant py-3 text-center font-bold text-body-sm {{ $bc['index'] === 1 ? '' : 'text-on-surface-variant' }}">Giường {{ $bc['index'] }}</div>
+@endforeach
 </div>
-@foreach ($g['beds'] as $bi => $bk)
-<div class="relative border-b {{ $bi < $beds - 1 ? 'border-r' : '' }} border-outline-variant min-h-[64px] hover:bg-surface-container-low transition-colors">
-@if ($bk)
-@php $appr = $bk->trang_thai === 'da_duyet'; @endphp
-<a href="/{{ $coSo->slug }}/danh-sach" class="absolute inset-x-2 top-1.5 bottom-1.5 z-10 rounded-lg p-2 shadow-sm border-l-4 overflow-hidden block {{ $appr ? 'bg-tertiary-fixed-dim/20 border-tertiary-fixed-dim' : 'bg-secondary-fixed/30 border-secondary-container' }}">
-<div class="flex justify-between items-start gap-1">
-<span class="font-bold text-body-sm {{ $appr ? 'text-tertiary-container' : '' }} truncate">{{ $bk->khachHang?->ho_ten }}</span>
-@if ($appr)
-<span class="material-symbols-outlined text-[16px] text-on-tertiary-container shrink-0" style="font-variation-settings: 'FILL' 1;">check_circle</span>
-@else
-<span class="text-[10px] bg-secondary-container text-on-secondary-container px-1.5 rounded uppercase font-bold shrink-0">Chờ</span>
-@endif
-</div>
-<div class="text-[11px] italic text-on-surface-variant truncate">{{ $bk->dichVu?->ten }}</div>
-<div class="text-[11px] font-time-slot text-on-surface-variant">{{ $bk->khungGio?->nhan }}</div>
-</a>
-@endif
+<!-- Body: cột giờ + các cột giường -->
+<div class="flex relative">
+<!-- Cột giờ -->
+<div class="w-[64px] shrink-0 relative border-r border-outline-variant bg-surface-container-lowest sticky left-0 z-10" style="height: {{ $bodyHeight + 1 }}px">
+@foreach ($hours as $i => $h)
+<div class="absolute left-0 right-0 flex items-start justify-center" style="top: {{ $i * $hourPx - 7 }}px">
+<span class="text-time-slot text-on-surface-variant">{{ sprintf('%02d:00', $h) }}</span>
 </div>
 @endforeach
+</div>
+<!-- Các giường -->
+@forelse ($bedColumns as $bc)
+<div class="w-[150px] shrink-0 relative border-r border-outline-variant" style="height: {{ $bodyHeight + 1 }}px">
+@foreach ($hours as $i => $h)
+<div class="absolute left-0 right-0 border-t border-outline-variant" style="top: {{ $i * $hourPx }}px; height: {{ $hourPx }}px"></div>
+@endforeach
+<div class="absolute left-0 right-0 border-t border-outline-variant" style="top: {{ $bodyHeight }}px"></div>
+@foreach ($bc['events'] as $ev)
+@php
+    $bk = $ev['bk'];
+    $pending = $bk->trang_thai === 'cho_duyet';
+    if ($pending) {
+        $cardCls = 'bg-amber-100 border-amber-400';        // Chờ duyệt -> vàng
+    } elseif ($bk->co_tu_van) {
+        $cardCls = 'bg-emerald-100 border-emerald-500';     // Tư vấn -> xanh lá
+    } elseif ($bk->co_kham_cls) {
+        $cardCls = 'bg-sky-100 border-sky-500';             // Thăm khám lâm sàng -> xanh dương
+    } else {
+        $cardCls = 'bg-slate-100 border-slate-400';
+    }
+    $w = 100 / $ev['ncols'];
+    $l = $ev['col'] * $w;
+@endphp
+<a href="/{{ $coSo->slug }}/danh-sach"
+   class="absolute rounded-lg px-1.5 py-0.5 shadow-sm border-l-4 overflow-hidden block leading-tight {{ $cardCls }}"
+   style="top: {{ $ev['top'] + 1 }}px; height: {{ max($ev['height'] - 2, 15) }}px; left: calc({{ $l }}% + 1px); width: calc({{ $w }}% - 2px);">
+<div class="flex justify-between items-start gap-1">
+<span class="font-bold text-[11px] text-on-surface truncate">{{ $bk->khachHang?->ho_ten }}</span>
+@if ($pending)
+<span class="text-[8px] bg-amber-400 text-amber-950 px-1 rounded uppercase font-bold shrink-0">Chờ</span>
+@else
+<span class="material-symbols-outlined text-[14px] text-on-surface-variant shrink-0" style="font-variation-settings: 'FILL' 1;">check_circle</span>
+@endif
+</div>
+<div class="text-[9px] font-time-slot text-on-surface-variant truncate">{{ $bk->gio_thuc_hien ? substr($bk->gio_thuc_hien,0,5) . ($bk->gio_ket_thuc ? '–'.substr($bk->gio_ket_thuc,0,5) : '') : $bk->khungGio?->nhan }}</div>
+<div class="text-[9px] italic text-on-surface-variant truncate">{{ $bk->dichVu?->ten }}</div>
+</a>
+@endforeach
+</div>
 @empty
-<div class="border-b border-outline-variant p-10 text-center text-on-surface-variant" style="grid-column: 1 / -1;">
+<div class="flex-1 p-10 text-center text-on-surface-variant">
 {{ $room && $room->trang_thai === 'bao_tri' ? 'Phòng đang bảo trì.' : 'Phòng chưa cấu hình khung giờ phục vụ.' }}
 </div>
 @endforelse
+<!-- Đường kẻ đỏ: thời gian hiện tại -->
+<div id="current-time-line" class="absolute left-[64px] right-0 h-0.5 bg-error z-[15] pointer-events-none" style="display:none">
+<span class="absolute -left-[62px] -top-2 w-[58px] text-right pr-1 text-[10px] font-bold text-error font-time-slot" id="current-time-label"></span>
+<span class="absolute -left-1 -top-[3px] w-2 h-2 rounded-full bg-error"></span>
+</div>
 </div>
 </div>
 </div>
@@ -352,12 +388,20 @@
             }
         }
 
-        // Pulse effect for the current time line
-        setInterval(() => {
+        // Đường kẻ đỏ "thời gian hiện tại": ánh xạ giờ -> px theo lưới lịch.
+        const TL = { startMin: {{ $startHour * 60 }}, endMin: {{ $endHour * 60 }}, hourPx: {{ $hourPx }}, isToday: @json($date->isToday()) };
+        function placeNowLine() {
             const line = document.getElementById('current-time-line');
-            if (line) {
-                line.style.opacity = line.style.opacity === '0.5' ? '1' : '0.5';
-            }
-        }, 1000);
+            const label = document.getElementById('current-time-label');
+            if (!line) return;
+            const now = new Date();
+            const m = now.getHours() * 60 + now.getMinutes();
+            if (!TL.isToday || m < TL.startMin || m > TL.endMin) { line.style.display = 'none'; return; }
+            line.style.top = ((m - TL.startMin) / 60 * TL.hourPx) + 'px';
+            line.style.display = 'block';
+            if (label) label.textContent = String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+        }
+        placeNowLine();
+        setInterval(placeNowLine, 60000);
     </script>
 </body></html>

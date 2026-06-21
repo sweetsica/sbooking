@@ -2,8 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\BacSi;
-use App\Models\BacSiTuVan;
 use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\Menu;
@@ -11,6 +9,7 @@ use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\PhongBan;
 use App\Models\User;
+use App\Models\VaiTro;
 use App\Support\BookingFields;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -21,16 +20,14 @@ class SettingsController extends Controller
 {
     // 8 mục thiết lập
     public const SECTIONS = [
-        'phong'      => ['Phòng chức năng', 'meeting_room', 'Phòng trị liệu: số slot tối đa, khung giờ phục vụ (liên kết với form tạo booking).'],
+        'phong'      => ['Phòng chức năng', 'meeting_room', 'Phòng khám: số slot tối đa, khung giờ phục vụ.'],
         'phong-ban'  => ['Phòng ban', 'corporate_fare', 'Bộ phận: Kinh doanh (Sales), Quản trị... — dùng cho phân quyền & gán người dùng.'],
-        'bac-si'     => ['Bác sĩ', 'medical_services', 'Thêm/sửa/xóa bác sĩ để booking lấy thông tin.'],
-        'co-so'      => ['Cơ sở', 'store', 'Mỗi cơ sở (chi nhánh) có nhân sự, bác sĩ, phòng/giường riêng.'],
-        'quyen'      => ['Quyền', 'admin_panel_settings', 'Phòng ban nào được Xem / Sửa (tất cả - từng trường) / Xóa.'],
-        'nguoi-dung' => ['Người dùng', 'group', 'Thêm/sửa/xóa người dùng.'],
+        'vai-tro'    => ['Vai trò', 'badge', 'Vai trò: Nhân viên, KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân...'],
+        'co-so'      => ['Cơ sở', 'store', 'Mỗi cơ sở (chi nhánh) có nhân sự, bác sĩ, phòng riêng.'],
+        'quyen'      => ['Quyền', 'admin_panel_settings', 'Phòng ban nào được Xem / Sửa / Xóa.'],
+        'nguoi-dung' => ['Người dùng', 'group', 'Thêm/sửa/xóa người dùng (bao gồm KTV, Bác sĩ, Lễ tân...).'],
         'dich-vu'    => ['Dịch vụ', 'spa', 'CRUD tên dịch vụ — đưa vào form tạo mới.'],
-        'dieu-duong' => ['Điều dưỡng / Bác sĩ', 'health_and_safety', 'CRUD tên Điều dưỡng/Bác sĩ — đưa vào form tạo mới.'],
         'menu'       => ['Menu', 'restaurant_menu', 'CRUD tên Menu — đưa vào form tạo mới (dạng ô tick).'],
-        'bac-si-tu-van' => ['Bác sĩ tư vấn', 'stethoscope', 'Thêm/sửa bác sĩ tư vấn + thời gian khám, giờ làm — hệ thống tự chia ca khám.'],
     ];
 
     // Cấu hình các mục có CRUD
@@ -38,6 +35,7 @@ class SettingsController extends Controller
     {
         $catalog = fn ($model, $fields) => ['model' => $model, 'kind' => 'catalog', 'fields' => $fields];
         $phongBanOptions = PhongBan::orderBy('ten')->pluck('ten', 'id')->all();
+        $vaiTroOptions = VaiTro::orderBy('ten')->pluck('ten', 'id')->all();
 
         return [
             'dich-vu' => $catalog(DichVu::class, [
@@ -48,35 +46,29 @@ class SettingsController extends Controller
                 'ten'    => ['label' => 'Tên menu', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 'active' => ['label' => 'Kích hoạt', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
             ]),
-            'bac-si' => $catalog(BacSi::class, [
-                'chuc_danh' => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / KTV. / Điều dưỡng'],
-                'ten'       => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
-                'active'    => ['label' => 'Đang làm', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
-            ]),
             'phong' => $catalog(Phong::class, [
                 'ten'            => ['label' => 'Tên phòng', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
-                'loai'          => ['label' => 'Loại', 'type' => 'select', 'options' => ['vip' => 'VIP', 'cong_dong' => 'Cộng đồng'], 'rules' => ['required', Rule::in(['vip', 'cong_dong'])]],
+                'loai'          => ['label' => 'Loại', 'type' => 'select', 'options' => ['kham' => 'Khám', 'vip' => 'VIP', 'cong_dong' => 'Cộng đồng'], 'rules' => ['required', 'string', 'max:30']],
                 'so_slot_toi_da' => ['label' => 'Số slot tối đa', 'type' => 'number', 'rules' => ['required', 'integer', 'min:1', 'max:99']],
                 'trang_thai'    => ['label' => 'Trạng thái', 'type' => 'select', 'options' => ['hoat_dong' => 'Hoạt động', 'bao_tri' => 'Bảo trì'], 'rules' => ['required', Rule::in(['hoat_dong', 'bao_tri'])]],
                 'gio_mo'        => ['label' => 'Giờ mở cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
                 'gio_dong'      => ['label' => 'Giờ đóng cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
             ]),
-            'bac-si-tu-van' => $catalog(BacSiTuVan::class, [
-                'chuc_danh'      => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / ThS.'],
-                'ten'            => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
-                'thoi_gian_kham' => ['label' => 'Thời gian khám (phút)', 'type' => 'number', 'rules' => ['required', 'integer', 'min:5', 'max:120']],
-                'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:\d{2}$/']],
-                'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:\d{2}$/']],
-                'active'         => ['label' => 'Đang làm', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+            'vai-tro' => $catalog(VaiTro::class, [
+                'ten' => ['label' => 'Tên vai trò', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                'ma'  => ['label' => 'Mã', 'type' => 'text', 'rules' => ['required', 'string', 'max:50']],
             ]),
             'nguoi-dung' => [
                 'model' => User::class, 'kind' => 'user',
                 'fields' => [
                     'name'         => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                    'chuc_danh'    => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / KTV. / PGS.TS.BS.'],
                     'username'     => ['label' => 'Tài khoản', 'type' => 'text', 'rules' => [], 'placeholder' => 'vd: tttg'],
                     'email'        => ['label' => 'Email', 'type' => 'text', 'rules' => []],
                     'phong_ban_id' => ['label' => 'Phòng ban', 'type' => 'select', 'options' => ['' => '— Không —'] + $phongBanOptions, 'rules' => ['nullable', Rule::exists('phong_ban', 'id')]],
+                    'vai_tro_id'   => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
                     'is_admin'     => ['label' => 'Quản trị (mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                    'is_tu_van'    => ['label' => 'Tư vấn (xuất hiện mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
                     'password'     => ['label' => 'Mật khẩu', 'type' => 'password', 'rules' => [], 'virtual' => true, 'placeholder' => 'Tối thiểu 6 ký tự'],
                 ],
             ],
@@ -101,7 +93,7 @@ class SettingsController extends Controller
 
     private function resolveSection(string $section): string
     {
-        return $section === 'dieu-duong' ? 'bac-si' : $section;
+        return $section;
     }
 
     public function index(CoSo $co_so)
@@ -118,11 +110,10 @@ class SettingsController extends Controller
             'phong'      => $co_so->phongs()->with('khungGios')->get(),
             'dich-vu'    => $co_so->dichVus()->get(),
             'menu'       => $co_so->menus()->get(),
-            'bac-si', 'dieu-duong' => $co_so->bacSis()->get(),
-            'bac-si-tu-van' => $co_so->bacSiTuVans()->with('caKhams')->get(),
-            'nguoi-dung' => $co_so->nguoiDungs()->with('phongBan')->get(),
+            'nguoi-dung' => $co_so->nguoiDungs()->with(['phongBan', 'vaiTro'])->get(),
             'co-so'      => CoSo::orderBy('id')->get(),
             'phong-ban'  => PhongBan::orderBy('id')->get(),
+            'vai-tro'    => VaiTro::orderBy('id')->get(),
             default      => collect(),
         };
 
@@ -174,7 +165,11 @@ class SettingsController extends Controller
             'user' => $this->saveUser($co_so, $request, $co_so->nguoiDungs()->findOrFail($id)),
             'coso' => $this->saveCoSo($request, CoSo::findOrFail($id)),
             'phongban' => $this->savePhongBan($request, PhongBan::findOrFail($id)),
-            default => $this->saveCatalog($co_so, $request, $config, $model, $section, $model::where('co_so_id', $co_so->id)->findOrFail($id)),
+            default => $this->saveCatalog($co_so, $request, $config, $model, $section,
+                in_array('co_so_id', (new $model)->getFillable())
+                    ? $model::where('co_so_id', $co_so->id)->findOrFail($id)
+                    : $model::findOrFail($id)
+            ),
         };
     }
 
@@ -197,7 +192,10 @@ class SettingsController extends Controller
         } elseif ($config['kind'] === 'user') {
             $co_so->nguoiDungs()->findOrFail($id)->delete();
         } else {
-            $model::where('co_so_id', $co_so->id)->findOrFail($id)->delete();
+            $record = in_array('co_so_id', (new $model)->getFillable())
+                ? $model::where('co_so_id', $co_so->id)->findOrFail($id)
+                : $model::findOrFail($id);
+            $record->delete();
         }
 
         return back()->with('ok', 'Đã xóa.');
@@ -213,16 +211,14 @@ class SettingsController extends Controller
         if ($record) {
             $record->update($attrs);
         } else {
-            $attrs['co_so_id'] = $co_so->id;
+            if (in_array('co_so_id', (new $model)->getFillable())) {
+                $attrs['co_so_id'] = $co_so->id;
+            }
             $record = $model::create($attrs);
         }
 
         if ($section === 'phong') {
             $this->regenSlots($record, $data['gio_mo'], $data['gio_dong']);
-        }
-
-        if ($section === 'bac-si-tu-van') {
-            $record->taoCaKham();
         }
 
         return back()->with('ok', $record->wasRecentlyCreated ? 'Đã thêm mới.' : 'Đã cập nhật.');
@@ -232,10 +228,13 @@ class SettingsController extends Controller
     {
         $data = $request->validate([
             'name'         => ['required', 'string', 'max:255'],
+            'chuc_danh'    => ['nullable', 'string', 'max:50'],
             'username'     => ['nullable', 'string', 'max:50', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($user?->id)],
             'email'        => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'phong_ban_id' => ['nullable', Rule::exists('phong_ban', 'id')],
+            'vai_tro_id'   => ['nullable', Rule::exists('vai_tro', 'id')],
             'is_admin'     => ['nullable', 'boolean'],
+            'is_tu_van'    => ['nullable', 'boolean'],
             'password'     => [$user ? 'nullable' : 'required', 'string', 'min:6'],
         ], [
             'username.regex' => 'Tài khoản chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.',
@@ -244,10 +243,13 @@ class SettingsController extends Controller
         $isAdmin = $request->boolean('is_admin');
         $attrs = [
             'name'         => $data['name'],
+            'chuc_danh'    => ($data['chuc_danh'] ?? null) ?: null,
             'username'     => ($data['username'] ?? null) ?: null,
             'email'        => $data['email'],
             'phong_ban_id' => ($data['phong_ban_id'] ?? null) ?: null,
+            'vai_tro_id'   => ($data['vai_tro_id'] ?? null) ?: null,
             'is_admin'     => $isAdmin,
+            'is_tu_van'    => $request->boolean('is_tu_van'),
             'co_so_id'     => $isAdmin ? null : $co_so->id,
         ];
         if (! empty($data['password'])) {

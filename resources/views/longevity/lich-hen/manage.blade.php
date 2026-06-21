@@ -147,7 +147,7 @@ $tip = $lh ? $lh->khachHang?->ho_ten . ' · ' . $ck->nhan . ($lh->sale ? ' · '.
 <div class="flex items-center gap-2 text-on-surface-variant/60 py-4">
 <span class="material-symbols-outlined text-[18px]">event_busy</span>
 <span class="text-body-sm">Chưa cấu hình ca khám.
-<a href="/{{ $coSo->slug }}/thiet-lap/bac-si-tu-van" class="text-secondary underline">Thiết lập</a>
+<a href="/{{ $coSo->slug }}/thiet-lap/nguoi-dung" class="text-secondary underline">Thiết lập</a>
 </span>
 </div>
 @endif
@@ -156,7 +156,7 @@ $tip = $lh ? $lh->khachHang?->ho_ten . ' · ' . $ck->nhan . ($lh->sale ? ' · '.
 @empty
 <div class="xl:col-span-2 bg-surface-container-lowest border border-outline-variant rounded-xl p-12 text-center text-on-surface-variant">
 <span class="material-symbols-outlined text-[48px] opacity-40">stethoscope</span>
-<p class="mt-2">Chưa có bác sĩ tư vấn. Vui lòng thêm trong <a href="/{{ $coSo->slug }}/thiet-lap/bac-si-tu-van" class="text-secondary underline">Thiết lập</a>.</p>
+<p class="mt-2">Chưa có bác sĩ tư vấn. Vui lòng thêm trong <a href="/{{ $coSo->slug }}/thiet-lap/nguoi-dung" class="text-secondary underline">Thiết lập</a>.</p>
 </div>
 @endforelse
 </div>

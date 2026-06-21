@@ -16,7 +16,7 @@
     $defaults = ['active' => 1, 'loai' => 'cong_dong', 'trang_thai' => 'hoat_dong',
         'so_slot_toi_da' => 1, 'gio_mo' => '08:00', 'gio_dong' => '21:00', 'chuc_danh' => '', 'ten' => '',
         'thoi_gian_kham' => 20, 'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00'];
-    $hasExtra = in_array($key, ['phong', 'bac-si-tu-van']);
+    $hasExtra = in_array($key, ['phong']);
     $colspan = count($cols) + ($hasExtra ? 1 : 0) + 1;
 @endphp
 
@@ -67,7 +67,7 @@
 </thead>
 <tbody class="divide-y divide-outline-variant/50">
 @foreach ($fields as $fkey => $flabel)
-@php $isApprove = str_starts_with($fkey, 'xac_nhan_duyet'); @endphp
+@php $isApprove = str_starts_with($fkey, 'duyet_'); @endphp
 <tr class="hover:bg-surface-container-low/40">
 <td class="px-4 py-2.5 sticky left-0 bg-surface-container-lowest font-medium">
 <span class="{{ $isApprove ? 'text-secondary font-semibold' : '' }}">{{ $flabel }}</span>
@@ -121,10 +121,9 @@
 @if ($editable)
 @foreach ($cols as $fn => $ff)<th class="px-4 py-3">{{ $ff['label'] }}</th>@endforeach
 @if ($key === 'phong')<th class="px-4 py-3">Khung giờ</th>@endif
-@if ($key === 'bac-si-tu-van')<th class="px-4 py-3">Ca khám</th>@endif
 @else
 @switch($key)
-@case('nguoi-dung')<th class="px-4 py-3">Tên</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Phòng ban</th>@break
+@case('nguoi-dung')<th class="px-4 py-3">Tên</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Phòng ban</th><th class="px-4 py-3">Vai trò</th>@break
 @case('co-so')<th class="px-4 py-3">Tên cơ sở</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3">Địa chỉ</th>@break
 @default<th class="px-4 py-3">Nội dung</th>
 @endswitch
@@ -159,7 +158,6 @@
 </td>
 @endforeach
 @if ($key === 'phong')<td class="px-4 py-3 text-body-sm text-on-surface-variant">{{ $r->khungGios->count() }} khung (1 tiếng)</td>@endif
-@if ($key === 'bac-si-tu-van')<td class="px-4 py-3 text-body-sm text-on-surface-variant">{{ $r->caKhams->count() }} ca ({{ $r->thoi_gian_kham }}p)</td>@endif
 <td class="px-4 py-3">
 <div class="flex items-center justify-end gap-1">
 <button type="button" @click="edit = true" class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-lg" title="Sửa"><span class="material-symbols-outlined text-[18px]">edit</span></button>
@@ -201,6 +199,7 @@
 <td class="px-4 py-3 font-semibold">{{ $r->name }}</td>
 <td class="px-4 py-3 text-on-surface-variant">{{ $r->email }}</td>
 <td class="px-4 py-3">{{ $r->phongBan?->ten ?? '—' }}</td>
+<td class="px-4 py-3">{{ $r->vaiTro?->ten ?? '—' }}</td>
 @break
 @case('co-so')
 <td class="px-4 py-3 font-semibold">{{ $r->ten }}</td>

@@ -12,17 +12,17 @@ class Booking extends Model
 
     protected $fillable = [
         'co_so_id', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
-        'bac_si_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
-        'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'ghi_chu', 'trang_thai',
-        'xac_nhan_duyet_1', 'xac_nhan_duyet_2', 'xac_nhan_duyet_3',
+        'bac_si_user_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
+        'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
+        'ghi_chu', 'trang_thai', 'da_duyet',
     ];
 
     protected $casts = [
         'ngay_dat' => 'date',
         'ket_hop_medical' => 'boolean',
-        'xac_nhan_duyet_1' => 'boolean',
-        'xac_nhan_duyet_2' => 'boolean',
-        'xac_nhan_duyet_3' => 'boolean',
+        'co_tu_van' => 'boolean',
+        'co_kham_cls' => 'boolean',
+        'da_duyet' => 'boolean',
     ];
 
     public function coSo(): BelongsTo
@@ -52,7 +52,12 @@ class Booking extends Model
 
     public function bacSi(): BelongsTo
     {
-        return $this->belongsTo(BacSi::class, 'bac_si_id');
+        return $this->belongsTo(User::class, 'bac_si_user_id');
+    }
+
+    public function ktv(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ktv_user_id');
     }
 
     public function sale(): BelongsTo

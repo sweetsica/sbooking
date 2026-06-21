@@ -162,9 +162,27 @@
 </div>
 </div>
 
+<!-- Loại lịch: Tư vấn / Thăm khám lâm sàng (ngay sau Nguồn) -->
+<div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
+<label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="flex items-center gap-2 text-body-md font-medium text-on-surface"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Tư vấn</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" name="co_tu_van" value="1" @checked(old('co_tu_van', $bk?->co_tu_van))/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
+</div>
+</label>
+<label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="flex items-center gap-2 text-body-md font-medium text-on-surface"><span class="w-3 h-3 rounded-full bg-sky-500"></span> Thăm khám lâm sàng</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" name="co_kham_cls" value="1" @checked(old('co_kham_cls', $bk?->co_kham_cls))/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
+</div>
+</label>
+</div>
+
 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
 <!-- Section 1: Customer -->
-<div class="space-y-6">
+<div class="space-y-6 order-2">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">person</span>
 <h3 class="text-headline-md font-headline-md">Thông tin Khách hàng</h3>
@@ -189,7 +207,7 @@
 </div>
 
 <!-- Section 2: Schedule & Room -->
-<div class="space-y-6">
+<div class="space-y-6 order-3">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">calendar_today</span>
 <h3 class="text-headline-md font-headline-md">Lịch trình &amp; Phòng <span class="text-error">*</span></h3>
@@ -243,7 +261,7 @@
 </div>
 
 <!-- Section 3: Service -->
-<div class="space-y-6">
+<div class="space-y-6 order-1">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">medical_information</span>
 <h3 class="text-headline-md font-headline-md">Chi tiết Dịch vụ</h3>
@@ -263,16 +281,25 @@
 <input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Điều dưỡng/Bác sĩ</label>
-<select name="bac_si_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ</label>
+<select name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 <option value="">-- Chọn --</option>
 @foreach ($bacSis as $bs)
-<option value="{{ $bs->id }}" @selected(old('bac_si_id', $bk?->bac_si_id)==$bs->id)>{{ $bs->ten_day_du }}</option>
+<option value="{{ $bs->id }}" @selected(old('bac_si_user_id', $bk?->bac_si_user_id)==$bs->id)>{{ $bs->ten_day_du }}</option>
 @endforeach
 </select>
 </div>
 </div>
-<div class="pt-2">
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV)</label>
+<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
+@foreach ($ktvs as $k)
+<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
+@endforeach
+</select>
+</div>
+<div class="pt-2 space-y-2">
 <label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
 <span class="text-body-md font-medium text-on-surface">KH có SD kết hợp Medical không?</span>
 <div class="relative inline-flex items-center cursor-pointer">
@@ -285,7 +312,7 @@
 </div>
 
 <!-- Section 4: Admin & Notes -->
-<div class="space-y-6">
+<div class="space-y-6 order-4">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">assignment_ind</span>
 <h3 class="text-headline-md font-headline-md">Hành chính &amp; Ghi chú</h3>
