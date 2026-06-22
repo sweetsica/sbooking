@@ -323,21 +323,21 @@
 <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col gap-4 shadow-sm">
 <div class="flex items-center justify-between">
 <span class="text-label-caps text-on-surface-variant">TỶ LỆ LẤY ĐẦY PHÒNG</span>
-<span class="text-headline-md font-bold text-secondary">68%</span>
+<span class="text-headline-md font-bold text-secondary">{{ $stats['fill'] }}%</span>
 </div>
 <div class="w-full bg-surface-container-high h-2 rounded-full overflow-hidden">
-<div class="bg-secondary h-full w-[68%]"></div>
+<div class="bg-secondary h-full" style="width: {{ min(100, $stats['fill']) }}%"></div>
 </div>
-<p class="text-[11px] text-on-surface-variant italic">Phòng VIP 1 đang có hiệu suất cao nhất trong ngày hôm nay.</p>
+<p class="text-[11px] text-on-surface-variant italic">{{ $room?->ten ?? 'Tất cả phòng' }} · {{ $date->format('d/m/Y') }}</p>
 </div>
 <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex flex-col justify-between shadow-sm">
 <div class="flex items-center justify-between mb-4">
 <span class="text-label-caps text-on-surface-variant">TỔNG LỊCH HẸN TRONG NGÀY</span>
-<span class="text-headline-md font-bold text-on-surface">24</span>
+<span class="text-headline-md font-bold text-on-surface">{{ $stats['total'] }}</span>
 </div>
 <div class="flex gap-2">
-<span class="px-3 py-1 rounded bg-tertiary-fixed-dim/20 text-on-tertiary-container text-[11px] font-bold">18 ĐÃ DUYỆT</span>
-<span class="px-3 py-1 rounded bg-secondary-fixed text-on-secondary-container text-[11px] font-bold">6 CHỜ</span>
+<span class="px-3 py-1 rounded bg-tertiary-fixed-dim/20 text-on-tertiary-container text-[11px] font-bold">{{ $stats['approved'] }} ĐÃ DUYỆT</span>
+<span class="px-3 py-1 rounded bg-secondary-fixed text-on-secondary-container text-[11px] font-bold">{{ $stats['pending'] }} CHỜ</span>
 </div>
 </div>
 <div class="bg-surface-container-lowest p-6 rounded-xl border border-outline-variant flex items-center gap-4 group cursor-pointer hover:bg-surface-container-low transition-colors shadow-sm">
