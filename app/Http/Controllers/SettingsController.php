@@ -24,7 +24,7 @@ class SettingsController extends Controller
         'phong-ban'  => ['Phòng ban', 'corporate_fare', 'Bộ phận: Kinh doanh (Sales), Quản trị... — dùng cho phân quyền & gán người dùng.'],
         'vai-tro'    => ['Vai trò', 'badge', 'Vai trò: Nhân viên, KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân...'],
         'co-so'      => ['Cơ sở', 'store', 'Mỗi cơ sở (chi nhánh) có nhân sự, bác sĩ, phòng riêng.'],
-        'quyen'      => ['Quyền', 'admin_panel_settings', 'Phòng ban nào được Xem / Sửa / Xóa.'],
+        'quyen'      => ['Quyền', 'admin_panel_settings', 'Vai trò nào được Xem / Thêm / Sửa / Xóa booking.'],
         'nguoi-dung' => ['Người dùng', 'group', 'Thêm/sửa/xóa người dùng (bao gồm KTV, Bác sĩ, Lễ tân...).'],
         'dich-vu'    => ['Dịch vụ', 'spa', 'CRUD tên dịch vụ — đưa vào form tạo mới.'],
         'menu'       => ['Menu', 'restaurant_menu', 'CRUD tên Menu — đưa vào form tạo mới (dạng ô tick).'],
@@ -117,16 +117,18 @@ class SettingsController extends Controller
             default      => collect(),
         };
 
-        // Dữ liệu cho ma trận phân quyền sửa trường
+        // Dữ liệu cho ma trận phân quyền sửa trường (theo Vai trò)
         $quyen = null;
         if ($section === 'quyen') {
-            $allowed = PhanQuyen::all()
-                ->groupBy('phong_ban_id')
+            $allowed = PhanQuyen::whereNotNull('vai_tro_id')
+                ->get()
+                ->groupBy('vai_tro_id')
                 ->map(fn ($g) => $g->pluck('truong')->all());
             $quyen = [
-                'phongBans' => PhongBan::orderBy('id')->get(),
+                'vaiTros' => VaiTro::orderBy('id')->get(),
                 'fields' => BookingFields::all(),
-                'allowed' => $allowed,   // [phong_ban_id => [truong,...]]
+                'groups' => BookingFields::groups(),
+                'allowed' => $allowed,   // [vai_tro_id => [truong,...]]
             ];
         }
 
@@ -278,23 +280,23 @@ class SettingsController extends Controller
         return back()->with('ok', $cs ? 'Đã cập nhật cơ sở.' : 'Đã thêm cơ sở.');
     }
 
-    // Lưu ma trận phân quyền sửa trường (phòng ban × trường)
+    // Lưu ma trận phân quyền (vai trò × trường)
     private function saveQuyen(Request $request)
     {
         $validKeys = BookingFields::keys();
-        $allow = (array) $request->input('allow', []); // [phong_ban_id => [truong,...]]
+        $allow = (array) $request->input('allow', []); // [vai_tro_id => [truong,...]]
 
         DB::transaction(function () use ($allow, $validKeys) {
-            foreach (PhongBan::pluck('id') as $pbId) {
-                $truongs = array_values(array_intersect((array) ($allow[$pbId] ?? []), $validKeys));
-                PhanQuyen::where('phong_ban_id', $pbId)->delete();
+            foreach (VaiTro::pluck('id') as $vtId) {
+                $truongs = array_values(array_intersect((array) ($allow[$vtId] ?? []), $validKeys));
+                PhanQuyen::where('vai_tro_id', $vtId)->delete();
                 foreach ($truongs as $t) {
-                    PhanQuyen::create(['phong_ban_id' => $pbId, 'truong' => $t]);
+                    PhanQuyen::create(['vai_tro_id' => $vtId, 'truong' => $t]);
                 }
             }
         });
 
-        return back()->with('ok', 'Đã lưu phân quyền sửa trường.');
+        return back()->with('ok', 'Đã lưu phân quyền theo vai trò.');
     }
 
     private function savePhongBan(Request $request, ?PhongBan $pb)

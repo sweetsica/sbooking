@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\User;
@@ -10,6 +11,7 @@ use Illuminate\Http\Request;
 
 class PageController extends Controller
 {
+    use AuthorizesByPhanQuyen;
     /** Trang Bác sĩ: mỗi bác sĩ + danh sách booking đặt phòng được phân công trong ngày. */
     public function doctors(CoSo $co_so, Request $request)
     {
@@ -121,6 +123,8 @@ class PageController extends Controller
 
     public function timeline(CoSo $co_so, Request $request)
     {
+        $this->authorizePerm('xem_booking');
+
         $rooms = $co_so->phongs()->orderBy('id')->get();
         $date = $request->date('ngay') ?? now();
 
@@ -275,6 +279,8 @@ class PageController extends Controller
 
     public function bookings(CoSo $co_so, Request $request)
     {
+        $this->authorizePerm('xem_booking');
+
         $query = Booking::where('co_so_id', $co_so->id)
             ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
             ->latest('id');

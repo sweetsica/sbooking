@@ -39,46 +39,90 @@
 </div>
 
 @if ($key === 'quyen')
-{{-- Ma trận phân quyền sửa trường: phòng ban × trường --}}
-@php $phongBans = $quyen['phongBans']; $fields = $quyen['fields']; $allowed = $quyen['allowed']; @endphp
+{{-- Ma trận phân quyền: vai trò × trường, gom theo nhóm --}}
+@php $vaiTros = $quyen['vaiTros']; $groups = $quyen['groups']; $allowed = $quyen['allowed']; @endphp
 <form method="POST" action="{{ $action }}">
 @csrf
 <div class="flex flex-wrap items-center justify-between gap-3 mb-4">
-<p class="text-body-sm text-on-surface-variant">Tick ô để cho phép <strong>phòng ban</strong> được sửa <strong>trường</strong> tương ứng — {{ count($fields) }} trường × {{ $phongBans->count() }} phòng ban.</p>
+<p class="text-body-sm text-on-surface-variant">Tick ô để cấp quyền cho <strong>vai trò</strong> tương ứng — gom theo nhóm: booking, nhập/xuất, duyệt.</p>
 <button type="submit" class="px-5 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2"><span class="material-symbols-outlined text-[20px]">save</span> Lưu phân quyền</button>
 </div>
-@if ($phongBans->isEmpty())
-<div class="p-6 bg-surface-container-lowest border border-outline-variant rounded-xl text-center text-on-surface-variant">Chưa có phòng ban nào. Hãy tạo phòng ban trước.</div>
+@if ($vaiTros->isEmpty())
+<div class="p-6 bg-surface-container-lowest border border-outline-variant rounded-xl text-center text-on-surface-variant">Chưa có vai trò nào. Hãy tạo vai trò trước.</div>
 @else
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-x-auto">
 <table class="w-full text-body-md border-collapse">
 <thead>
 <tr class="bg-surface-container-low border-b border-outline-variant">
-<th class="px-4 py-3 text-left text-label-caps font-label-caps text-on-surface-variant sticky left-0 bg-surface-container-low min-w-[210px] z-10">Trường &bsol; Phòng ban</th>
-@foreach ($phongBans as $pb)
-<th class="px-3 py-3 text-center align-top min-w-[130px]">
-<div class="font-semibold">{{ $pb->ten }}</div>
-<label class="inline-flex items-center gap-1 mt-1 text-[11px] text-on-surface-variant cursor-pointer">
+<th class="px-4 py-3 text-left text-label-caps font-label-caps text-on-surface-variant sticky left-0 bg-surface-container-low min-w-[260px] z-10">Trường &bsol; Vai trò</th>
+@foreach ($vaiTros as $pb)
+<th class="px-3 py-3 text-center align-bottom min-w-[130px]">
+<div class="flex flex-col items-center gap-1">
+<div class="font-semibold leading-tight flex items-center justify-center text-center min-h-[2.6rem]">{{ $pb->ten }}</div>
+<label class="inline-flex items-center gap-1 text-[11px] text-on-surface-variant cursor-pointer whitespace-nowrap">
 <input type="checkbox" onclick="document.querySelectorAll('.col-{{ $pb->id }}').forEach(c => c.checked = this.checked)" class="w-3.5 h-3.5 rounded border-outline text-secondary"/> chọn tất cả
 </label>
+</div>
 </th>
 @endforeach
 </tr>
 </thead>
 <tbody class="divide-y divide-outline-variant/50">
-@foreach ($fields as $fkey => $flabel)
-@php $isApprove = str_starts_with($fkey, 'duyet_'); @endphp
-<tr class="hover:bg-surface-container-low/40">
-<td class="px-4 py-2.5 sticky left-0 bg-surface-container-lowest font-medium">
-<span class="{{ $isApprove ? 'text-secondary font-semibold' : '' }}">{{ $flabel }}</span>
-@if ($isApprove)<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container uppercase">mới</span>@endif
+@foreach ($groups as $groupName => $group)
+@php $groupKey = \Illuminate\Support\Str::slug($groupName); @endphp
+<tr class="bg-secondary-container/30">
+<td class="px-4 py-2.5 sticky left-0 bg-secondary-container/30 font-semibold text-on-secondary-container z-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[18px]">{{ $group['icon'] }}</span>
+<span class="uppercase text-label-caps font-label-caps">{{ $groupName }}</span>
+</div>
 </td>
-@foreach ($phongBans as $pb)
+@foreach ($vaiTros as $pb)
 <td class="px-3 py-2.5 text-center">
-<input type="checkbox" name="allow[{{ $pb->id }}][]" value="{{ $fkey }}" @checked(in_array($fkey, $allowed->get($pb->id, []))) class="col-{{ $pb->id }} w-4 h-4 rounded border-outline text-secondary focus:ring-secondary"/>
+<input type="checkbox" onclick="document.querySelectorAll('.grp-{{ $groupKey }}-{{ $pb->id }}').forEach(c => { c.checked = this.checked; c.dispatchEvent(new Event('change')); });" class="w-3.5 h-3.5 rounded border-outline text-secondary" title="Chọn cả nhóm cho vai trò này"/>
 </td>
 @endforeach
 </tr>
+@foreach ($group['fields'] as $fkey => $flabel)
+@php
+    $isApprove = str_starts_with($fkey, 'duyet_');
+    $subFields = $group['sub'][$fkey] ?? [];
+    $hasSub = ! empty($subFields);
+@endphp
+<tr class="hover:bg-surface-container-low/40">
+<td class="px-4 py-2.5 pl-10 sticky left-0 bg-surface-container-lowest font-medium">
+<span class="{{ $isApprove ? 'text-secondary font-semibold' : '' }}{{ $hasSub ? ' text-on-surface font-semibold' : '' }}">{{ $flabel }}</span>
+@if ($isApprove)<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container uppercase">duyệt</span>@endif
+@if ($hasSub)<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase">{{ count($subFields) }} trường</span>@endif
+</td>
+@foreach ($vaiTros as $pb)
+<td class="px-3 py-2.5 text-center">
+<input type="checkbox"
+    name="allow[{{ $pb->id }}][]"
+    value="{{ $fkey }}"
+    @checked(in_array($fkey, $allowed->get($pb->id, [])))
+    class="col-{{ $pb->id }} grp-{{ $groupKey }}-{{ $pb->id }} w-4 h-4 rounded border-outline text-secondary focus:ring-secondary"
+    @if ($hasSub) data-master="sua" data-pbid="{{ $pb->id }}" @endif/>
+</td>
+@endforeach
+</tr>
+@foreach ($subFields as $subKey => $subLabel)
+<tr class="hover:bg-surface-container-low/40 bg-surface-container-low/20">
+<td class="px-4 py-2 pl-16 sticky left-0 bg-surface-container-lowest text-body-sm text-on-surface-variant">
+<span class="inline-block mr-1 text-on-surface-variant/60">└</span> {{ $subLabel }}
+</td>
+@foreach ($vaiTros as $pb)
+<td class="px-3 py-2 text-center">
+<input type="checkbox"
+    name="allow[{{ $pb->id }}][]"
+    value="{{ $subKey }}"
+    @checked(in_array($subKey, $allowed->get($pb->id, [])))
+    class="col-{{ $pb->id }} grp-{{ $groupKey }}-{{ $pb->id }} sub-of-sua-{{ $pb->id }} w-4 h-4 rounded border-outline text-secondary focus:ring-secondary"/>
+</td>
+@endforeach
+</tr>
+@endforeach
+@endforeach
 @endforeach
 </tbody>
 </table>
@@ -88,6 +132,24 @@
 </div>
 @endif
 </form>
+
+<script>
+(function () {
+    // Master 'Sửa booking' điều khiển các trường con: tắt → uncheck + disable.
+    document.querySelectorAll('input[type="checkbox"][data-master="sua"]').forEach(function (master) {
+        var pbId = master.dataset.pbid;
+        var subs = document.querySelectorAll('.sub-of-sua-' + pbId);
+        function sync() {
+            subs.forEach(function (s) {
+                if (! master.checked) { s.checked = false; s.disabled = true; }
+                else { s.disabled = false; }
+            });
+        }
+        master.addEventListener('change', sync);
+        sync();
+    });
+})();
+</script>
 @else
 @if ($editable)
 {{-- Form thêm mới --}}

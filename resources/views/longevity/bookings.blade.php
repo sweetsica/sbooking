@@ -200,8 +200,8 @@
     $vtId = auth()->user()->vai_tro_id;
     $isAdmin = auth()->user()->is_admin;
     $canExportBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xuat_lich_dat_phong')->exists();
-    $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_lich_dat_phong')->exists();
-    $canEditBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_lich_dat_phong')->exists();
+    $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_booking')->exists();
+    $canEditBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_booking')->exists();
     $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
 @endphp
 <div class="ml-auto flex items-center gap-2">

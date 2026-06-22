@@ -30,19 +30,19 @@ class LongevitySeeder extends Seeder
         // ---- Phòng ban ----
         $pbSales     = PhongBan::firstOrCreate(['ma' => 'sales'],           ['ten' => 'Kinh doanh (Sales)']);
         $pbTuVan     = PhongBan::firstOrCreate(['ma' => 'tu_van'],          ['ten' => 'Phòng tư vấn']);
-        $pbAdmin     = PhongBan::firstOrCreate(['ma' => 'admin'],           ['ten' => 'Quản trị']);
+        $pbAdmin     = PhongBan::updateOrCreate(['ma' => 'admin'],          ['ten' => 'Admin Vận hành']);
         $pbKhamNgoai = PhongBan::firstOrCreate(['ma' => 'phong_kham_ngoai'],['ten' => 'Phòng khám Ngoại']);
         $pbChuyenGia = PhongBan::firstOrCreate(['ma' => 'phong_chuyen_gia'],['ten' => 'Phòng chuyên gia']);
         $pbKhamNoi1  = PhongBan::firstOrCreate(['ma' => 'phong_kham_noi_1'],['ten' => 'Phòng khám Nội 1']);
         $pbKhamNoi2  = PhongBan::firstOrCreate(['ma' => 'phong_kham_noi_2'],['ten' => 'Phòng khám Nội 2']);
         $pbSieuAm    = PhongBan::firstOrCreate(['ma' => 'phong_sieu_am'],   ['ten' => 'Phòng siêu âm']);
 
-        // ---- Phân quyền cho Tư vấn viên ----
-        foreach (['sua_lich_dat_phong', 'sua_lich_tu_van'] as $truong) {
+        // ---- Phân quyền mặc định cho Tư vấn viên (gắn theo vai trò) ----
+        foreach (['xem_booking', 'sua_booking', 'sua_lich_tu_van'] as $truong) {
             PhanQuyen::firstOrCreate([
                 'vai_tro_id' => $vrTuVanVien->id,
                 'truong'     => $truong,
-            ], ['phong_ban_id' => $pbTuVan->id]);
+            ]);
         }
 
         // ---- 4 cơ sở ----
@@ -63,13 +63,13 @@ class LongevitySeeder extends Seeder
             'dia_chi' => '137 NCT HCM',
         ]);
 
-        // ---- Admin toàn hệ thống ----
+        // ---- Admin Hệ thống (IT) — tài khoản đặc biệt, không thuộc phòng ban / cơ sở nào, full quyền ----
         User::updateOrCreate(['username' => 'admin'], [
-            'name'         => 'Admin',
+            'name'         => 'Admin Hệ thống',
             'email'        => 'admin@sweetsica.com',
             'password'     => Hash::make('59ntn'),
             'co_so_id'     => null,
-            'phong_ban_id' => $pbAdmin->id,
+            'phong_ban_id' => null,
             'vai_tro_id'   => $vrAdmin->id,
             'is_admin'     => true,
         ]);

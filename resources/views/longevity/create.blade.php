@@ -456,4 +456,27 @@
     if (window.lucide) lucide.createIcons();
 })();
 </script>
+
+@if (! is_null($allowedFields))
+<script>
+(function () {
+    // Field-level enforcement: disable input/select/textarea không có quyền sửa.
+    const allowed = @json($allowedFields);
+    const form = document.querySelector('form[method="POST"]');
+    if (! form) return;
+    form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
+        const n = el.getAttribute('name');
+        // Bỏ qua các field không thuộc danh mục phân quyền (csrf, menu_ids[]).
+        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','bac_si_user_id','ktv_user_id','ghi_chu'];
+        if (! trackable.includes(n)) return;
+        if (! allowed.includes(n)) {
+            el.disabled = true;
+            el.classList.add('opacity-50','cursor-not-allowed','bg-surface-container-high');
+            const wrap = el.closest('label, .field, div');
+            if (wrap) wrap.title = 'Bạn không có quyền sửa trường này.';
+        }
+    });
+})();
+</script>
+@endif
 </body></html>

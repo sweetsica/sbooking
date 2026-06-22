@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\KhachHang;
@@ -14,19 +15,28 @@ use Illuminate\Validation\Rule;
 
 class BookingController extends Controller
 {
+    use AuthorizesByPhanQuyen;
     public function create(CoSo $co_so)
     {
-        return view('longevity.create', $this->formData($co_so) + ['bk' => null]);
+        $this->authorizePerm('them_booking');
+
+        return view('longevity.create', $this->formData($co_so) + [
+            'bk' => null,
+            'allowedFields' => null, // null = không giới hạn (mode tạo mới)
+        ]);
     }
 
     public function edit(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('sua_lich_dat_phong');
+        $this->authorizePerm('sua_booking');
 
         $booking->load(['khachHang', 'menus']);
 
-        return view('longevity.create', $this->formData($co_so) + ['bk' => $booking]);
+        return view('longevity.create', $this->formData($co_so) + [
+            'bk' => $booking,
+            'allowedFields' => $this->allowedFieldKeys(),
+        ]);
     }
 
     /** Dữ liệu dùng chung cho form tạo / sửa. */
@@ -151,6 +161,8 @@ class BookingController extends Controller
 
     public function store(CoSo $co_so, Request $request)
     {
+        $this->authorizePerm('them_booking');
+
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
             'so_dien_thoai' => ['required', 'string', 'max:30'],
@@ -249,7 +261,7 @@ class BookingController extends Controller
     public function update(CoSo $co_so, Booking $booking, Request $request)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('sua_lich_dat_phong');
+        $this->authorizePerm('sua_booking');
 
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
@@ -304,32 +316,49 @@ class BookingController extends Controller
             ]);
         }
 
-        $sdt = preg_replace('/\s+/', '', $data['so_dien_thoai']);
+        // Field-level: chỉ cho ghi các trường user được phép sửa.
+        $allowed = $this->allowedFieldKeys();
+        $can = fn (string $k) => in_array($k, $allowed, true);
+
+        $khFromBk = $booking->khachHang;
+        $sdt = $can('so_dien_thoai')
+            ? preg_replace('/\s+/', '', $data['so_dien_thoai'])
+            : ($khFromBk?->so_dien_thoai ?? '');
         $kh = KhachHang::firstOrNew(['co_so_id' => $co_so->id, 'so_dien_thoai' => $sdt]);
-        $kh->ho_ten = $data['ho_ten'];
-        $kh->email = $data['email'] ?? $kh->email;
+        if ($can('ho_ten'))  $kh->ho_ten = $data['ho_ten'];
+        elseif (! $kh->ho_ten) $kh->ho_ten = $khFromBk?->ho_ten ?? '';
+        if ($can('email'))   $kh->email = $data['email'] ?? $kh->email;
         $kh->save();
 
-        $booking->update([
-            'khach_hang_id' => $kh->id,
-            'phong_id'      => $data['phong_id'],
-            'khung_gio_id'  => $data['khung_gio_id'],
-            'dich_vu_id'    => $data['dich_vu_id'],
-            'bac_si_user_id' => $data['bac_si_user_id'] ?? null,
-            'ktv_user_id'   => $data['ktv_user_id'] ?? null,
-            'sale_id'       => $data['sale_id'],
-            'ngay_dat'      => $data['ngay_dat'],
-            'gio_thuc_hien' => ! empty($data['gio_thuc_hien']) ? $data['gio_thuc_hien'] . ':00' : null,
-            'gio_ket_thuc'  => ! empty($data['gio_ket_thuc']) ? $data['gio_ket_thuc'] . ':00' : null,
-            'so_lieu_trinh' => $data['so_lieu_trinh'] ?? null,
-            'nguon'         => $data['nguon'] ?? null,
+        $map = [
+            'phong_id'        => $data['phong_id'],
+            'khung_gio_id'    => $data['khung_gio_id'],
+            'dich_vu_id'      => $data['dich_vu_id'],
+            'bac_si_user_id'  => $data['bac_si_user_id'] ?? null,
+            'ktv_user_id'     => $data['ktv_user_id'] ?? null,
+            'sale_id'         => $data['sale_id'],
+            'ngay_dat'        => $data['ngay_dat'],
+            'gio_thuc_hien'   => ! empty($data['gio_thuc_hien']) ? $data['gio_thuc_hien'] . ':00' : null,
+            'gio_ket_thuc'    => ! empty($data['gio_ket_thuc']) ? $data['gio_ket_thuc'] . ':00' : null,
+            'so_lieu_trinh'   => $data['so_lieu_trinh'] ?? null,
+            'nguon'           => $data['nguon'] ?? null,
             'ket_hop_medical' => $request->boolean('ket_hop_medical'),
-            'co_tu_van'     => $request->boolean('co_tu_van'),
-            'co_kham_cls'   => $request->boolean('co_kham_cls'),
-            'ghi_chu'       => $data['ghi_chu'] ?? null,
-        ]);
+            'ghi_chu'         => $data['ghi_chu'] ?? null,
+        ];
+        $payload = ['khach_hang_id' => $kh->id];
+        foreach ($map as $col => $val) {
+            if ($can($col)) $payload[$col] = $val;
+        }
+        // Hai cờ phụ không phân quyền riêng — gắn vào quyền sửa nguồn.
+        if ($can('nguon')) {
+            $payload['co_tu_van']   = $request->boolean('co_tu_van');
+            $payload['co_kham_cls'] = $request->boolean('co_kham_cls');
+        }
+        $booking->update($payload);
 
-        $booking->menus()->sync($data['menu_ids'] ?? []);
+        if ($can('dich_vu_id')) {
+            $booking->menus()->sync($data['menu_ids'] ?? []);
+        }
 
         return redirect("/{$co_so->slug}/danh-sach")
             ->with('ok', 'Đã cập nhật lịch hẹn của ' . $kh->ho_ten . '.');
@@ -338,7 +367,7 @@ class BookingController extends Controller
     public function destroy(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('xoa_lich_dat_phong');
+        $this->authorizePerm('xoa_booking');
 
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
         $booking->menus()->detach();
@@ -385,18 +414,4 @@ class BookingController extends Controller
         return back()->with('ok', ($done ? 'Đã hoàn thành' : 'Đã chuyển lại "Đã duyệt"') . ' lịch hẹn của ' . $ten . '.');
     }
 
-    private function authorizePerm(string $field): void
-    {
-        $user = auth()->user();
-        if ($user->is_admin) {
-            return;
-        }
-
-        $ok = PhanQuyen::where(function ($q) use ($user) {
-                if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
-                if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
-            })->where('truong', $field)->exists();
-
-        abort_unless($ok, 403, 'Bạn không có quyền thực hiện thao tác này.');
-    }
 }
