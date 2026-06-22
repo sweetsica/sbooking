@@ -30,12 +30,10 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <main class="pt-24 pb-12 px-container-margin">
 <div class="max-w-[1600px] mx-auto">
 <div class="flex items-center justify-between mb-6">
-<h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Danh sách Lịch Tư Vấn</h2>
-<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl w-fit">
-<a href="/{{ $coSo->slug }}/lich-tu-van" class="px-6 py-2 text-body-md font-semibold text-on-surface-variant hover:text-on-surface transition-all inline-block">Lịch trình</a>
-<button class="px-6 py-2 bg-surface-container-lowest text-on-surface font-bold rounded-lg shadow-sm border border-outline-variant/30 flex items-center gap-2">
-<span class="material-symbols-outlined text-[18px]">format_list_bulleted</span> Danh sách chi tiết
-</button>
+<h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Quản lý Đặt lịch Bác sĩ</h2>
+<div class="flex bg-surface-container-low rounded-xl p-1">
+<a href="/{{ $coSo->slug }}/lich-tu-van" class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface inline-block">Timeline</a>
+<button class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all bg-surface-container-lowest shadow-sm text-secondary">Danh sách</button>
 </div>
 </div>
 

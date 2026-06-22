@@ -16,6 +16,5 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(LongevitySeeder::class);
-        $this->call(NhanSu59ntnSeeder::class);
     }
 }

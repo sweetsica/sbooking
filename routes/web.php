@@ -3,6 +3,7 @@
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExcelController;
+use App\Http\Controllers\LichHenController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
@@ -28,12 +29,18 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::prefix('{co_so:slug}')->group(function () {
-    // ----- CÔNG KHAI: form tạo lịch hẹn (không cần đăng nhập) -----
+    // ----- CÔNG KHAI: form tạo đặt phòng (không cần đăng nhập) -----
     Route::get('/tao-moi',           [BookingController::class, 'create'])->name('booking.create');
     Route::post('/tao-moi',          [BookingController::class, 'store'])->name('booking.store');
     Route::get('/tao-moi/khung-gio', [BookingController::class, 'khungGio'])->name('booking.khunggio');
     Route::get('/tao-moi/check-sdt', [BookingController::class, 'checkPhone'])->name('booking.checksdt');
     Route::get('/tao-moi/check-ktv', [BookingController::class, 'checkKtv'])->name('booking.checkktv');
+
+    // ----- CÔNG KHAI: form đặt lịch tư vấn bác sĩ -----
+    Route::get('/dat-kham',            [LichHenController::class, 'create'])->name('lichhen.create');
+    Route::post('/dat-kham',           [LichHenController::class, 'store'])->name('lichhen.store');
+    Route::get('/dat-kham/ca-kham',    [LichHenController::class, 'caKham'])->name('lichhen.cakham');
+    Route::get('/dat-kham/check-sdt',  [LichHenController::class, 'checkPhone'])->name('lichhen.checksdt');
 
     // ----- CẦN ĐĂNG NHẬP -----
     Route::middleware('auth')->group(function () {
@@ -57,6 +64,18 @@ Route::prefix('{co_so:slug}')->group(function () {
 
         Route::get('/xuat-booking',  [ExcelController::class, 'exportBooking'])->name('excel.exportBooking');
         Route::post('/nhap-booking', [ExcelController::class, 'importBooking'])->name('excel.importBooking');
+
+        // ----- Lịch tư vấn bác sĩ -----
+        Route::get('/lich-tu-van',                    [LichHenController::class, 'manage'])->name('lichhen.manage');
+        Route::get('/ds-tu-van',                      [LichHenController::class, 'list'])->name('lichhen.list');
+        Route::get('/xem-tu-van/{lich_hen}',          [LichHenController::class, 'show'])->name('lichhen.show');
+        Route::get('/sua-tu-van/{lich_hen}',          [LichHenController::class, 'edit'])->name('lichhen.edit');
+        Route::put('/sua-tu-van/{lich_hen}',          [LichHenController::class, 'update'])->name('lichhen.update');
+        Route::delete('/xoa-tu-van/{lich_hen}',       [LichHenController::class, 'destroy'])->name('lichhen.destroy');
+        Route::patch('/duyet-tu-van/{lich_hen}',      [LichHenController::class, 'duyet'])->name('lichhen.approve');
+
+        Route::get('/xuat-tu-van',  [ExcelController::class, 'exportLichHen'])->name('excel.exportLichHen');
+        Route::post('/nhap-tu-van', [ExcelController::class, 'importLichHen'])->name('excel.importLichHen');
 
         // ----- CHỈ ADMIN: Thiết lập -----
         Route::middleware('admin')->prefix('thiet-lap')->name('settings.')->group(function () {

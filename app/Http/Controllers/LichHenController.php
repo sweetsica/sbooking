@@ -105,6 +105,18 @@ class LichHenController extends Controller
         ]);
     }
 
+    public function show(CoSo $co_so, LichHen $lich_hen)
+    {
+        abort_unless($lich_hen->co_so_id === $co_so->id, 404);
+
+        $lich_hen->load(['khachHang', 'bacSiTuVan', 'caKham', 'sale']);
+
+        return view('longevity.lich-hen.show', [
+            'coSo' => $co_so,
+            'lichHen' => $lich_hen,
+        ]);
+    }
+
     public function store(CoSo $co_so, Request $request)
     {
         $data = $request->validate([
@@ -273,8 +285,10 @@ class LichHenController extends Controller
 
     public function manage(CoSo $co_so, Request $request)
     {
-        $vrBsTuVan = VaiTro::where('ma', 'bac_si_tu_van')->first();
-        $bacSis = User::where('vai_tro_id', $vrBsTuVan?->id)
+        $loai = $request->query('loai') === 'tham_kham' ? 'tham_kham' : 'tu_van';
+        $maVaiTro = $loai === 'tham_kham' ? 'bac_si' : 'bac_si_tu_van';
+        $vrBs = VaiTro::where('ma', $maVaiTro)->first();
+        $bacSis = User::where('vai_tro_id', $vrBs?->id)
             ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
             ->with('caKhams')
             ->orderBy('id')->get();
@@ -287,34 +301,54 @@ class LichHenController extends Controller
             ->orderBy('id')->get()
             ->groupBy('bac_si_user_id');
 
-        // Một thẻ cho mỗi bác sĩ, kèm timeline ca khám theo trạng thái.
-        $cards = $bacSis->map(function ($bs) use ($lichHens) {
+        $toMin = fn ($t) => $t ? ((int) substr($t, 0, 2)) * 60 + ((int) substr($t, 3, 2)) : null;
+
+        $startHour = 8;
+        $endHour = 18;
+        if ($bacSis->isNotEmpty()) {
+            $startHour = $bacSis->min(fn ($bs) => (int) substr($bs->gio_bat_dau ?? '08:00', 0, 2));
+            $endHour = $bacSis->max(function ($bs) {
+                [$h, $m] = array_map('intval', explode(':', substr($bs->gio_ket_thuc ?? '18:00', 0, 5)));
+                return $m > 0 ? $h + 1 : $h;
+            });
+        }
+
+        $hourPx = 64;
+        $dayStart = $startHour * 60;
+        $bodyHeight = max(1, $endHour - $startHour) * $hourPx;
+        $hours = range($startHour, $endHour - 1);
+
+        $doctorColumns = $bacSis->map(function ($bs) use ($lichHens, $dayStart, $hourPx, $toMin) {
             $byCa = ($lichHens[$bs->id] ?? collect())->keyBy('ca_kham_id');
             $slots = $bs->caKhams->sortBy('thu_tu')->values();
 
+            $events = [];
             $booked = 0;
-            $timeline = $slots->map(function ($ck) use ($byCa, &$booked) {
+            foreach ($slots as $ck) {
                 $lh = $byCa->get($ck->id);
-                $tt = $lh && $lh->trang_thai !== 'tu_choi' ? $lh->trang_thai : null;
-                if ($tt) {
-                    $booked++;
+                $s = $toMin($ck->gio_bat_dau);
+                $e = $toMin($ck->gio_ket_thuc);
+                if ($s === null || $e === null || $e <= $s) {
+                    continue;
                 }
 
-                return [
+                $events[] = [
                     'ck' => $ck,
-                    'lh' => $tt ? $lh : null,
-                    'state' => $tt === 'da_duyet' ? 'dang_kham' : ($tt ? 'co_lich' : 'trong'),
+                    'lh' => $lh,
+                    'top' => ($s - $dayStart) / 60 * $hourPx,
+                    'height' => ($e - $s) / 60 * $hourPx,
                 ];
-            });
 
-            $total = $slots->count();
+                if ($lh && $lh->trang_thai !== 'tu_choi') {
+                    $booked++;
+                }
+            }
 
             return [
                 'bs' => $bs,
-                'timeline' => $timeline,
-                'total' => $total,
+                'events' => $events,
+                'total' => $slots->count(),
                 'booked' => $booked,
-                'rate' => $total > 0 ? (int) round($booked / $total * 100) : 0,
             ];
         });
 
@@ -323,8 +357,14 @@ class LichHenController extends Controller
         return view('longevity.lich-hen.manage', [
             'coSo' => $co_so,
             'danhSachCoSo' => $danhSachCoSo,
-            'cards' => $cards,
+            'doctorColumns' => $doctorColumns,
+            'loai' => $loai,
             'date' => $date,
+            'hours' => $hours,
+            'hourPx' => $hourPx,
+            'bodyHeight' => $bodyHeight,
+            'startHour' => $startHour,
+            'endHour' => $endHour,
             'stats' => [
                 'total' => $allLich->count(),
                 'approved' => $allLich->where('trang_thai', 'da_duyet')->count(),

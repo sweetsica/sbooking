@@ -4,6 +4,7 @@
 
     $items = [
         ['key' => 'lich-hen',  'label' => 'Đặt phòng',       'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
+        ['key' => 'tu-van',    'label' => 'Đặt lịch bác sĩ', 'icon' => 'medical_services', 'href' => '/'.$coSo->slug.'/lich-tu-van'],
         ['key' => 'bac-si',    'label' => 'Bác sĩ',           'icon' => 'stethoscope',    'href' => '/'.$coSo->slug.'/bac-si'],
         ['key' => 'phong',     'label' => 'Phòng Dịch vụ',    'icon' => 'meeting_room',   'href' => '/'.$coSo->slug.'/phong'],
     ];
