@@ -60,10 +60,10 @@ class ExcelController extends Controller
             return;
         }
 
-        $hasPermission = $user->phong_ban_id
-            && PhanQuyen::where('phong_ban_id', $user->phong_ban_id)
-                ->where('truong', $field)
-                ->exists();
+        $hasPermission = PhanQuyen::where(function ($q) use ($user) {
+                if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
+                if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
+            })->where('truong', $field)->exists();
 
         abort_unless($hasPermission, 403, 'Bạn không có quyền xuất/nhập Excel.');
     }

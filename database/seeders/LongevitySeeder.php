@@ -19,13 +19,14 @@ class LongevitySeeder extends Seeder
         $matKhau = Hash::make('59@ntn');
 
         // ---- Vai trò ----
-        VaiTro::firstOrCreate(['ma' => 'nhan_vien'],     ['ten' => 'Nhân viên']);
+        $vrNhanVien  = VaiTro::firstOrCreate(['ma' => 'nhan_vien'],     ['ten' => 'Nhân viên']);
         $vrKtv       = VaiTro::firstOrCreate(['ma' => 'ktv'],           ['ten' => 'Kỹ thuật viên']);
         $vrBacSi     = VaiTro::firstOrCreate(['ma' => 'bac_si'],        ['ten' => 'Bác sĩ']);
         $vrBsTuVan   = VaiTro::firstOrCreate(['ma' => 'bac_si_tu_van'], ['ten' => 'Bác sĩ tư vấn']);
         $vrTuVanVien = VaiTro::firstOrCreate(['ma' => 'tu_van_vien'],   ['ten' => 'Tư vấn viên']);
         VaiTro::firstOrCreate(['ma' => 'le_tan'],        ['ten' => 'Lễ tân']);
-        $vrAdmin     = VaiTro::firstOrCreate(['ma' => 'admin'],         ['ten' => 'Quản trị viên']);
+        $vrVanHanh   = VaiTro::firstOrCreate(['ma' => 'quan_tri_van_hanh'], ['ten' => 'Quản trị vận hành']);
+        $vrAdmin     = VaiTro::firstOrCreate(['ma' => 'admin'],         ['ten' => 'Quản trị hệ thống']);
 
         // ---- Phòng ban ----
         $pbSales     = PhongBan::firstOrCreate(['ma' => 'sales'],           ['ten' => 'Kinh doanh (Sales)']);
@@ -37,12 +38,27 @@ class LongevitySeeder extends Seeder
         $pbKhamNoi2  = PhongBan::firstOrCreate(['ma' => 'phong_kham_noi_2'],['ten' => 'Phòng khám Nội 2']);
         $pbSieuAm    = PhongBan::firstOrCreate(['ma' => 'phong_sieu_am'],   ['ten' => 'Phòng siêu âm']);
 
-        // ---- Phân quyền mặc định cho Tư vấn viên (gắn theo vai trò) ----
-        foreach (['xem_booking', 'sua_booking', 'sua_lich_tu_van'] as $truong) {
-            PhanQuyen::firstOrCreate([
-                'vai_tro_id' => $vrTuVanVien->id,
-                'truong'     => $truong,
-            ]);
+        // ---- Phân quyền mặc định theo vai trò ----
+        $quyenMacDinh = [
+            // Tư vấn viên: xem + sửa booking, sửa lịch tư vấn
+            $vrTuVanVien->id => ['xem_booking', 'sua_booking', 'sua_lich_tu_van'],
+            // Nhân viên: thêm + xem booking (danh sách chỉ đọc)
+            $vrNhanVien->id  => ['them_booking', 'xem_booking'],
+            // Quản trị vận hành: xem + duyệt (đặt phòng & tư vấn)
+            $vrVanHanh->id   => ['xem_booking', 'duyet_booking', 'duyet_tu_van'],
+            // KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân: chỉ xem booking
+            $vrKtv->id       => ['xem_booking'],
+            $vrBacSi->id     => ['xem_booking'],
+            $vrBsTuVan->id   => ['xem_booking'],
+        ];
+        // Lễ tân (không có biến sẵn) — lấy theo mã: xem + thêm booking
+        if ($vrLeTan = VaiTro::where('ma', 'le_tan')->first()) {
+            $quyenMacDinh[$vrLeTan->id] = ['xem_booking', 'them_booking'];
+        }
+        foreach ($quyenMacDinh as $vaiTroId => $truongs) {
+            foreach ($truongs as $truong) {
+                PhanQuyen::firstOrCreate(['vai_tro_id' => $vaiTroId, 'truong' => $truong]);
+            }
         }
 
         // ---- 4 cơ sở ----

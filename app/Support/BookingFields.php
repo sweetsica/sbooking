@@ -5,15 +5,16 @@ namespace App\Support;
 class BookingFields
 {
     /**
-     * Danh sách các trường của booking có thể phân quyền sửa.
-     * 16 trường gốc (đúng các cột trong trang Danh sách) + 3 trường Xác nhận duyệt.
+     * Danh sách tất cả các trường có thể phân quyền (gắn theo vai trò).
+     * Gồm: quyền đặt phòng (booking) + quyền đặt lịch bác sĩ (tư vấn)
+     * + nhập/xuất + duyệt.
      *
      * @return array<string,string> [khóa => nhãn]
      */
     public static function all(): array
     {
         return [
-            // CRUD cấp chính
+            // ----- Đặt phòng (booking) -----
             'xem_booking'     => 'Xem booking',
             'them_booking'    => 'Thêm booking',
             'sua_booking'     => 'Sửa booking (cho phép sửa)',
@@ -36,10 +37,18 @@ class BookingFields
             'bac_si_user_id'  => 'Bác sĩ',
             'ktv_user_id'     => 'Kỹ thuật viên',
             'ghi_chu'         => 'Ghi chú',
-            // Nhập / xuất
-            'xuat_lich_dat_phong' => 'Xuất lịch đặt phòng (Excel)',
-            // Duyệt
+
+            // ----- Đặt lịch bác sĩ (tư vấn) -----
+            'sua_lich_tu_van' => 'Sửa lịch tư vấn',
+            'xoa_lich_tu_van' => 'Xóa lịch tư vấn',
+
+            // ----- Nhập / xuất -----
+            'xuat_lich_dat_phong' => 'Xuất / Nhập lịch đặt phòng (Excel)',
+            'xuat_lich_tu_van'    => 'Xuất / Nhập lịch tư vấn (Excel)',
+
+            // ----- Duyệt -----
             'duyet_booking'   => 'Duyệt lịch đặt phòng',
+            'duyet_tu_van'    => 'Duyệt lịch tư vấn',
         ];
     }
 
@@ -62,7 +71,7 @@ class BookingFields
     }
 
     /**
-     * Gom các trường thành 3 nhóm để hiển thị ma trận phân quyền.
+     * Gom các trường thành nhóm để hiển thị ma trận phân quyền.
      *
      * @return array<string,array{icon:string,fields:array<string,string>}>
      */
@@ -72,7 +81,7 @@ class BookingFields
         $pick = fn (array $keys) => array_intersect_key($all, array_flip($keys));
 
         return [
-            'Quyền booking' => [
+            'Quyền đặt phòng' => [
                 'icon'   => 'edit_calendar',
                 'fields' => $pick(['xem_booking', 'them_booking', 'sua_booking', 'xoa_booking']),
                 'sub'    => [
@@ -80,14 +89,19 @@ class BookingFields
                     'sua_booking' => self::suaSubFields(),
                 ],
             ],
+            'Quyền đặt lịch bác sĩ' => [
+                'icon'   => 'medical_services',
+                'fields' => $pick(['sua_lich_tu_van', 'xoa_lich_tu_van']),
+                'sub'    => [],
+            ],
             'Quyền nhập / xuất dữ liệu' => [
                 'icon'   => 'import_export',
-                'fields' => $pick(['xuat_lich_dat_phong']),
+                'fields' => $pick(['xuat_lich_dat_phong', 'xuat_lich_tu_van']),
                 'sub'    => [],
             ],
             'Quyền duyệt' => [
                 'icon'   => 'verified',
-                'fields' => $pick(['duyet_booking']),
+                'fields' => $pick(['duyet_booking', 'duyet_tu_van']),
                 'sub'    => [],
             ],
         ];

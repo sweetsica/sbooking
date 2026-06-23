@@ -77,11 +77,24 @@ class AuthController extends Controller
         return back()->with('ok', 'Đã đổi mật khẩu thành công.');
     }
 
-    // Trang chủ theo người dùng: cơ sở của họ (admin -> cơ sở đầu tiên)
+    // Trang chủ theo người dùng: bác sĩ → lịch tư vấn, còn lại → đặt phòng
     private function homeFor($user): string
     {
         $coSo = $user->coSo ?? CoSo::where('active', true)->first();
+        if (! $coSo) return '/login';
 
-        return $coSo ? "/{$coSo->slug}/lich-hen" : '/login';
+        $vaiTroMa = $user->vaiTro?->ma;
+
+        // Bác sĩ → lịch tư vấn
+        if (in_array($vaiTroMa, ['bac_si', 'bac_si_tu_van'], true)) {
+            return "/{$coSo->slug}/lich-tu-van";
+        }
+
+        // Nhân viên → trang tạo booking
+        if ($vaiTroMa === 'nhan_vien') {
+            return "/{$coSo->slug}/tao-moi";
+        }
+
+        return "/{$coSo->slug}/lich-hen";
     }
 }

@@ -1,6 +1,7 @@
 @php
     $active = $active ?? 'lich-hen';
     $isAdmin = auth()->check() && auth()->user()->is_admin;
+    $vaiTroMa = auth()->user()?->vaiTro?->ma;
 
     $items = [
         ['key' => 'lich-hen',  'label' => 'Đặt phòng',       'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
@@ -8,6 +9,11 @@
         ['key' => 'bac-si',    'label' => 'Bác sĩ',           'icon' => 'stethoscope',    'href' => '/'.$coSo->slug.'/bac-si'],
         ['key' => 'phong',     'label' => 'Phòng Dịch vụ',    'icon' => 'meeting_room',   'href' => '/'.$coSo->slug.'/phong'],
     ];
+
+    // Nhân viên: chỉ thấy "Đặt phòng" và "Đặt lịch bác sĩ".
+    if ($vaiTroMa === 'nhan_vien') {
+        $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'tu-van'], true)));
+    }
     // "Thiết lập" đã có icon bánh răng ở góc phải -> không lặp lại trong menu.
 @endphp
 <!-- Top Navigation Bar -->

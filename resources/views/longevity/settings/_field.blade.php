@@ -22,7 +22,7 @@
 @endfor
 </select>
 @elseif ($type === 'number')
-<input type="number" name="{{ $name }}" value="{{ $value }}" min="1" max="99" class="{{ $ic }}"/>
+<input type="number" name="{{ $name }}" value="{{ $value }}" min="{{ $f['min'] ?? 1 }}" max="{{ $f['max'] ?? 99 }}" class="{{ $ic }}"/>
 @elseif ($type === 'password')
 <input type="password" name="{{ $name }}" value="" autocomplete="new-password" placeholder="{{ $f['placeholder'] ?? '••••••' }}" class="{{ $ic }}"/>
 @else

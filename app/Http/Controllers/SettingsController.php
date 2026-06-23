@@ -61,15 +61,18 @@ class SettingsController extends Controller
             'nguoi-dung' => [
                 'model' => User::class, 'kind' => 'user',
                 'fields' => [
-                    'name'         => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
-                    'chuc_danh'    => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / KTV. / PGS.TS.BS.'],
-                    'username'     => ['label' => 'Tài khoản', 'type' => 'text', 'rules' => [], 'placeholder' => 'vd: tttg'],
-                    'email'        => ['label' => 'Email', 'type' => 'text', 'rules' => []],
-                    'phong_ban_id' => ['label' => 'Phòng ban', 'type' => 'select', 'options' => ['' => '— Không —'] + $phongBanOptions, 'rules' => ['nullable', Rule::exists('phong_ban', 'id')]],
-                    'vai_tro_id'   => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
-                    'is_admin'     => ['label' => 'Quản trị (mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
-                    'is_tu_van'    => ['label' => 'Tư vấn (xuất hiện mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
-                    'password'     => ['label' => 'Mật khẩu', 'type' => 'password', 'rules' => [], 'virtual' => true, 'placeholder' => 'Tối thiểu 6 ký tự'],
+                    'name'           => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                    'chuc_danh'      => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / KTV. / PGS.TS.BS.'],
+                    'username'       => ['label' => 'Tài khoản', 'type' => 'text', 'rules' => [], 'placeholder' => 'vd: tttg'],
+                    'email'          => ['label' => 'Email', 'type' => 'text', 'rules' => []],
+                    'phong_ban_id'   => ['label' => 'Phòng ban', 'type' => 'select', 'options' => ['' => '— Không —'] + $phongBanOptions, 'rules' => ['nullable', Rule::exists('phong_ban', 'id')]],
+                    'vai_tro_id'     => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
+                    'is_admin'       => ['label' => 'Quản trị (mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                    'is_tu_van'      => ['label' => 'Tư vấn (xuất hiện mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                    'thoi_gian_kham' => ['label' => 'TG khám (phút)', 'type' => 'number', 'min' => 1, 'max' => 999, 'rules' => ['nullable', 'integer', 'min:1', 'max:999']],
+                    'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
+                    'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
+                    'password'       => ['label' => 'Mật khẩu', 'type' => 'password', 'rules' => [], 'virtual' => true, 'placeholder' => 'Tối thiểu 6 ký tự'],
                 ],
             ],
             'co-so' => [
@@ -229,30 +232,40 @@ class SettingsController extends Controller
     private function saveUser(CoSo $co_so, Request $request, ?User $user)
     {
         $data = $request->validate([
-            'name'         => ['required', 'string', 'max:255'],
-            'chuc_danh'    => ['nullable', 'string', 'max:50'],
-            'username'     => ['nullable', 'string', 'max:50', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($user?->id)],
-            'email'        => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
-            'phong_ban_id' => ['nullable', Rule::exists('phong_ban', 'id')],
-            'vai_tro_id'   => ['nullable', Rule::exists('vai_tro', 'id')],
-            'is_admin'     => ['nullable', 'boolean'],
-            'is_tu_van'    => ['nullable', 'boolean'],
-            'password'     => [$user ? 'nullable' : 'required', 'string', 'min:6'],
+            'name'           => ['required', 'string', 'max:255'],
+            'chuc_danh'      => ['nullable', 'string', 'max:50'],
+            'username'       => ['nullable', 'string', 'max:50', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($user?->id)],
+            'email'          => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
+            'phong_ban_id'   => ['nullable', Rule::exists('phong_ban', 'id')],
+            'vai_tro_id'     => ['nullable', Rule::exists('vai_tro', 'id')],
+            'is_admin'       => ['nullable', 'boolean'],
+            'is_tu_van'      => ['nullable', 'boolean'],
+            'thoi_gian_kham' => ['nullable', 'integer', 'min:1', 'max:999'],
+            'gio_bat_dau'    => ['nullable', 'string', 'max:5'],
+            'gio_ket_thuc'   => ['nullable', 'string', 'max:5'],
+            'password'       => [$user ? 'nullable' : 'required', 'string', 'min:6'],
         ], [
             'username.regex' => 'Tài khoản chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.',
         ]);
 
-        $isAdmin = $request->boolean('is_admin');
+        // Vai trò 'admin' → tự động bật is_admin (tránh trường hợp quên tick toggle)
+        $vaiTroId = ($data['vai_tro_id'] ?? null) ?: null;
+        $isAdminByRole = $vaiTroId && VaiTro::where('id', $vaiTroId)->where('ma', 'admin')->exists();
+        $isAdmin = $request->boolean('is_admin') || $isAdminByRole;
+
         $attrs = [
-            'name'         => $data['name'],
-            'chuc_danh'    => ($data['chuc_danh'] ?? null) ?: null,
-            'username'     => ($data['username'] ?? null) ?: null,
-            'email'        => $data['email'],
-            'phong_ban_id' => ($data['phong_ban_id'] ?? null) ?: null,
-            'vai_tro_id'   => ($data['vai_tro_id'] ?? null) ?: null,
-            'is_admin'     => $isAdmin,
-            'is_tu_van'    => $request->boolean('is_tu_van'),
-            'co_so_id'     => $isAdmin ? null : $co_so->id,
+            'name'           => $data['name'],
+            'chuc_danh'      => ($data['chuc_danh'] ?? null) ?: null,
+            'username'       => ($data['username'] ?? null) ?: null,
+            'email'          => $data['email'],
+            'phong_ban_id'   => ($data['phong_ban_id'] ?? null) ?: null,
+            'vai_tro_id'     => $vaiTroId,
+            'is_admin'       => $isAdmin,
+            'is_tu_van'      => $request->boolean('is_tu_van'),
+            'thoi_gian_kham' => ($data['thoi_gian_kham'] ?? null) ?: null,
+            'gio_bat_dau'    => ($data['gio_bat_dau'] ?? null) ?: null,
+            'gio_ket_thuc'   => ($data['gio_ket_thuc'] ?? null) ?: null,
+            'co_so_id'       => $isAdmin ? null : $co_so->id,
         ];
         if (! empty($data['password'])) {
             $attrs['password'] = Hash::make($data['password']);
