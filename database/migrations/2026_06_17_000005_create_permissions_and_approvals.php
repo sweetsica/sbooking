@@ -18,7 +18,7 @@ return new class extends Migration
         // Phân quyền: phòng ban X được sửa trường Y (tồn tại dòng = được phép)
         Schema::create('phan_quyen', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('phong_ban_id')->constrained('phong_ban')->cascadeOnDelete();
+            $table->foreignId('phong_ban_id')->nullable()->constrained('phong_ban')->cascadeOnDelete();
             $table->string('truong', 60);   // khóa trường, vd: ho_ten, xac_nhan_duyet_1
             $table->timestamps();
             $table->unique(['phong_ban_id', 'truong']);
