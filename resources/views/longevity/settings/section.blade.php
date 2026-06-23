@@ -153,7 +153,7 @@
 @else
 @if ($editable)
 {{-- Form thêm mới --}}
-<div x-data="{ open: false }" class="mb-5">
+<div x-data="{ open: {{ $errors->any() ? 'true' : 'false' }} }" class="mb-5">
 <button @click="open = !open" class="px-4 py-2 bg-secondary-container text-on-secondary-container font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
 <span class="material-symbols-outlined text-[20px]" x-text="open ? 'close' : 'add'">add</span>
 <span x-text="open ? 'Đóng' : 'Thêm mới'">Thêm mới</span>

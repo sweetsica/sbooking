@@ -123,8 +123,7 @@ class PageController extends Controller
 
     public function timeline(CoSo $co_so, Request $request)
     {
-        $this->authorizePerm('xem_booking');
-
+        // Trang chủ Lịch hẹn: mọi tài khoản đã đăng nhập đều xem được (không khóa theo quyền)
         $rooms = $co_so->phongs()->orderBy('id')->get();
         $date = $request->date('ngay') ?? now();
 

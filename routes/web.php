@@ -29,6 +29,9 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::prefix('{co_so:slug}')->group(function () {
+    // Vào thẳng slug (không có path) -> chuyển về trang chủ Lịch hẹn
+    Route::get('/', fn (CoSo $co_so) => redirect("/{$co_so->slug}/lich-hen"));
+
     // ----- CÔNG KHAI: form tạo đặt phòng (không cần đăng nhập) -----
     Route::get('/tao-moi',           [BookingController::class, 'create'])->name('booking.create');
     Route::post('/tao-moi',          [BookingController::class, 'store'])->name('booking.store');

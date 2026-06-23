@@ -67,7 +67,7 @@ class SettingsController extends Controller
                     'email'          => ['label' => 'Email', 'type' => 'text', 'rules' => []],
                     'phong_ban_id'   => ['label' => 'Phòng ban', 'type' => 'select', 'options' => ['' => '— Không —'] + $phongBanOptions, 'rules' => ['nullable', Rule::exists('phong_ban', 'id')]],
                     'vai_tro_id'     => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
-                    'is_admin'       => ['label' => 'Quản trị (mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                    // Ẩn toggle "Quản trị (mọi cơ sở)": muốn cấp quyền admin thì chọn vai trò "Quản trị hệ thống" (tự bật is_admin).
                     'is_tu_van'      => ['label' => 'Tư vấn (xuất hiện mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
                     'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
                     'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
@@ -112,7 +112,9 @@ class SettingsController extends Controller
             'phong'      => $co_so->phongs()->with('khungGios')->get(),
             'dich-vu'    => $co_so->dichVus()->get(),
             'menu'       => $co_so->menus()->get(),
-            'nguoi-dung' => $co_so->nguoiDungs()->with(['phongBan', 'vaiTro'])->get(),
+            'nguoi-dung' => User::with(['phongBan', 'vaiTro'])
+                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id')) // gồm cả quản trị toàn hệ thống
+                ->orderByDesc('is_admin')->orderBy('name')->get(),
             'co-so'      => CoSo::orderBy('id')->get(),
             'phong-ban'  => PhongBan::orderBy('id')->get(),
             'vai-tro'    => VaiTro::orderBy('id')->get(),
@@ -166,7 +168,7 @@ class SettingsController extends Controller
         [$model, $config] = $this->mustEditable($section);
 
         return match ($config['kind']) {
-            'user' => $this->saveUser($co_so, $request, $co_so->nguoiDungs()->findOrFail($id)),
+            'user' => $this->saveUser($co_so, $request, $this->findManageableUser($co_so, $id)),
             'coso' => $this->saveCoSo($request, CoSo::findOrFail($id)),
             'phongban' => $this->savePhongBan($request, PhongBan::findOrFail($id)),
             default => $this->saveCatalog($co_so, $request, $config, $model, $section,
@@ -175,6 +177,14 @@ class SettingsController extends Controller
                     : $model::findOrFail($id)
             ),
         };
+    }
+
+    // Người dùng thao tác được trong 1 cơ sở = user của cơ sở đó HOẶC quản trị toàn hệ thống (co_so_id NULL).
+    private function findManageableUser(CoSo $co_so, int $id): User
+    {
+        return User::where('id', $id)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
+            ->firstOrFail();
     }
 
     public function destroy(CoSo $co_so, string $section, int $id)
@@ -194,7 +204,7 @@ class SettingsController extends Controller
             }
             $pb->delete(); // phân quyền của phòng ban này tự xóa theo (cascade)
         } elseif ($config['kind'] === 'user') {
-            $co_so->nguoiDungs()->findOrFail($id)->delete();
+            $this->findManageableUser($co_so, $id)->delete();
         } else {
             $record = in_array('co_so_id', (new $model)->getFillable())
                 ? $model::where('co_so_id', $co_so->id)->findOrFail($id)
@@ -243,7 +253,14 @@ class SettingsController extends Controller
             'gio_ket_thuc'   => ['nullable', 'string', 'max:5'],
             'password'       => [$user ? 'nullable' : 'required', 'string', 'min:6'],
         ], [
-            'username.regex' => 'Tài khoản chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.',
+            'username.regex'    => 'Tài khoản chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.',
+            'username.unique'   => 'Tài khoản này đã có người dùng. Vui lòng chọn tài khoản khác.',
+            'name.required'     => 'Vui lòng nhập họ tên.',
+            'email.required'    => 'Vui lòng nhập email.',
+            'email.email'       => 'Email không hợp lệ.',
+            'email.unique'      => 'Email này đã được dùng cho tài khoản khác.',
+            'password.required' => 'Vui lòng nhập mật khẩu cho người dùng mới (tối thiểu 6 ký tự).',
+            'password.min'      => 'Mật khẩu phải có ít nhất 6 ký tự.',
         ]);
 
         // Vai trò 'admin' → tự động bật is_admin (tránh trường hợp quên tick toggle)

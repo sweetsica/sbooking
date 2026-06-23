@@ -115,6 +115,12 @@
     </style>
 </head>
 <body class="bg-surface font-body-md text-on-surface">
+@if (session('err'))
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-[60] max-w-md px-5 py-3 rounded-xl bg-error-container/95 text-on-error-container shadow-lg flex items-start gap-2 text-body-md font-semibold" id="flash-err">
+<span class="material-symbols-outlined">block</span> {{ session('err') }}
+</div>
+<script>setTimeout(()=>document.getElementById('flash-err')?.remove(), 6000);</script>
+@endif
 <!-- Top Navigation Bar -->
 @include('partials.topnav', ['active' => 'lich-hen'])
 <!-- Main Content Area -->

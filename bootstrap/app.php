@@ -16,5 +16,14 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
-        //
+        // 403 (không đủ quyền) cho người đã đăng nhập -> hiện trang "Không có quyền truy cập" thân thiện.
+        $exceptions->render(function (\Symfony\Component\HttpKernel\Exception\HttpExceptionInterface $e, \Illuminate\Http\Request $request) {
+            if ($e->getStatusCode() !== 403 || ! $request->user() || $request->expectsJson()) {
+                return null;
+            }
+            $co = $request->route('co_so');
+            $slug = is_object($co) ? $co->slug : (is_string($co) ? $co : null);
+
+            return response()->view('longevity.khong-co-quyen', ['slug' => $slug], 403);
+        });
     })->create();
