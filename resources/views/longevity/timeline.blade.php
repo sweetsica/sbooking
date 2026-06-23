@@ -119,7 +119,7 @@
 @include('partials.topnav', ['active' => 'lich-hen'])
 <!-- Main Content Area -->
 <main class="min-h-screen pt-24 pb-12 px-container-margin">
-<div class="max-w-[1600px] mx-auto">
+<div class="max-w-[1650px] mx-auto">
 <!-- Header with View Switcher -->
 <div class="flex flex-wrap justify-between items-center mb-8 gap-4">
 <h2 class="text-headline-lg font-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Quản lý Đặt lịch</h2>
@@ -224,7 +224,7 @@
     $w = 100 / $ev['ncols'];
     $l = $ev['col'] * $w;
 @endphp
-<a href="/{{ $coSo->slug }}/danh-sach"
+<a href="/{{ $coSo->slug }}/xem-dat-phong/{{ $bk->id }}"
    class="absolute rounded-lg px-1.5 py-0.5 shadow-sm border-l-4 overflow-hidden block leading-tight {{ $cardCls }}"
    style="top: {{ $ev['top'] + 1 }}px; height: {{ max($ev['height'] - 2, 15) }}px; left: calc({{ $l }}% + 1px); width: calc({{ $w }}% - 2px);">
 <div class="flex justify-between items-start gap-1">
@@ -404,4 +404,5 @@
         placeNowLine();
         setInterval(placeNowLine, 60000);
     </script>
+@include('partials.datepicker')
 </body></html>

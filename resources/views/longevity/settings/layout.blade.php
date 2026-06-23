@@ -44,7 +44,7 @@ tailwind.config = {
 @include('partials.topnav', ['active' => 'thiet-lap'])
 
 <main class="pt-16 min-h-screen">
-<div class="px-container-margin py-8 max-w-[1280px] mx-auto">
+<div class="px-container-margin py-8 max-w-[1650px] mx-auto">
 @if (session('ok'))
 <div x-data="{show:true}" x-show="show" x-init="setTimeout(()=>show=false,3500)"
      class="mb-6 px-4 py-3 rounded-xl bg-tertiary-fixed-dim/40 text-on-tertiary-container flex items-center gap-2 text-body-md font-semibold">

@@ -141,14 +141,22 @@
 </div>
 <script>setTimeout(()=>document.getElementById('flash-ok')?.remove(), 4000);</script>
 @endif
+@if (session('warning'))
+<div class="fixed top-32 left-1/2 -translate-x-1/2 z-[60] max-w-md px-5 py-3 rounded-xl bg-error-container/95 text-on-error-container shadow-lg flex items-start gap-2 text-body-md font-semibold" id="flash-warning">
+<span class="material-symbols-outlined">warning</span> {{ session('warning') }}
+</div>
+<script>setTimeout(()=>document.getElementById('flash-warning')?.remove(), 8000);</script>
+@endif
 <!-- Top Navigation Bar -->
-@include('partials.topnav', ['active' => 'lich-hen'])
+@php $approvalMode = $approvalMode ?? false; @endphp
+@include('partials.topnav', ['active' => $approvalMode ? 'duyet-lich' : 'lich-hen'])
 <!-- Main Content -->
 <main class="pt-24 pb-12 px-container-margin">
-<div class="max-w-[1600px] mx-auto">
+<div class="max-w-[1650px] mx-auto">
 <!-- Header & View Switcher -->
 <div class="flex items-center justify-between mb-6">
-<h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Quản lý Đặt lịch</h2>
+<h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">{{ $approvalMode ? 'Duyệt lịch — đơn chờ duyệt' : 'Quản lý Đặt lịch' }}</h2>
+@unless ($approvalMode)
 <div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl w-fit">
 <a href="/{{ $coSo->slug }}/lich-hen" class="px-6 py-2 text-body-md font-semibold text-on-surface-variant hover:text-on-surface transition-all inline-block">Lịch trình</a>
 <button class="px-6 py-2 bg-surface-container-lowest text-on-surface font-bold rounded-lg shadow-sm border border-outline-variant/30 flex items-center gap-2">
@@ -156,6 +164,7 @@
                     Danh sách chi tiết
                 </button>
 </div>
+@endunless
 </div>
 <!-- Advanced Filters -->
 <form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4 mb-8">
@@ -186,6 +195,7 @@
 @endforeach
 </select>
 </div>
+@unless ($approvalMode)
 <div class="flex flex-col gap-1.5">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">TRẠNG THÁI</label>
 <select name="trang_thai" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
@@ -195,6 +205,7 @@
 <option value="da_xong" @selected(($filters['trang_thai'] ?? '')==='da_xong')>Đã xong</option>
 </select>
 </div>
+@endunless
 @php
     $pbId = auth()->user()->phong_ban_id;
     $vtId = auth()->user()->vai_tro_id;
@@ -205,7 +216,7 @@
     $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
 @endphp
 <div class="ml-auto flex items-center gap-2">
-<a href="/{{ $coSo->slug }}/danh-sach" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
+<a href="/{{ $coSo->slug }}/{{ $approvalMode ? 'duyet-lich' : 'danh-sach' }}" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
 <span class="material-symbols-outlined text-[18px]">restart_alt</span> Đặt lại
 </a>
 <button type="submit" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
@@ -222,15 +233,13 @@
 @endif
 </div>
 </div>
-</div>
-</div>
 </form>
 @if ($canExportBooking)
 <form id="import-booking" method="POST" action="/{{ $coSo->slug }}/nhap-booking" enctype="multipart/form-data" class="hidden">@csrf</form>
 @endif
 <!-- Data Table Container -->
 <div class="bg-surface-container-lowest rounded-2xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
-<div class="overflow-x-auto custom-scrollbar">
+<div class="overflow-x-auto custom-scrollbar w-full min-w-0">
 <table class="w-full text-left border-collapse table-auto min-w-[1800px] whitespace-nowrap">
 <thead>
 <tr class="bg-surface-container-low border-b border-outline-variant">
@@ -334,9 +343,11 @@
 <tr>
 <td colspan="18" class="px-4 py-16 text-center">
 <div class="flex flex-col items-center gap-2 text-on-surface-variant">
-<span class="material-symbols-outlined text-[40px] opacity-50">event_busy</span>
-<p class="text-body-md">Chưa có lịch hẹn nào khớp bộ lọc.</p>
+<span class="material-symbols-outlined text-[40px] opacity-50">{{ $approvalMode ? 'task_alt' : 'event_busy' }}</span>
+<p class="text-body-md">{{ $approvalMode ? 'Không còn đơn nào đang chờ duyệt.' : 'Chưa có lịch hẹn nào khớp bộ lọc.' }}</p>
+@unless ($approvalMode)
 <a href="/{{ $coSo->slug }}/tao-moi" class="mt-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg font-semibold text-body-sm">+ Tạo lịch hẹn</a>
+@endunless
 </div>
 </td>
 </tr>
@@ -390,4 +401,5 @@ Không có kết quả
         tableContainer.scrollLeft = scrollLeft - walk;
     });
 </script>
+@include('partials.datepicker')
 </body></html>

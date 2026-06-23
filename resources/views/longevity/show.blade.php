@@ -16,7 +16,7 @@ body { background-color: #f7f9fb; }
 <body class="font-body-md text-on-surface">
 @include('partials.topnav', ['active' => 'lich-hen'])
 <main class="pt-16 min-h-screen">
-<div class="p-container-margin max-w-5xl mx-auto">
+<div class="p-container-margin max-w-[1650px] mx-auto">
 <div class="flex items-center gap-4 py-6">
 <a href="javascript:history.back()" class="p-2 hover:bg-surface-container-low rounded-full transition-all">
 <span class="material-symbols-outlined">arrow_back</span>

@@ -15,7 +15,7 @@
     }
     $defaults = ['active' => 1, 'loai' => 'cong_dong', 'trang_thai' => 'hoat_dong',
         'so_slot_toi_da' => 1, 'gio_mo' => '08:00', 'gio_dong' => '21:00', 'chuc_danh' => '', 'ten' => '',
-        'thoi_gian_kham' => 20, 'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00'];
+        'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00'];
     $hasExtra = in_array($key, ['phong']);
     $colspan = count($cols) + ($hasExtra ? 1 : 0) + 1;
 @endphp

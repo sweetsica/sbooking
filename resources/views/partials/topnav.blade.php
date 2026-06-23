@@ -3,12 +3,25 @@
     $isAdmin = auth()->check() && auth()->user()->is_admin;
     $vaiTroMa = auth()->user()?->vaiTro?->ma;
 
+    // Quyền duyệt lịch (admin hoặc có trường 'duyet_booking' theo phòng ban / vai trò).
+    $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
+        if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
+        if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
+    })->where('truong', 'duyet_booking')->exists();
+
     $items = [
         ['key' => 'lich-hen',  'label' => 'Đặt phòng',       'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
         ['key' => 'tu-van',    'label' => 'Đặt lịch bác sĩ', 'icon' => 'medical_services', 'href' => '/'.$coSo->slug.'/lich-tu-van'],
         ['key' => 'bac-si',    'label' => 'Bác sĩ',           'icon' => 'stethoscope',    'href' => '/'.$coSo->slug.'/bac-si'],
         ['key' => 'phong',     'label' => 'Phòng Dịch vụ',    'icon' => 'meeting_room',   'href' => '/'.$coSo->slug.'/phong'],
     ];
+
+    // "Duyệt lịch": chỉ hiện cho người có quyền duyệt.
+    if ($canDuyet) {
+        array_splice($items, 1, 0, [
+            ['key' => 'duyet-lich', 'label' => 'Duyệt lịch', 'icon' => 'fact_check', 'href' => '/'.$coSo->slug.'/duyet-lich'],
+        ]);
+    }
 
     // Nhân viên: chỉ thấy "Đặt phòng" và "Đặt lịch bác sĩ".
     if ($vaiTroMa === 'nhan_vien') {
@@ -18,7 +31,7 @@
 @endphp
 <!-- Top Navigation Bar -->
 <header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center px-container-margin z-50">
-<div class="flex items-center gap-2 lg:gap-4 xl:gap-6 w-full max-w-[1600px] mx-auto min-w-0">
+<div class="flex items-center gap-2 lg:gap-4 xl:gap-6 w-full max-w-[1650px] mx-auto min-w-0">
 <!-- Brand Identity -->
 <a href="/{{ $coSo->slug }}/lich-hen" class="flex items-center gap-2 shrink-0 lg:mr-2">
 <div class="w-8 h-8 bg-primary rounded flex items-center justify-center shrink-0">

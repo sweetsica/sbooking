@@ -6,6 +6,7 @@ use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\KhachHang;
+use App\Models\KhungGio;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\User;
@@ -143,6 +144,50 @@ class BookingController extends Controller
         return $booked >= $capacity;
     }
 
+    // Cảnh báo (KHÔNG chặn) khi bác sĩ đã có lịch trùng giờ trong cùng ngày —
+    // kể cả ở phòng khác (so theo khoảng giờ thực tế, không theo khung_gio_id vì
+    // mỗi phòng có khung giờ riêng). Trả về câu cảnh báo hoặc null.
+    private function bacSiTrungLich(CoSo $co_so, int $bacSiId, string $ngay, int $khungGioId, ?string $gioThucHien, ?string $gioKetThuc, ?int $exceptId = null): ?string
+    {
+        $toMin = fn (?string $t) => $t ? ((int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2)) : null;
+        $kg = KhungGio::find($khungGioId);
+
+        $bd = $gioThucHien ?: ($kg ? substr($kg->gio_bat_dau, 0, 5) : null);
+        $kt = $gioKetThuc ?: ($kg ? substr($kg->gio_ket_thuc, 0, 5) : null);
+        $s = $toMin($bd);
+        if ($s === null) {
+            return null;
+        }
+        $e = $toMin($kt) ?? ($s + 60); // thiếu giờ kết thúc → mặc định 1 tiếng
+
+        $others = Booking::where('co_so_id', $co_so->id)
+            ->where('bac_si_user_id', $bacSiId)
+            ->whereDate('ngay_dat', $ngay)
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->with(['phong', 'khungGio'])
+            ->get();
+
+        foreach ($others as $o) {
+            $obd = $o->gio_thuc_hien ?: $o->khungGio?->gio_bat_dau;
+            $okt = $o->gio_ket_thuc ?: $o->khungGio?->gio_ket_thuc;
+            $os = $toMin($obd ? substr($obd, 0, 5) : null);
+            if ($os === null) {
+                continue;
+            }
+            $oe = $toMin($okt ? substr($okt, 0, 5) : null) ?? ($os + 60);
+
+            if ($s < $oe && $os < $e) { // hai khoảng giờ chồng nhau
+                $bs = User::find($bacSiId);
+
+                return 'Lưu ý: ' . ($bs?->ten_day_du ?? 'Bác sĩ') . ' đã có lịch lúc '
+                    . substr($obd, 0, 5) . ' tại ' . ($o->phong?->ten ?? 'phòng khác')
+                    . ' trong ngày này (trùng giờ) — lịch vẫn được lưu.';
+            }
+        }
+
+        return null;
+    }
+
     // Kiểm tra trùng số điện thoại trong cơ sở
     public function checkPhone(CoSo $co_so, Request $request)
     {
@@ -229,6 +274,11 @@ class BookingController extends Controller
         $gioBatDau = ! empty($data['gio_thuc_hien']) ? $data['gio_thuc_hien'] . ':00' : null;
         $gioKetThuc = ! empty($data['gio_ket_thuc']) ? $data['gio_ket_thuc'] . ':00' : null;
 
+        // Cảnh báo trùng lịch bác sĩ (tính trước khi tạo để không tự khớp chính nó)
+        $canhBaoBacSi = ! empty($data['bac_si_user_id'])
+            ? $this->bacSiTrungLich($co_so, (int) $data['bac_si_user_id'], $data['ngay_dat'], (int) $data['khung_gio_id'], $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null)
+            : null;
+
         $booking = Booking::create([
             'co_so_id'      => $co_so->id,
             'khach_hang_id' => $kh->id,
@@ -255,7 +305,8 @@ class BookingController extends Controller
         }
 
         return redirect("/{$co_so->slug}/danh-sach")
-            ->with('ok', 'Đã tạo lịch hẹn cho ' . $kh->ho_ten . '.');
+            ->with('ok', 'Đã tạo lịch hẹn cho ' . $kh->ho_ten . '.')
+            ->with('warning', $canhBaoBacSi);
     }
 
     public function update(CoSo $co_so, Booking $booking, Request $request)
@@ -360,8 +411,14 @@ class BookingController extends Controller
             $booking->menus()->sync($data['menu_ids'] ?? []);
         }
 
+        // Cảnh báo trùng lịch bác sĩ (bỏ qua chính booking đang sửa)
+        $canhBaoBacSi = $booking->bac_si_user_id
+            ? $this->bacSiTrungLich($co_so, (int) $booking->bac_si_user_id, (string) $booking->ngay_dat, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id)
+            : null;
+
         return redirect("/{$co_so->slug}/danh-sach")
-            ->with('ok', 'Đã cập nhật lịch hẹn của ' . $kh->ho_ten . '.');
+            ->with('ok', 'Đã cập nhật lịch hẹn của ' . $kh->ho_ten . '.')
+            ->with('warning', $canhBaoBacSi);
     }
 
     public function destroy(CoSo $co_so, Booking $booking)

@@ -114,7 +114,7 @@
 @include('partials.topnav', ['active' => 'lich-hen'])
 <!-- Main Content -->
 <main class="pt-16 min-h-screen">
-<div class="p-container-margin max-w-5xl mx-auto">
+<div class="p-container-margin max-w-[1650px] mx-auto">
 <!-- Breadcrumb -->
 <div class="flex items-center gap-4 py-6">
 <a href="{{ $editing ? '/'.$coSo->slug.'/danh-sach' : '/'.$coSo->slug.'/lich-hen' }}" class="p-2 hover:bg-surface-container-low rounded-full transition-all">
@@ -479,4 +479,5 @@
 })();
 </script>
 @endif
+@include('partials.datepicker')
 </body></html>

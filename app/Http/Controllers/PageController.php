@@ -277,9 +277,15 @@ class PageController extends Controller
         ]);
     }
 
-    public function bookings(CoSo $co_so, Request $request)
+    // Trang "Duyệt lịch": cùng danh sách nhưng chỉ các đơn đang chờ duyệt.
+    public function approvals(CoSo $co_so, Request $request)
     {
-        $this->authorizePerm('xem_booking');
+        return $this->bookings($co_so, $request, true);
+    }
+
+    public function bookings(CoSo $co_so, Request $request, bool $approvalMode = false)
+    {
+        $this->authorizePerm($approvalMode ? 'duyet_booking' : 'xem_booking');
 
         $query = Booking::where('co_so_id', $co_so->id)
             ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
@@ -297,7 +303,9 @@ class PageController extends Controller
         if ($request->filled('nguon')) {
             $query->where('nguon', $request->query('nguon'));
         }
-        if ($request->filled('trang_thai')) {
+        if ($approvalMode) {
+            $query->where('trang_thai', 'cho_duyet'); // khóa cứng chỉ đơn chờ duyệt
+        } elseif ($request->filled('trang_thai')) {
             $query->where('trang_thai', $request->query('trang_thai'));
         }
 
@@ -310,6 +318,7 @@ class PageController extends Controller
             'nguons' => Booking::where('co_so_id', $co_so->id)
                 ->whereNotNull('nguon')->distinct()->pluck('nguon'),
             'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'nguon', 'trang_thai']),
+            'approvalMode' => $approvalMode,
         ]);
     }
 }

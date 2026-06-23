@@ -47,6 +47,7 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::get('/phong',     [PageController::class, 'rooms'])->name('phong');
         Route::get('/lich-hen',  [PageController::class, 'timeline'])->name('timeline');
         Route::get('/danh-sach', [PageController::class, 'bookings'])->name('bookings');
+        Route::get('/duyet-lich', [PageController::class, 'approvals'])->name('approvals');
 
         // Trang Bác sĩ: lịch của từng bác sĩ, dữ liệu lấy từ Booking đặt phòng
         Route::get('/bac-si', [PageController::class, 'doctors'])->name('doctors');

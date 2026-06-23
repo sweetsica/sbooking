@@ -16,37 +16,38 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </head>
 <body class="bg-background text-on-surface">
 @include('partials.topnav', ['active' => 'phong'])
-<main class="pt-[calc(56px+24px)] pb-12 px-container-margin max-w-[1440px] mx-auto">
-<header class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
-<div>
+<main class="pt-[calc(56px+24px)] pb-12 px-container-margin max-w-[1650px] mx-auto">
+<!-- Header -->
+<div class="mb-6">
 <h1 class="font-headline-lg text-headline-lg text-primary mb-1">Quản lý Phòng Trị liệu</h1>
-<p class="font-body-md text-body-md text-on-surface-variant">Theo dõi tình trạng chiếm chỗ và hiệu suất sử dụng phòng thời gian thực.</p>
+<p class="font-body-md text-body-md text-on-surface-variant">Theo dõi tình trạng chiếm chỗ và hiệu suất sử dụng phòng thời gian thực · {{ $date->format('d/m/Y') }} · {{ $roomData->count() }} phòng.</p>
 </div>
-<div class="flex flex-wrap gap-3">
-<div class="flex bg-surface-container rounded-lg p-1">
-@foreach ($danhSachCoSo as $cs)
-<a href="/{{ $cs->slug }}/phong" class="px-4 py-1.5 rounded-md font-body-sm text-body-sm transition-colors {{ $cs->id === $coSo->id ? 'bg-surface shadow-sm font-semibold text-secondary' : 'hover:bg-surface-variant/50 text-on-surface-variant' }}">{{ $cs->ten }}</a>
-@endforeach
-</div>
-<a href="/{{ $coSo->slug }}/tao-moi" class="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl font-body-md text-body-md font-semibold transition-transform active:scale-95">
-<span class="material-symbols-outlined text-[20px]">add</span> Tạo booking
-</a>
-</div>
-</header>
 
-<!-- Date Filter -->
-<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-5 mb-6 flex flex-wrap items-end gap-4">
-<form method="GET" class="flex flex-wrap items-end gap-4 w-full">
-<div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">NGÀY</label>
+<!-- Date Filter (đồng bộ với trang Bác sĩ) -->
+<form method="GET" class="flex flex-wrap items-end gap-4 mb-6 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<div class="space-y-1.5">
+<label class="text-label-caps text-on-surface-variant block">NGÀY</label>
 <input name="ngay" value="{{ $date->toDateString() }}" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface" type="date"/>
 </div>
-<button type="submit" class="flex items-center gap-2 px-5 py-2 bg-primary text-on-primary rounded-lg font-semibold">
-<span class="material-symbols-outlined text-[18px]">filter_list</span> Lọc
-</button>
-<span class="text-body-sm text-on-surface-variant ml-2">{{ $date->format('d/m/Y') }} · {{ $roomData->count() }} phòng</span>
-</form>
+<div class="space-y-1.5 flex-1 min-w-[240px]">
+<label class="text-label-caps text-on-surface-variant block">CƠ SỞ</label>
+<select onchange="if(this.value)window.location.href=this.value" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface">
+@foreach ($danhSachCoSo as $cs)
+<option value="/{{ $cs->slug }}/phong" @selected($cs->id === $coSo->id)>{{ $cs->ten }}</option>
+@endforeach
+</select>
 </div>
+<div class="flex items-center gap-2 ml-auto">
+<button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+<span>Lọc</span>
+</button>
+<a href="/{{ $coSo->slug }}/tao-moi" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">add</span>
+<span>Tạo booking</span>
+</a>
+</div>
+</form>
 
 <!-- Room Grid -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-gutter">
@@ -183,4 +184,5 @@ $textClass = match($st) {
 </div>
 </section>
 </main>
+@include('partials.datepicker')
 </body></html>

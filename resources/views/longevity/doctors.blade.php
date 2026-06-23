@@ -17,7 +17,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <body class="bg-surface text-on-surface">
 @include('partials.topnav', ['active' => 'bac-si'])
 
-<main class="pt-[calc(56px+24px)] pb-12 px-container-margin max-w-[1600px] mx-auto">
+<main class="pt-[calc(56px+24px)] pb-12 px-container-margin max-w-[1650px] mx-auto">
 <!-- Header -->
 <div class="mb-6">
 <h2 class="font-headline-lg text-headline-lg text-primary mb-1">Lịch theo Bác sĩ</h2>
@@ -175,4 +175,5 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 @endforelse
 </div>
 </main>
+@include('partials.datepicker')
 </body></html>
