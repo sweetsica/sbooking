@@ -17,6 +17,12 @@ body { background-color: #f7f9fb; }
 @include('partials.topnav', ['active' => 'lich-hen'])
 <main class="pt-16 min-h-screen">
 <div class="p-container-margin max-w-[1650px] mx-auto">
+@php
+    $canDuyet = $canDuyet ?? false;
+    $approved = in_array($booking->trang_thai, ['da_duyet', 'da_xong'], true);
+    $rejected = $booking->trang_thai === 'tu_choi';
+    $done = $booking->trang_thai === 'da_xong';
+@endphp
 <div class="flex items-center gap-4 py-6">
 <a href="javascript:history.back()" class="p-2 hover:bg-surface-container-low rounded-full transition-all">
 <span class="material-symbols-outlined">arrow_back</span>
@@ -33,6 +39,24 @@ body { background-color: #f7f9fb; }
     };
 @endphp
 <span class="px-3 py-1 rounded-full text-body-sm font-semibold {{ $stBadge[1] }}">{{ $stBadge[0] }}</span>
+@endif
+
+@if ($canDuyet && ! $done)
+<div class="ml-auto flex items-center gap-2">
+@unless ($approved)
+<form method="POST" action="/{{ $coSo->slug }}/duyet-dat-phong/{{ $booking->id }}">
+@csrf @method('PATCH')
+<button type="submit" class="h-[40px] px-5 bg-on-tertiary-container text-white font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">check_circle</span> Duyệt
+</button>
+</form>
+@endunless
+@unless ($rejected)
+<button type="button" onclick="openReject()" class="h-[40px] px-5 border border-red-300 text-red-600 font-semibold rounded-lg flex items-center gap-2 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors">
+<span class="material-symbols-outlined text-[20px]">block</span> Không duyệt
+</button>
+@endunless
+</div>
 @endif
 </div>
 
@@ -201,4 +225,36 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 </div>
 </div>
 </main>
+
+@if ($canDuyet && ! $done)
+<!-- Popup lý do từ chối -->
+<div id="reject-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/40 p-4">
+<div class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant overflow-hidden">
+<form method="POST" action="/{{ $coSo->slug }}/tu-choi-dat-phong/{{ $booking->id }}">
+@csrf @method('PATCH')
+<div class="p-5 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-red-500">block</span>
+<h3 class="text-headline-md font-headline-md text-on-surface">Từ chối lịch hẹn</h3>
+</div>
+<div class="p-5 space-y-2">
+<p class="text-body-sm text-on-surface-variant">Lịch hẹn của <span class="font-semibold text-on-surface">{{ $booking->khachHang?->ho_ten ?? 'khách' }}</span> sẽ chuyển sang trạng thái <span class="text-red-600 font-semibold">Từ chối</span>.</p>
+<label class="text-label-caps font-label-caps text-red-600 block">Lý do từ chối<span class="text-red-500 ml-0.5">*</span></label>
+<textarea name="ly_do_tu_choi" required rows="3" autofocus placeholder="Nhập lý do từ chối lịch hẹn này..." class="w-full px-3 py-2 rounded-lg text-body-md outline-none transition-all border border-red-300 bg-red-50/40 focus:border-red-500 focus:ring-1 focus:ring-red-500/20">{{ old('ly_do_tu_choi') }}</textarea>
+</div>
+<div class="p-4 bg-surface-container-low/50 border-t border-outline-variant flex justify-end gap-2">
+<button type="button" onclick="closeReject()" class="px-4 py-2 text-on-surface-variant font-semibold rounded-lg hover:bg-surface-container-high transition-colors">Hủy</button>
+<button type="submit" class="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg flex items-center gap-2 hover:bg-red-700 transition-colors">
+<span class="material-symbols-outlined text-[20px]">block</span> Xác nhận từ chối
+</button>
+</div>
+</form>
+</div>
+</div>
+<script>
+function openReject(){var m=document.getElementById('reject-modal');m.classList.remove('hidden');m.classList.add('flex');document.body.style.overflow='hidden';var t=m.querySelector('textarea');if(t)setTimeout(function(){t.focus();},50);}
+function closeReject(){var m=document.getElementById('reject-modal');m.classList.add('hidden');m.classList.remove('flex');document.body.style.overflow='';}
+(function(){var m=document.getElementById('reject-modal');if(!m)return;m.addEventListener('click',function(e){if(e.target===this)closeReject();});document.addEventListener('keydown',function(e){if(e.key==='Escape')closeReject();});})();
+@if ($errors->has('ly_do_tu_choi')) openReject(); @endif
+</script>
+@endif
 </body></html>

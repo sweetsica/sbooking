@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\KhachHang;
@@ -9,6 +10,8 @@ use Illuminate\Http\Request;
 
 class SearchController extends Controller
 {
+    use AuthorizesByPhanQuyen;
+
     /**
      * Tìm lịch đặt phòng theo tên / SĐT khách hàng.
      */
@@ -52,6 +55,7 @@ class SearchController extends Controller
         return view('longevity.show', [
             'coSo' => $co_so,
             'booking' => $booking,
+            'canDuyet' => $this->hasPerm('duyet_booking'),
         ]);
     }
 }

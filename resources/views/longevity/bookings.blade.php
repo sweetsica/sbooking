@@ -315,13 +315,9 @@
 </form>
 @endunless
 @unless ($done || $rejected)
-<form method="POST" action="/{{ $coSo->slug }}/tu-choi-dat-phong/{{ $b->id }}" class="inline" onsubmit="var r=prompt('Lý do từ chối lịch hẹn này:'); if(r===null||r.trim()===''){return false;} this.ly_do_tu_choi.value=r;">
-@csrf @method('PATCH')
-<input type="hidden" name="ly_do_tu_choi">
-<button type="submit" title="Từ chối (không duyệt)" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-red-400 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500">
+<button type="button" onclick="openReject({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'))" title="Từ chối (không duyệt)" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-red-400 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500">
 <span class="material-symbols-outlined text-[16px]">block</span>
 </button>
-</form>
 @endunless
 @if ($approved || $done)
 <form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $b->id }}" class="inline">
@@ -413,5 +409,52 @@ Không có kết quả
         tableContainer.scrollLeft = scrollLeft - walk;
     });
 </script>
+
+@if ($canDuyet)
+<!-- Popup lý do từ chối (dùng chung cho mọi dòng) -->
+<div id="reject-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/40 p-4">
+<div class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant overflow-hidden">
+<form id="reject-form" method="POST" action="">
+@csrf @method('PATCH')
+<div class="p-5 border-b border-outline-variant flex items-center gap-2">
+<span class="material-symbols-outlined text-red-500">block</span>
+<h3 class="text-headline-md font-headline-md text-on-surface">Từ chối lịch hẹn</h3>
+</div>
+<div class="p-5 space-y-2">
+<p class="text-body-sm text-on-surface-variant">Lịch hẹn của <span id="reject-name" class="font-semibold text-on-surface"></span> sẽ chuyển sang trạng thái <span class="text-red-600 font-semibold">Từ chối</span>.</p>
+<label class="text-label-caps font-label-caps text-red-600 block">Lý do từ chối<span class="text-red-500 ml-0.5">*</span></label>
+<textarea name="ly_do_tu_choi" required rows="3" placeholder="Nhập lý do từ chối lịch hẹn này..." class="w-full px-3 py-2 rounded-lg text-body-md outline-none transition-all border border-red-300 bg-red-50/40 focus:border-red-500 focus:ring-1 focus:ring-red-500/20"></textarea>
+</div>
+<div class="p-4 bg-surface-container-low/50 border-t border-outline-variant flex justify-end gap-2">
+<button type="button" onclick="closeReject()" class="px-4 py-2 text-on-surface-variant font-semibold rounded-lg hover:bg-surface-container-high transition-colors">Hủy</button>
+<button type="submit" class="px-5 py-2 bg-red-600 text-white font-semibold rounded-lg flex items-center gap-2 hover:bg-red-700 transition-colors">
+<span class="material-symbols-outlined text-[20px]">block</span> Xác nhận từ chối
+</button>
+</div>
+</form>
+</div>
+</div>
+<script>
+(function(){
+    var base = "/{{ $coSo->slug }}/tu-choi-dat-phong/";
+    var m = document.getElementById('reject-modal');
+    var f = document.getElementById('reject-form');
+    window.openReject = function(id, name){
+        f.action = base + id;
+        document.getElementById('reject-name').textContent = name || 'khách';
+        f.ly_do_tu_choi.value = '';
+        m.classList.remove('hidden'); m.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function(){ f.ly_do_tu_choi.focus(); }, 50);
+    };
+    window.closeReject = function(){
+        m.classList.add('hidden'); m.classList.remove('flex');
+        document.body.style.overflow = '';
+    };
+    m.addEventListener('click', function(e){ if(e.target === this) closeReject(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeReject(); });
+})();
+</script>
+@endif
 @include('partials.datepicker')
 </body></html>
