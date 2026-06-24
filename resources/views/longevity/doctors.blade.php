@@ -24,25 +24,34 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <p class="text-on-surface-variant text-body-md">Lịch làm việc của từng bác sĩ, tổng hợp từ các lịch đặt phòng trong ngày.</p>
 </div>
 
+@php $view = $view ?? 'ngay'; $isDoctorView = $isDoctorView ?? false; @endphp
+
 <!-- Date Filter (đồng bộ với trang Lịch biểu) -->
 <form method="GET" class="flex flex-wrap items-end gap-4 mb-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<input type="hidden" name="view" value="{{ $view }}"/>
 <div class="space-y-1.5">
 <label class="text-label-caps text-on-surface-variant block">NGÀY</label>
 <input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
 </div>
-<div class="space-y-1.5 flex-1 min-w-[240px]">
+<!-- Nút Xem đẩy sát form ngày tháng -->
+<button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+<span>Xem</span>
+</button>
+<div class="space-y-1.5 flex-1 min-w-[200px]">
 <label class="text-label-caps text-on-surface-variant block">CƠ SỞ</label>
 <select onchange="if(this.value)window.location.href=this.value" class="form-select w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
 @foreach ($danhSachCoSo as $cs)
-<option value="/{{ $cs->slug }}/bac-si" @selected($cs->id === $coSo->id)>{{ $cs->ten }}</option>
+<option value="/{{ $cs->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view={{ $view }}" @selected($cs->id === $coSo->id)>{{ $cs->ten }}</option>
 @endforeach
 </select>
 </div>
 <div class="flex items-center gap-2 ml-auto">
-<button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
-<span class="material-symbols-outlined text-[20px]">filter_list</span>
-<span>Lọc</span>
-</button>
+<!-- Chuyển Ngày ↔ Tháng -->
+<div class="flex bg-surface-container-low rounded-lg p-1 h-[42px]">
+<a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=ngay" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
+<a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=thang" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
+</div>
 <a href="/{{ $coSo->slug }}/tao-moi" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
 <span>Tạo Booking</span>
@@ -50,12 +59,17 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </div>
 </form>
 
-<!-- Stats summary -->
-<div class="grid grid-cols-3 gap-4 mb-8">
+@if ($view === 'thang')
+@include('partials.month-calendar', ['cells' => $monthCells, 'monthStart' => $monthStart, 'linkBase' => '/'.$coSo->slug.'/bac-si', 'unit' => 'lịch'])
+@else
+
+<!-- Stats summary: bác sĩ chỉ cần tổng lịch, không quan tâm khâu duyệt -->
+<div class="grid {{ $isDoctorView ? 'grid-cols-1' : 'grid-cols-3' }} gap-4 mb-8">
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 text-center">
 <div class="text-headline-lg font-headline-lg text-primary">{{ $stats['total'] }}</div>
 <div class="text-body-sm text-on-surface-variant">Tổng lịch hẹn</div>
 </div>
+@unless ($isDoctorView)
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 text-center">
 <div class="text-headline-lg font-headline-lg text-on-tertiary-container">{{ $stats['approved'] }}</div>
 <div class="text-body-sm text-on-surface-variant">Đã duyệt / xong</div>
@@ -64,9 +78,10 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <div class="text-headline-lg font-headline-lg text-secondary">{{ $stats['pending'] }}</div>
 <div class="text-body-sm text-on-surface-variant">Chờ duyệt</div>
 </div>
+@endunless
 </div>
 
-@if ($unassigned->total() > 0)
+@if ($unassigned && $unassigned->total() > 0)
 <!-- Lịch chưa gán bác sĩ -->
 <div class="bg-surface-container-lowest border-2 border-dashed border-amber-300 rounded-xl p-5 mb-6">
 <div class="flex items-center gap-2 mb-3">
@@ -77,13 +92,15 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 @foreach ($unassigned as $b)
 @php
     $done = $b->trang_thai === 'da_xong';
+    $rejected = $b->trang_thai === 'tu_choi';
     $badge = $done ? ['Đã xong', 'bg-primary/10 text-primary']
         : ($b->trang_thai === 'da_duyet' ? ['Đã duyệt', 'bg-tertiary-fixed-dim/40 text-on-tertiary-container']
-        : ['Chờ duyệt', 'bg-amber-100 text-amber-800']);
+        : ($rejected ? ['Từ chối', 'bg-red-100 text-red-700']
+        : ['Chờ duyệt', 'bg-amber-100 text-amber-800']));
     $isTV = $b->co_tu_van;
     $isTK = $b->co_kham_cls;
-    $border = $isTV ? 'border-l-emerald-500' : ($isTK ? 'border-l-sky-500' : 'border-l-outline-variant');
-    $bg = $isTV ? 'bg-emerald-50' : ($isTK ? 'bg-sky-50' : 'bg-surface');
+    $border = $rejected ? 'border-l-red-400' : ($isTV ? 'border-l-emerald-500' : ($isTK ? 'border-l-sky-500' : 'border-l-outline-variant'));
+    $bg = $rejected ? 'bg-red-50' : ($isTV ? 'bg-emerald-50' : ($isTK ? 'bg-sky-50' : 'bg-surface'));
 @endphp
 <a href="/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}" class="flex items-center gap-3 p-3 rounded-lg border border-outline-variant/60 border-l-4 {{ $border }} {{ $bg }} hover:shadow-sm transition-all">
 <div class="font-time-slot text-body-sm text-on-surface-variant w-24 shrink-0">
@@ -96,7 +113,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <div class="flex items-center gap-1.5 shrink-0">
 @if ($isTV)<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Tư vấn</span>@endif
 @if ($isTK)<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">Thăm khám</span>@endif
-<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $badge[1] }}">{{ $badge[0] }}</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $badge[1] }}" @if($rejected && $b->ly_do_tu_choi) title="Lý do từ chối: {{ $b->ly_do_tu_choi }}" @endif>{{ $badge[0] }}</span>
 </div>
 </a>
 @endforeach
@@ -110,16 +127,28 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <!-- Grid of Doctor Cards -->
 <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 @forelse ($cards as $card)
-@php $bs = $card['bs']; @endphp
-<div class="rounded-xl p-5 card-hover bg-surface-container-lowest border border-outline-variant">
+@php
+    $bs = $card['bs'];
+    $empty = $card['total'] === 0;
+    $isTuVan = $bs->is_tu_van;
+    $gioLam = ($bs->gio_bat_dau && $bs->gio_ket_thuc)
+        ? substr($bs->gio_bat_dau, 0, 5) . ' – ' . substr($bs->gio_ket_thuc, 0, 5)
+        : null;
+@endphp
+<div class="rounded-xl p-5 card-hover border {{ $empty ? 'bg-amber-50 border-amber-200' : 'bg-surface-container-lowest border-outline-variant' }}">
 <!-- Profile -->
 <div class="flex items-start gap-4 mb-4">
-<div class="w-14 h-14 rounded-2xl bg-primary-container flex items-center justify-center shrink-0">
-<span class="material-symbols-outlined text-on-primary text-[26px]">stethoscope</span>
+<div class="w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 {{ $isTuVan ? 'bg-emerald-100' : 'bg-primary-container' }}">
+<span class="material-symbols-outlined text-[26px] {{ $isTuVan ? 'text-emerald-700' : 'text-on-primary' }}">stethoscope</span>
 </div>
-<div class="flex-1">
+<div class="flex-1 min-w-0">
 <h3 class="font-headline-md text-headline-md text-primary leading-tight">{{ $bs->ten_day_du }}</h3>
 <p class="text-on-surface-variant text-body-sm">{{ $bs->phongBan?->ten ?? 'Bác sĩ' }}</p>
+@if ($isTuVan)
+<span class="inline-flex items-center gap-1 mt-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
+<span class="material-symbols-outlined text-[12px]">public</span> Bsi. Tư vấn · Toàn hệ thống
+</span>
+@endif
 </div>
 <div class="text-right">
 <span class="text-label-caps font-label-caps text-on-surface-variant block">ĐÃ ĐẶT</span>
@@ -133,13 +162,15 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 @foreach ($card['items'] as $b)
 @php
     $done = $b->trang_thai === 'da_xong';
+    $rejected = $b->trang_thai === 'tu_choi';
     $badge = $done ? ['Đã xong', 'bg-primary/10 text-primary']
         : ($b->trang_thai === 'da_duyet' ? ['Đã duyệt', 'bg-tertiary-fixed-dim/40 text-on-tertiary-container']
-        : ['Chờ duyệt', 'bg-amber-100 text-amber-800']);
+        : ($rejected ? ['Từ chối', 'bg-red-100 text-red-700']
+        : ['Chờ duyệt', 'bg-amber-100 text-amber-800']));
     $isTV = $b->co_tu_van;
     $isTK = $b->co_kham_cls;
-    $border = $isTV ? 'border-l-emerald-500' : ($isTK ? 'border-l-sky-500' : 'border-l-outline-variant');
-    $bg = $isTV ? 'bg-emerald-50' : ($isTK ? 'bg-sky-50' : 'bg-surface');
+    $border = $rejected ? 'border-l-red-400' : ($isTV ? 'border-l-emerald-500' : ($isTK ? 'border-l-sky-500' : 'border-l-outline-variant'));
+    $bg = $rejected ? 'bg-red-50' : ($isTV ? 'bg-emerald-50' : ($isTK ? 'bg-sky-50' : 'bg-surface'));
 @endphp
 <a href="/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}" class="flex items-center gap-3 p-3 rounded-lg border border-outline-variant/60 border-l-4 {{ $border }} {{ $bg }} hover:shadow-sm transition-all">
 <div class="font-time-slot text-body-sm text-on-surface-variant w-24 shrink-0">
@@ -152,7 +183,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <div class="flex items-center gap-1.5 shrink-0">
 @if ($isTV)<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">Tư vấn</span>@endif
 @if ($isTK)<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-sky-100 text-sky-700">Thăm khám</span>@endif
-<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $badge[1] }}">{{ $badge[0] }}</span>
+@unless ($isDoctorView)<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $badge[1] }}" @if($rejected && $b->ly_do_tu_choi) title="Lý do từ chối: {{ $b->ly_do_tu_choi }}" @endif>{{ $badge[0] }}</span>@endunless
 </div>
 </a>
 @endforeach
@@ -161,9 +192,17 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <div class="mt-3">{{ $card['items']->onEachSide(0)->links() }}</div>
 @endif
 @else
-<div class="flex items-center gap-2 text-on-surface-variant/60 py-6 justify-center">
-<span class="material-symbols-outlined text-[18px]">event_busy</span>
-<span class="text-body-sm">Chưa có lịch đặt phòng.</span>
+<!-- Chưa có lịch đặt: vẫn hiện màu vàng + giờ làm việc -->
+<div class="flex items-center gap-3 rounded-lg bg-amber-100/60 border border-amber-200 px-4 py-4">
+<span class="material-symbols-outlined text-amber-600">schedule</span>
+<div class="min-w-0">
+<div class="text-body-sm font-semibold text-amber-800">Chưa có lịch đặt phòng</div>
+@if ($gioLam)
+<div class="text-body-sm text-amber-700">Giờ làm việc: <span class="font-time-slot font-semibold">{{ $gioLam }}</span></div>
+@else
+<div class="text-body-sm text-amber-700/80">Chưa thiết lập giờ làm việc.</div>
+@endif
+</div>
 </div>
 @endif
 </div>
@@ -174,6 +213,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </div>
 @endforelse
 </div>
+@endif
 </main>
 @include('partials.datepicker')
 </body></html>

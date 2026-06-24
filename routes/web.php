@@ -64,6 +64,7 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::put('/sua-dat-phong/{booking}',    [BookingController::class, 'update'])->name('booking.update');
         Route::delete('/xoa-dat-phong/{booking}', [BookingController::class, 'destroy'])->name('booking.destroy');
         Route::patch('/duyet-dat-phong/{booking}', [BookingController::class, 'duyet'])->name('booking.approve');
+        Route::patch('/tu-choi-dat-phong/{booking}', [BookingController::class, 'tuChoi'])->name('booking.reject');
         Route::patch('/xong-dat-phong/{booking}',  [BookingController::class, 'xong'])->name('booking.done');
 
         Route::get('/xuat-booking',  [ExcelController::class, 'exportBooking'])->name('excel.exportBooking');

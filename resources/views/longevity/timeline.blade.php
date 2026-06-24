@@ -134,13 +134,15 @@
 <a href="/{{ $coSo->slug }}/danh-sach" class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface inline-block">Danh sách</a>
 </div>
 </div>
+@php $view = $view ?? 'ngay'; $tlPhong = $room ? '&phong_id='.$room->id : ''; @endphp
 <!-- Filters Bar -->
 <form method="GET" class="flex flex-wrap items-end gap-4 mb-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<input type="hidden" name="view" value="{{ $view }}"/>
 <div class="space-y-1.5">
 <label class="text-label-caps text-on-surface-variant block">NGÀY</label>
 <input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
 </div>
-<div class="space-y-1.5 flex-1 min-w-[240px]">
+<div class="space-y-1.5 w-[240px]">
 <label class="text-label-caps text-on-surface-variant block">PHÒNG / KHU VỰC</label>
 <select name="phong_id" onchange="this.form.submit()" class="form-select w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
 @foreach ($rooms as $rm)
@@ -148,17 +150,27 @@
 @endforeach
 </select>
 </div>
-<div class="flex items-center gap-2 ml-auto">
 <button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
 <span class="material-symbols-outlined text-[20px]">filter_list</span>
 <span>Xem</span>
 </button>
+<div class="flex items-center gap-2 ml-auto">
+<!-- Chuyển Ngày ↔ Tháng -->
+<div class="flex bg-surface-container-low rounded-lg p-1 h-[42px]">
+<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=ngay{{ $tlPhong }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
+<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=thang{{ $tlPhong }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
+</div>
 <a href="/{{ $coSo->slug }}/tao-moi" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
 <span class="">Tạo Booking</span>
 </a>
 </div>
 </form>
+
+@if ($view === 'thang')
+@include('partials.month-calendar', ['cells' => $monthCells, 'monthStart' => $monthStart, 'linkBase' => '/'.$coSo->slug.'/lich-hen', 'extra' => $room ? '&phong_id='.$room->id : '', 'unit' => 'lịch'])
+@endif
+@if ($view !== 'thang')
 <!-- View Container: Timeline -->
 <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm transition-all duration-300 opacity-100" id="view-timeline">
 <div class="p-4 border-b border-outline-variant bg-surface-container-low flex flex-wrap justify-between items-center gap-3">
@@ -357,6 +369,7 @@
 <span class="material-symbols-outlined ml-auto text-on-surface-variant group-hover:translate-x-1 transition-transform">chevron_right</span>
 </div>
 </div>
+@endif
 </div>
 </main>
 <!-- Floating Action Button -->
@@ -364,6 +377,7 @@
 <span class="material-symbols-outlined text-[28px]">add</span>
 <span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Tạo nhanh booking</span>
 </button>
+@if ($view !== 'thang')
 <script>
         function switchView(view) {
             const timelineView = document.getElementById('view-timeline');
@@ -410,5 +424,6 @@
         placeNowLine();
         setInterval(placeNowLine, 60000);
     </script>
+@endif
 @include('partials.datepicker')
 </body></html>

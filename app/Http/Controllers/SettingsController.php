@@ -61,17 +61,18 @@ class SettingsController extends Controller
             'nguoi-dung' => [
                 'model' => User::class, 'kind' => 'user',
                 'fields' => [
-                    'name'           => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                    // 3 trường bắt buộc gom liền nhau cho dễ nhập.
+                    'name'           => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255'], 'required' => true],
+                    'username'       => ['label' => 'Tài khoản', 'type' => 'text', 'rules' => [], 'required' => true, 'placeholder' => 'vd: tttg'],
+                    'password'       => ['label' => 'Mật khẩu', 'type' => 'password', 'rules' => [], 'required' => true, 'virtual' => true, 'placeholder' => 'Tối thiểu 6 ký tự', 'hint' => 'Để trống nếu giữ nguyên (khi sửa)'],
                     'chuc_danh'      => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / KTV. / PGS.TS.BS.'],
-                    'username'       => ['label' => 'Tài khoản', 'type' => 'text', 'rules' => [], 'placeholder' => 'vd: tttg'],
-                    'email'          => ['label' => 'Email', 'type' => 'text', 'rules' => []],
+                    'email'          => ['label' => 'Email', 'type' => 'text', 'rules' => [], 'placeholder' => 'Không bắt buộc'],
                     'phong_ban_id'   => ['label' => 'Phòng ban', 'type' => 'select', 'options' => ['' => '— Không —'] + $phongBanOptions, 'rules' => ['nullable', Rule::exists('phong_ban', 'id')]],
                     'vai_tro_id'     => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
                     // Ẩn toggle "Quản trị (mọi cơ sở)": muốn cấp quyền admin thì chọn vai trò "Quản trị hệ thống" (tự bật is_admin).
                     'is_tu_van'      => ['label' => 'Tư vấn (xuất hiện mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
                     'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
                     'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
-                    'password'       => ['label' => 'Mật khẩu', 'type' => 'password', 'rules' => [], 'virtual' => true, 'placeholder' => 'Tối thiểu 6 ký tự'],
                 ],
             ],
             'co-so' => [
@@ -243,8 +244,8 @@ class SettingsController extends Controller
         $data = $request->validate([
             'name'           => ['required', 'string', 'max:255'],
             'chuc_danh'      => ['nullable', 'string', 'max:50'],
-            'username'       => ['nullable', 'string', 'max:50', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($user?->id)],
-            'email'          => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
+            'username'       => ['required', 'string', 'max:50', 'regex:/^[a-z0-9._-]+$/', Rule::unique('users', 'username')->ignore($user?->id)],
+            'email'          => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'phong_ban_id'   => ['nullable', Rule::exists('phong_ban', 'id')],
             'vai_tro_id'     => ['nullable', Rule::exists('vai_tro', 'id')],
             'is_admin'       => ['nullable', 'boolean'],
@@ -253,10 +254,10 @@ class SettingsController extends Controller
             'gio_ket_thuc'   => ['nullable', 'string', 'max:5'],
             'password'       => [$user ? 'nullable' : 'required', 'string', 'min:6'],
         ], [
+            'username.required' => 'Vui lòng nhập tài khoản đăng nhập.',
             'username.regex'    => 'Tài khoản chỉ gồm chữ thường, số, dấu chấm, gạch dưới hoặc gạch ngang.',
             'username.unique'   => 'Tài khoản này đã có người dùng. Vui lòng chọn tài khoản khác.',
             'name.required'     => 'Vui lòng nhập họ tên.',
-            'email.required'    => 'Vui lòng nhập email.',
             'email.email'       => 'Email không hợp lệ.',
             'email.unique'      => 'Email này đã được dùng cho tài khoản khác.',
             'password.required' => 'Vui lòng nhập mật khẩu cho người dùng mới (tối thiểu 6 ký tự).',
@@ -272,7 +273,7 @@ class SettingsController extends Controller
             'name'           => $data['name'],
             'chuc_danh'      => ($data['chuc_danh'] ?? null) ?: null,
             'username'       => ($data['username'] ?? null) ?: null,
-            'email'          => $data['email'],
+            'email'          => ($data['email'] ?? null) ?: null,
             'phong_ban_id'   => ($data['phong_ban_id'] ?? null) ?: null,
             'vai_tro_id'     => $vaiTroId,
             'is_admin'       => $isAdmin,

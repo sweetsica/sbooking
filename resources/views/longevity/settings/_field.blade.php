@@ -1,6 +1,11 @@
 @php
     $type = $f['type'] ?? 'text';
-    $ic = 'w-full px-3 py-2 bg-surface border border-outline rounded-lg text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all';
+    $req = ! empty($f['required']);
+    // Trường bắt buộc: viền đỏ nhạt + focus đỏ để nổi bật.
+    $border = $req
+        ? 'border-red-300 bg-red-50/40 focus:border-red-500 focus:ring-1 focus:ring-red-500/20'
+        : 'border-outline bg-surface focus:border-secondary focus:ring-1 focus:ring-secondary/20';
+    $ic = "w-full px-3 py-2 rounded-lg text-body-md outline-none transition-all {$border}";
 @endphp
 @if ($type === 'toggle')
 <label class="inline-flex items-center gap-2 cursor-pointer">

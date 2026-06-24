@@ -24,9 +24,24 @@ body { background-color: #f7f9fb; }
 <h2 class="text-headline-md font-headline-md font-extrabold text-on-surface">Chi tiết Lịch Hẹn</h2>
 <span class="ml-1 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container text-body-sm font-semibold">{{ $coSo->ten }}</span>
 @if ($booking->trang_thai)
-<span class="px-3 py-1 rounded-full bg-surface-container-high text-on-surface-variant text-body-sm font-semibold">{{ $booking->trang_thai }}</span>
+@php
+    $stBadge = match ($booking->trang_thai) {
+        'da_xong'  => ['Đã xong', 'bg-primary/10 text-primary'],
+        'da_duyet' => ['Đã duyệt', 'bg-tertiary-fixed-dim/40 text-on-tertiary-container'],
+        'tu_choi'  => ['Từ chối', 'bg-red-100 text-red-700'],
+        default    => ['Chờ duyệt', 'bg-secondary-container/40 text-on-secondary-container'],
+    };
+@endphp
+<span class="px-3 py-1 rounded-full text-body-sm font-semibold {{ $stBadge[1] }}">{{ $stBadge[0] }}</span>
 @endif
 </div>
+
+@if ($booking->trang_thai === 'tu_choi' && $booking->ly_do_tu_choi)
+<div class="mb-6 flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-200 text-red-800 text-body-sm">
+<span class="material-symbols-outlined text-red-500 text-[20px]">block</span>
+<div><span class="font-semibold">Lý do từ chối:</span> {{ $booking->ly_do_tu_choi }}</div>
+</div>
+@endif
 
 <div class="mb-6 flex items-center gap-2 p-3 rounded-xl bg-secondary-container/20 border border-secondary/20 text-on-secondary-container text-body-sm">
 <span class="material-symbols-outlined text-[20px]">visibility</span>

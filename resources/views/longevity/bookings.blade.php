@@ -203,6 +203,7 @@
 <option value="cho_duyet" @selected(($filters['trang_thai'] ?? '')==='cho_duyet')>Chờ duyệt</option>
 <option value="da_duyet" @selected(($filters['trang_thai'] ?? '')==='da_duyet')>Đã duyệt</option>
 <option value="da_xong" @selected(($filters['trang_thai'] ?? '')==='da_xong')>Đã xong</option>
+<option value="tu_choi" @selected(($filters['trang_thai'] ?? '')==='tu_choi')>Từ chối</option>
 </select>
 </div>
 @endunless
@@ -265,8 +266,9 @@
 </thead>
 <tbody class="divide-y divide-outline-variant/30">
 @forelse ($bookings as $b)
-<tr class="hover:bg-surface-variant/10 transition-colors">
-<td class="px-4 py-4 sticky-col sticky-left-0 bg-surface-container-lowest shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+@php $rejected = $b->trang_thai === 'tu_choi'; $rowBg = $rejected ? 'bg-red-50' : 'bg-surface-container-lowest'; @endphp
+<tr class="transition-colors {{ $rejected ? 'bg-red-50 hover:bg-red-100/60' : 'hover:bg-surface-variant/10' }}">
+<td class="px-4 py-4 sticky-col sticky-left-0 {{ $rowBg }} shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
 <span class="text-body-sm font-time-slot text-on-surface-variant">{{ $b->created_at->format('d/m H:i') }}</span>
 </td>
 <td class="px-4 py-4 font-bold text-on-surface">{{ $b->khachHang?->ho_ten }}</td>
@@ -291,7 +293,7 @@
 <td class="px-4 py-4 text-body-sm">{{ $b->bacSi?->ten_day_du ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm">{{ $b->ktv?->ten_day_du ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant italic truncate max-w-[150px]" title="{{ $b->ghi_chu }}">{{ $b->ghi_chu ?: '—' }}</td>
-<td class="px-4 py-4 sticky-col sticky-right-0 bg-surface-container-lowest shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
+<td class="px-4 py-4 sticky-col sticky-right-0 {{ $rowBg }} shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
 <div class="flex items-center justify-end gap-1">
 @php
     $approved = $b->trang_thai === 'da_duyet';
@@ -299,15 +301,25 @@
     $badge = $done
         ? ['Đã xong', 'bg-primary/10 text-primary']
         : ($approved ? ['Đã duyệt', 'bg-tertiary-fixed-dim/40 text-on-tertiary-container']
-                     : ['Chờ duyệt', 'bg-secondary-container/40 text-on-secondary-container']);
+        : ($rejected ? ['Từ chối', 'bg-red-100 text-red-700']
+                     : ['Chờ duyệt', 'bg-secondary-container/40 text-on-secondary-container']));
 @endphp
-<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $badge[1] }}">{{ $badge[0] }}</span>
+<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $badge[1] }}" @if($rejected && $b->ly_do_tu_choi) title="Lý do từ chối: {{ $b->ly_do_tu_choi }}" @endif>{{ $badge[0] }}</span>
 @if ($canDuyet)
 @unless ($done)
 <form method="POST" action="/{{ $coSo->slug }}/duyet-dat-phong/{{ $b->id }}" class="inline">
 @csrf @method('PATCH')
 <button type="submit" title="{{ $approved ? 'Bỏ duyệt' : 'Duyệt' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $approved ? 'bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error' : 'text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container' }}">
 <span class="material-symbols-outlined text-[16px]">{{ $approved ? 'close' : 'check' }}</span>
+</button>
+</form>
+@endunless
+@unless ($done || $rejected)
+<form method="POST" action="/{{ $coSo->slug }}/tu-choi-dat-phong/{{ $b->id }}" class="inline" onsubmit="var r=prompt('Lý do từ chối lịch hẹn này:'); if(r===null||r.trim()===''){return false;} this.ly_do_tu_choi.value=r;">
+@csrf @method('PATCH')
+<input type="hidden" name="ly_do_tu_choi">
+<button type="submit" title="Từ chối (không duyệt)" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-red-400 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500">
+<span class="material-symbols-outlined text-[16px]">block</span>
 </button>
 </form>
 @endunless

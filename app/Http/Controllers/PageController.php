@@ -17,11 +17,47 @@ class PageController extends Controller
     {
         $danhSachCoSo = CoSo::where('active', true)->orderBy('id')->get();
         $date = $request->date('ngay') ?? now(); // mặc định hôm nay
+        $view = $request->query('view') === 'thang' ? 'thang' : 'ngay';
+
+        // Tài khoản đang đăng nhập có phải bác sĩ không (không phải admin).
+        $authUser = auth()->user();
+        $isDoctorView = $authUser && ! $authUser->is_admin
+            && in_array($authUser->vaiTro?->ma, ['bac_si', 'bac_si_tu_van'], true);
 
         $vaiTroIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
         $bacSis = User::whereIn('vai_tro_id', $vaiTroIds)
             ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->with('phongBan')
             ->orderBy('name')->get();
+
+        // Tài khoản bác sĩ: chỉ quan tâm lịch của chính mình.
+        $bacSiUserId = $isDoctorView ? $authUser->id : null;
+
+        // ----- VIEW THÁNG: lưới lịch, mỗi ô đếm số booking trong ngày -----
+        if ($view === 'thang') {
+            $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $bacSiUserId) {
+                $q = Booking::where('co_so_id', $co_so->id)
+                    ->whereBetween('ngay_dat', [$from, $to]);
+                if ($bacSiUserId) $q->where('bac_si_user_id', $bacSiUserId);
+
+                return $q->selectRaw('DATE(ngay_dat) d, COUNT(*) c')->groupBy('d')->pluck('c', 'd')->all();
+            });
+
+            return view('longevity.doctors', [
+                'coSo' => $co_so,
+                'danhSachCoSo' => $danhSachCoSo,
+                'date' => $date,
+                'view' => $view,
+                'isDoctorView' => $isDoctorView,
+                'monthCells' => $month['cells'],
+                'monthStart' => $month['monthStart'],
+            ]);
+        }
+
+        // Tài khoản bác sĩ chỉ xem thẻ của chính mình.
+        if ($bacSiUserId) {
+            $bacSis = $bacSis->where('id', $bacSiUserId)->values();
+        }
 
         // Mỗi bác sĩ: 5 lịch gần nhất + phân trang riêng (page param "bs{id}").
         $cards = $bacSis->map(function ($bs) use ($co_so, $date) {
@@ -40,16 +76,20 @@ class PageController extends Controller
             ];
         });
 
-        // Lịch chưa gán bác sĩ (vẫn cần hiển thị để không bỏ sót).
-        $unassignedQ = Booking::where('co_so_id', $co_so->id)
-            ->whereNull('bac_si_user_id')
-            ->whereDate('ngay_dat', $date)
-            ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
-            ->orderByDesc('gio_thuc_hien')->orderByDesc('id');
-        $unassigned = $unassignedQ->paginate(5, ['*'], 'chuaphan')->withQueryString();
+        // Lịch chưa gán bác sĩ (chỉ admin/nhân viên cần thấy để phân; bác sĩ thì không).
+        $unassigned = null;
+        if (! $isDoctorView) {
+            $unassigned = Booking::where('co_so_id', $co_so->id)
+                ->whereNull('bac_si_user_id')
+                ->whereDate('ngay_dat', $date)
+                ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
+                ->orderByDesc('gio_thuc_hien')->orderByDesc('id')
+                ->paginate(5, ['*'], 'chuaphan')->withQueryString();
+        }
 
         // Thống kê tổng (mọi lịch của cơ sở trong ngày đã chọn).
         $statQ = Booking::where('co_so_id', $co_so->id)->whereDate('ngay_dat', $date);
+        if ($bacSiUserId) $statQ->where('bac_si_user_id', $bacSiUserId);
         $total = (clone $statQ)->count();
         $approved = (clone $statQ)->whereIn('trang_thai', ['da_duyet', 'da_xong'])->count();
 
@@ -57,6 +97,8 @@ class PageController extends Controller
             'coSo' => $co_so,
             'danhSachCoSo' => $danhSachCoSo,
             'date' => $date,
+            'view' => $view,
+            'isDoctorView' => $isDoctorView,
             'cards' => $cards,
             'unassigned' => $unassigned,
             'stats' => [
@@ -67,6 +109,36 @@ class PageController extends Controller
         ]);
     }
 
+    /**
+     * Dựng lưới lịch tháng (tuần bắt đầu Thứ Hai). $counter($from, $to) trả về
+     * map ['Y-m-d' => số booking] để tô màu + hiển thị số lịch mỗi ngày.
+     */
+    private function buildMonthCells(\Illuminate\Support\Carbon $date, \Closure $counter): array
+    {
+        $monthStart = $date->copy()->startOfMonth();
+        $monthEnd = $date->copy()->endOfMonth();
+        $gridStart = $monthStart->copy()->startOfWeek(\Carbon\CarbonInterface::MONDAY);
+        $gridEnd = $monthEnd->copy()->endOfWeek(\Carbon\CarbonInterface::SUNDAY);
+
+        $counts = $counter($monthStart->toDateString(), $monthEnd->toDateString());
+        $today = now()->toDateString();
+        $selected = $date->toDateString();
+
+        $cells = [];
+        for ($d = $gridStart->copy(); $d <= $gridEnd; $d->addDay()) {
+            $key = $d->toDateString();
+            $cells[] = [
+                'date' => $d->copy(),
+                'inMonth' => $d->month === $monthStart->month,
+                'count' => (int) ($counts[$key] ?? 0),
+                'isToday' => $key === $today,
+                'isSelected' => $key === $selected,
+            ];
+        }
+
+        return ['cells' => $cells, 'monthStart' => $monthStart];
+    }
+
     public function rooms(CoSo $co_so, Request $request)
     {
         $danhSachCoSo = CoSo::where('active', true)->orderBy('id')->get();
@@ -74,6 +146,7 @@ class PageController extends Controller
         $phongs = $co_so->phongs()->with('khungGios')->orderBy('id')->get();
 
         $bookingsByPhong = Booking::where('co_so_id', $co_so->id)
+            ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
             ->whereDate('ngay_dat', $date)
             ->get()
             ->groupBy('phong_id');
@@ -126,10 +199,33 @@ class PageController extends Controller
         // Trang chủ Lịch hẹn: mọi tài khoản đã đăng nhập đều xem được (không khóa theo quyền)
         $rooms = $co_so->phongs()->orderBy('id')->get();
         $date = $request->date('ngay') ?? now();
+        $view = $request->query('view') === 'thang' ? 'thang' : 'ngay';
 
         $room = $rooms->firstWhere('id', (int) $request->query('phong_id'))
             ?? $rooms->firstWhere('trang_thai', 'hoat_dong')
             ?? $rooms->first();
+
+        // ----- VIEW THÁNG: lưới lịch, mỗi ô đếm số booking của phòng trong ngày -----
+        if ($view === 'thang') {
+            $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room) {
+                $q = Booking::where('co_so_id', $co_so->id)
+                    ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
+                    ->whereBetween('ngay_dat', [$from, $to]);
+                if ($room) $q->where('phong_id', $room->id);
+
+                return $q->selectRaw('DATE(ngay_dat) d, COUNT(*) c')->groupBy('d')->pluck('c', 'd')->all();
+            });
+
+            return view('longevity.timeline', [
+                'coSo' => $co_so,
+                'rooms' => $rooms,
+                'room' => $room,
+                'date' => $date,
+                'view' => $view,
+                'monthCells' => $month['cells'],
+                'monthStart' => $month['monthStart'],
+            ]);
+        }
 
         $slots = $room ? $room->khungGios()->orderBy('thu_tu')->get() : collect();
         $beds = $room ? max(1, (int) $room->so_slot_toi_da) : 0;
@@ -138,6 +234,7 @@ class PageController extends Controller
         if ($room) {
             $bookings = Booking::where('co_so_id', $co_so->id)
                 ->where('phong_id', $room->id)
+                ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ trong lịch biểu
                 ->whereDate('ngay_dat', $date)
                 ->with(['khachHang', 'dichVu', 'bacSi', 'ktv', 'khungGio'])
                 ->orderBy('id')->get();
@@ -260,6 +357,7 @@ class PageController extends Controller
             'rooms' => $rooms,
             'room' => $room,
             'date' => $date,
+            'view' => $view,
             'beds' => $nbeds,
             'bedColumns' => $bedColumns,
             'hours' => $hours,

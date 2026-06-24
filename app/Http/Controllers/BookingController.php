@@ -443,11 +443,34 @@ class BookingController extends Controller
         $approve = ! $booking->da_duyet;
         $booking->da_duyet = $approve;
         $booking->trang_thai = $approve ? 'da_duyet' : 'cho_duyet';
+        $booking->ly_do_tu_choi = null; // duyệt lại thì xóa lý do từ chối cũ
         $booking->save();
 
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
 
         return back()->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch hẹn của ' . $ten . '.');
+    }
+
+    /** Từ chối (không duyệt) lịch đặt phòng kèm lý do (chỉ người có quyền duyệt). */
+    public function tuChoi(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('duyet_booking');
+
+        $data = $request->validate([
+            'ly_do_tu_choi' => ['required', 'string', 'max:1000'],
+        ], [
+            'ly_do_tu_choi.required' => 'Vui lòng nhập lý do từ chối.',
+        ]);
+
+        $booking->trang_thai = 'tu_choi';
+        $booking->da_duyet = false;
+        $booking->ly_do_tu_choi = $data['ly_do_tu_choi'];
+        $booking->save();
+
+        $ten = $booking->khachHang?->ho_ten ?? 'khách';
+
+        return back()->with('ok', 'Đã từ chối lịch hẹn của ' . $ten . '.');
     }
 
     /** Đánh dấu đã xong / hoàn tác về đã duyệt. */

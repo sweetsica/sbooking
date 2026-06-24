@@ -14,7 +14,7 @@ class Booking extends Model
         'co_so_id', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
         'bac_si_user_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
         'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
-        'ghi_chu', 'trang_thai', 'da_duyet',
+        'ghi_chu', 'trang_thai', 'ly_do_tu_choi', 'da_duyet',
     ];
 
     protected $casts = [

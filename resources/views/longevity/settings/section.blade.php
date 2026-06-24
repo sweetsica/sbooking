@@ -158,18 +158,32 @@
 <span class="material-symbols-outlined text-[20px]" x-text="open ? 'close' : 'add'">add</span>
 <span x-text="open ? 'Đóng' : 'Thêm mới'">Thêm mới</span>
 </button>
-<div x-show="open" x-cloak class="mt-3 p-4 bg-surface-container-lowest border border-outline-variant rounded-xl">
-<form method="POST" action="{{ $action }}" class="flex flex-wrap items-end gap-3">
+@php $hasRequired = collect($config['fields'])->contains(fn ($ff) => ! empty($ff['required'])); @endphp
+<div x-show="open" x-cloak class="mt-3 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
+<form method="POST" action="{{ $action }}">
 @csrf
+<div class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
 @foreach ($config['fields'] as $fn => $ff)
-<div class="flex flex-col gap-1 {{ $ff['type'] === 'toggle' ? 'justify-end pb-2' : 'min-w-[150px]' }}">
-@if ($ff['type'] !== 'toggle')<label class="text-label-caps font-label-caps text-on-surface-variant">{{ $ff['label'] }}</label>@endif
+@php $isReq = ! empty($ff['required']); @endphp
+<div class="flex flex-col gap-1.5 {{ $ff['type'] === 'toggle' ? 'sm:col-span-2 lg:col-span-3 justify-end' : '' }}">
+@if ($ff['type'] !== 'toggle')
+<label class="text-label-caps font-label-caps {{ $isReq ? 'text-red-600' : 'text-on-surface-variant' }}">{{ $ff['label'] }}@if ($isReq)<span class="text-red-500 ml-0.5">*</span>@endif</label>
+@endif
 @include('longevity.settings._field', ['name' => $fn, 'f' => $ff, 'value' => old($fn, $defaults[$fn] ?? '')])
+@if (! empty($ff['hint']))<span class="text-[11px] text-on-surface-variant/70">{{ $ff['hint'] }}</span>@endif
 </div>
 @endforeach
-<button type="submit" class="px-5 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2">
+</div>
+<div class="px-5 py-3 bg-surface-container-low/50 border-t border-outline-variant flex items-center justify-between gap-3">
+@if ($hasRequired)
+<p class="text-body-sm text-on-surface-variant flex items-center gap-1"><span class="text-red-500 font-bold">*</span> Trường bắt buộc nhập</p>
+@else
+<span></span>
+@endif
+<button type="submit" class="px-5 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
 <span class="material-symbols-outlined text-[20px]">save</span> Lưu
 </button>
+</div>
 </form>
 </div>
 </div>
@@ -236,8 +250,9 @@
 <form method="POST" action="{{ $action }}/{{ $r->id }}" class="flex flex-wrap items-end gap-3">
 @csrf @method('PUT')
 @foreach ($config['fields'] as $fn => $ff)
+@php $isReq = ! empty($ff['required']); @endphp
 <div class="flex flex-col gap-1 {{ $ff['type'] === 'toggle' ? 'justify-end pb-2' : 'min-w-[150px]' }}">
-@if ($ff['type'] !== 'toggle')<label class="text-label-caps font-label-caps text-on-surface-variant">{{ $ff['label'] }}</label>@endif
+@if ($ff['type'] !== 'toggle')<label class="text-label-caps font-label-caps {{ $isReq ? 'text-red-600' : 'text-on-surface-variant' }}">{{ $ff['label'] }}@if ($isReq)<span class="text-red-500 ml-0.5">*</span>@endif</label>@endif
 @include('longevity.settings._field', ['name' => $fn, 'f' => $ff, 'value' => old($fn, $vals[$fn])])
 </div>
 @endforeach
