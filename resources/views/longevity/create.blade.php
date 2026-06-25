@@ -111,7 +111,7 @@
 <body class="font-body-md text-on-surface">
 @php $bk = $bk ?? null; $editing = (bool) $bk; @endphp
 <!-- Top Navigation Bar (Replacing SideNavBar) -->
-@include('partials.topnav', ['active' => 'lich-hen'])
+@include('partials.topnav', ['active' => ($loaiDatLich ?? 'phong_kham') === 'dich_vu' ? 'dich-vu' : 'lich-hen'])
 <!-- Main Content -->
 <main class="pt-16 min-h-screen">
 <div class="p-container-margin max-w-[1650px] mx-auto">
@@ -143,7 +143,9 @@
 
 <!-- Main Form Card -->
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden mb-12">
-<form class="p-8" id="booking-form" method="POST" action="{{ $editing ? '/'.$coSo->slug.'/sua-dat-phong/'.$bk->id : '/'.$coSo->slug.'/tao-moi' }}">
+@php $isDichVu = ($loaiDatLich ?? 'phong_kham') === 'dich_vu'; @endphp
+<form class="p-8" id="booking-form" method="POST" action="{{ $editing ? '/'.$coSo->slug.'/sua-dat-phong/'.$bk->id : ($isDichVu ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/tao-moi') }}">
+<input type="hidden" name="loai_dat_lich" value="{{ $isDichVu ? 'dich_vu' : 'phong_kham' }}"/>
 @csrf
 @if ($editing) @method('PUT') @endif
 <!-- System Info -->
@@ -162,23 +164,32 @@
 </div>
 </div>
 
-<!-- Loại lịch: Tư vấn / Thăm khám lâm sàng (ngay sau Nguồn) -->
-<div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-4">
-<label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
-<span class="flex items-center gap-2 text-body-md font-medium text-on-surface"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Tư vấn</span>
-<div class="relative inline-flex items-center cursor-pointer">
-<input class="sr-only peer" type="checkbox" name="co_tu_van" value="1" @checked(old('co_tu_van', $bk?->co_tu_van))/>
-<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-emerald-500"></div>
-</div>
+@if (! $isDichVu)
+<!-- Loại chính: Tư vấn / Thăm khám lâm sàng (mutex) -->
+@php
+    $loaiChinh = old('loai_chinh', $bk?->co_tu_van ? 'tu_van' : ($bk?->co_kham_cls ? 'kham_ls' : ''));
+@endphp
+<div class="mb-10">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-2">Loại chính (chọn để tự lọc bác sĩ + chia khung giờ theo phút)</label>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/30">
+<input type="radio" name="loai_chinh" value="" @checked($loaiChinh === '') class="w-4 h-4 text-secondary"/>
+<span class="text-body-md">Không chọn (dùng dịch vụ thường)</span>
 </label>
-<label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
-<span class="flex items-center gap-2 text-body-md font-medium text-on-surface"><span class="w-3 h-3 rounded-full bg-sky-500"></span> Thăm khám lâm sàng</span>
-<div class="relative inline-flex items-center cursor-pointer">
-<input class="sr-only peer" type="checkbox" name="co_kham_cls" value="1" @checked(old('co_kham_cls', $bk?->co_kham_cls))/>
-<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-500"></div>
-</div>
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
+<input type="radio" name="loai_chinh" value="tu_van" @checked($loaiChinh === 'tu_van') class="w-4 h-4 text-emerald-500"/>
+<span class="flex items-center gap-2 text-body-md"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Tư vấn / Đọc kết quả</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50">
+<input type="radio" name="loai_chinh" value="kham_ls" @checked($loaiChinh === 'kham_ls') class="w-4 h-4 text-sky-500"/>
+<span class="flex items-center gap-2 text-body-md"><span class="w-3 h-3 rounded-full bg-sky-500"></span> Thăm khám lâm sàng</span>
 </label>
 </div>
+{{-- Cờ co_tu_van/co_kham_cls vẫn lưu (backend không đổi schema) - đồng bộ từ radio bằng hidden input --}}
+<input type="hidden" name="co_tu_van" id="co_tu_van" value="{{ $loaiChinh === 'tu_van' ? '1' : '0' }}"/>
+<input type="hidden" name="co_kham_cls" id="co_kham_cls" value="{{ $loaiChinh === 'kham_ls' ? '1' : '0' }}"/>
+</div>
+@endif
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
 <!-- Section 1: Customer -->
@@ -222,7 +233,11 @@
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Phòng (Room) <span class="text-error">*</span></label>
 <select id="phong" name="phong_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 @foreach ($phongs as $p)
-<option value="{{ $p->id }}" @selected(old('phong_id', $bk?->phong_id)==$p->id)>{{ $p->ten }} ({{ $p->so_slot_toi_da }} slot)</option>
+<option value="{{ $p->id }}"
+    data-kieu="{{ $p->kieu_phong }}"
+    data-phut="{{ $p->phut_moi_khach }}"
+    data-ktv="{{ $p->ktv_mac_dinh_id }}"
+    @selected(old('phong_id', $bk?->phong_id)==$p->id)>{{ $p->ten }} ({{ $p->so_slot_toi_da }} slot)</option>
 @endforeach
 </select>
 </div>
@@ -258,9 +273,81 @@
 </div>
 </div>
 </div>
+
+{{-- Khung tham khảo lịch trình bác sĩ / phòng theo cơ sở --}}
+@php $lichTrinh = config('lich-trinh.'.$coSo->slug); @endphp
+@if ($lichTrinh)
+<details class="mt-4 bg-secondary-container/30 border border-outline-variant rounded-xl overflow-hidden" open>
+<summary class="px-4 py-2.5 cursor-pointer flex items-center gap-2 hover:bg-secondary-container/50 select-none">
+<span class="material-symbols-outlined text-secondary text-[20px]">info</span>
+<span class="font-semibold text-on-secondary-container">Quy tắc đặt lịch — {{ $coSo->ten }}</span>
+<span class="text-body-sm text-on-surface-variant ml-2">(giờ hoạt động: {{ $lichTrinh['gio_hoat_dong'] }})</span>
+</summary>
+<div class="overflow-x-auto bg-surface-container-lowest border-t border-outline-variant">
+<table class="w-full text-body-sm">
+<thead class="bg-surface-container-low text-left text-label-caps font-label-caps uppercase text-on-surface-variant">
+<tr>
+<th class="px-3 py-2">Phòng</th>
+<th class="px-3 py-2">Bác sĩ / Vai trò</th>
+<th class="px-3 py-2">Ưu tiên</th>
+<th class="px-3 py-2">Ghi chú</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40">
+@foreach ($lichTrinh['rows'] as $r)
+<tr class="hover:bg-surface-container-low/50 align-top">
+<td class="px-3 py-2 font-medium whitespace-nowrap">{{ $r['phong'] }}</td>
+<td class="px-3 py-2">
+@if ($r['bac_si'])
+<div class="font-medium">{{ $r['bac_si'] }}</div>
+@endif
+@if ($r['vai_tro'])
+<div class="text-[11px] text-on-surface-variant">{{ $r['vai_tro'] }}</div>
+@endif
+@if (! $r['bac_si']) <span class="text-on-surface-variant">—</span> @endif
+</td>
+<td class="px-3 py-2">
+@forelse ($r['uu_tien'] as $u)
+<div>{{ $u }}</div>
+@empty
+<span class="text-on-surface-variant">—</span>
+@endforelse
+</td>
+<td class="px-3 py-2 text-on-surface-variant">
+@forelse ($r['ghi_chu'] as $g)
+<div>{{ $g }}</div>
+@empty
+—
+@endforelse
+</td>
+</tr>
+@endforeach
+</tbody>
+</table>
+</div>
+</details>
+@endif
 </div>
 
-<!-- Section 3: Service -->
+@if ($isDichVu)
+<!-- Section 3 (Đặt dịch vụ): chỉ KTV -->
+<div class="space-y-6 order-1">
+<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
+<span class="material-symbols-outlined text-secondary">engineering</span>
+<h3 class="text-headline-md font-headline-md">Kỹ thuật viên</h3>
+</div>
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
+<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
+@foreach ($ktvs as $k)
+<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
+@endforeach
+</select>
+</div>
+</div>
+@else
+<!-- Section 3: Chi tiết Dịch vụ (đặt phòng khám) -->
 <div class="space-y-6 order-1">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">medical_information</span>
@@ -269,9 +356,9 @@
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Liệu pháp (Therapy/Service) <span class="text-error">*</span></label>
-<select name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 @foreach ($dichVus as $dv)
-<option value="{{ $dv->id }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
+<option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
 @endforeach
 </select>
 </div>
@@ -281,8 +368,8 @@
 <input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ</label>
-<select name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ <span class="text-on-surface-variant/60 text-[11px]" id="bs_hint"></span></label>
+<select id="bac_si" name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 <option value="">-- Chọn --</option>
 @foreach ($bacSis as $bs)
 <option value="{{ $bs->id }}" @selected(old('bac_si_user_id', $bk?->bac_si_user_id)==$bs->id)>{{ $bs->ten_day_du }}</option>
@@ -310,6 +397,7 @@
 </div>
 </div>
 </div>
+@endif
 
 <!-- Section 4: Admin & Notes -->
 <div class="space-y-6 order-4">
@@ -319,11 +407,11 @@
 </div>
 <div class="space-y-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Sale phụ trách <span class="text-error">*</span></label>
-<select name="sale_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Sale phụ trách @if (! $isDichVu)<span class="text-error">*</span>@else<span class="text-on-surface-variant/60 text-[11px]">— không bắt buộc</span>@endif</label>
+<select name="sale_id" @if (! $isDichVu) required @endif class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 <option value="">-- Chọn nhân viên Sales --</option>
 @foreach ($sales as $s)
-<option value="{{ $s->id }}" @selected(old('sale_id', $bk?->sale_id)==$s->id)>{{ $s->name }}</option>
+<option value="{{ $s->id }}" @selected(old('sale_id', $bk?->sale_id)==$s->id)>{{ $s->name }}{{ $s->chuc_danh ? ' ('.$s->chuc_danh.')' : '' }}</option>
 @endforeach
 </select>
 @if ($sales->isEmpty())
@@ -379,21 +467,34 @@
     let fullHours = new Set();
     let firstRun = true;
 
-    // Tải khung giờ theo phòng + ngày, khóa khung đã đầy (đủ số slot của phòng)
+    // Tải khung giờ theo phòng + ngày + BS + dịch vụ (để tách sub-slot theo phút BS)
     async function loadSlots() {
         let data = { slots: [] };
         if (phong && phong.value) {
+            const dvEl = document.getElementById('dich_vu');
+            const bsEl = document.getElementById('bac_si');
+            const params = new URLSearchParams({ phong_id: phong.value, ngay: ngay ? ngay.value : '' });
+            if (editId) params.append('except', editId);
+            if (bsEl && bsEl.value) params.append('bac_si_id', bsEl.value);
+            if (dvEl && dvEl.value) params.append('dich_vu_id', dvEl.value);
             try {
-                const r = await fetch(`/${slug}/tao-moi/khung-gio?phong_id=${phong.value}&ngay=${encodeURIComponent(ngay ? ngay.value : '')}${editId ? `&except=${editId}` : ''}`);
+                const r = await fetch(`/${slug}/tao-moi/khung-gio?${params}`);
                 data = await r.json();
             } catch (e) {}
         }
         const slots = data.slots || [];
         fullHours = new Set(slots.filter(s => s.full).map(s => s.gio));
         khung.innerHTML = slots.length
-            ? slots.map(s => {
+            ? slots.flatMap(s => {
+                // Nếu có sub-slot (đã chọn BS + dịch vụ) → render từng sub-slot
+                if (s.sub_slots && s.sub_slots.length) {
+                    return s.sub_slots.map(ss => {
+                        const lbl = `${ss.bd} - ${ss.kt}` + (ss.full ? ' — đã đặt 🔒' : '');
+                        return `<option value="${s.id}" data-kt="${ss.kt}" data-bd="${ss.bd}" data-gio="${s.gio}" ${ss.full ? 'disabled' : ''}>${lbl}</option>`;
+                    });
+                }
                 const trong = s.capacity > 1 ? ` (còn ${s.capacity - s.booked}/${s.capacity})` : '';
-                return `<option value="${s.id}" data-kt="${s.kt}" data-gio="${s.gio}" ${s.full ? 'disabled' : ''}>${s.nhan}${s.full ? ' — đã đầy 🔒' : trong}</option>`;
+                return [`<option value="${s.id}" data-kt="${s.kt}" data-bd="${s.bd}" data-gio="${s.gio}" ${s.full ? 'disabled' : ''}>${s.nhan}${s.full ? ' — đã đầy 🔒' : trong}</option>`];
             }).join('')
             : '<option value="">(Phòng chưa cấu hình khung giờ)</option>';
         if (oldKhung) { const o = khung.querySelector(`option[value="${oldKhung}"]`); if (o && !o.disabled) khung.value = oldKhung; }
@@ -417,20 +518,122 @@
         });
     }
 
-    // Gợi ý giờ kết thúc theo khung giờ; lần đầu giữ giá trị cũ (khi reload lỗi)
+    // Gợi ý giờ thực hiện + giờ kết thúc theo khung giờ (hoặc sub-slot) đã chọn
     function updateEnd() {
         if (firstRun) { firstRun = false; if (!ketThuc.dataset.old) return; }
 
         const opt = khung.options[khung.selectedIndex];
-        const kt = opt ? (opt.getAttribute('data-kt') || '') : '';
-        if (kt) { const t = ketThuc.querySelector(`option[value="${kt}"]`); if (t && !t.disabled) ketThuc.value = kt; }
+        if (!opt) return;
+        const bd = opt.getAttribute('data-bd') || '';
+        const kt = opt.getAttribute('data-kt') || '';
+
+        // Đảm bảo giờ bd/kt tồn tại trong dropdown (insert nếu thiếu, vì có phút lẻ 25, 05...)
+        const ensureOption = (sel, val) => {
+            if (!val) return;
+            if (![...sel.options].some(o => o.value === val)) {
+                const opt = document.createElement('option');
+                opt.value = val; opt.textContent = val;
+                sel.appendChild(opt);
+            }
+        };
+        if (batDau && bd) { ensureOption(batDau, bd); batDau.value = bd; }
+        if (kt) { ensureOption(ketThuc, kt); ketThuc.value = kt; }
+    }
+
+    // Auto-fill KTV mặc định + cập nhật meta khi chọn phòng dịch vụ
+    function syncPhongMeta() {
+        const opt = phong.options[phong.selectedIndex];
+        if (!opt) return;
+        const ktvId = opt.dataset.ktv;
+        const ktvSel = document.querySelector('[name="ktv_user_id"]');
+        if (ktvSel && ktvId) {
+            const target = ktvSel.querySelector(`option[value="${ktvId}"]`);
+            if (target) ktvSel.value = ktvId;
+        }
     }
 
     if (phong) {
-        phong.addEventListener('change', loadSlots);
+        phong.addEventListener('change', () => { syncPhongMeta(); loadSlots(); });
         if (ngay) ngay.addEventListener('change', loadSlots);
         khung.addEventListener('change', updateEnd);
         loadSlots();
+        syncPhongMeta();
+    }
+
+    // ===== Radio "Loại chính" (mutex Tư vấn / Khám LS / Không) =====
+    const dichVu = document.getElementById('dich_vu');
+    const bacSi = document.getElementById('bac_si');
+    const bsHint = document.getElementById('bs_hint');
+    const hCoTuVan = document.getElementById('co_tu_van');
+    const hCoKhamCls = document.getElementById('co_kham_cls');
+    document.querySelectorAll('input[name="loai_chinh"]').forEach(r => {
+        r.addEventListener('change', () => {
+            const v = r.value;
+            if (hCoTuVan) hCoTuVan.value = v === 'tu_van' ? '1' : '0';
+            if (hCoKhamCls) hCoKhamCls.value = v === 'kham_ls' ? '1' : '0';
+
+            // Auto-select dịch vụ matching nhóm
+            if (v && dichVu) {
+                const match = [...dichVu.options].find(o => o.dataset.nhom === v);
+                if (match) dichVu.value = match.value;
+            }
+            loadBacSi();
+            loadSlots();
+        });
+    });
+
+    let bsAbortCtl;
+
+    async function loadBacSi() {
+        if (!bacSi || !khung || !dichVu || !ngay) return;
+        const params = new URLSearchParams({
+            khung_gio_id: khung.value || '',
+            dich_vu_id: dichVu.value || '',
+            ngay: ngay.value || '',
+        });
+        if (editId) params.append('except', editId);
+        if (!khung.value || !dichVu.value || !ngay.value) return;
+
+        if (bsAbortCtl) bsAbortCtl.abort();
+        bsAbortCtl = new AbortController();
+        if (bsHint) bsHint.textContent = '(đang kiểm tra…)';
+
+        try {
+            const r = await fetch(`/${slug}/tao-moi/check-bac-si?${params}`, { signal: bsAbortCtl.signal });
+            const j = await r.json();
+            const map = {};
+            (j.list || []).forEach(b => { map[b.id] = b; });
+
+            [...bacSi.options].forEach(o => {
+                if (!o.value) return;
+                const info = map[o.value];
+                if (!info) { o.disabled = false; o.textContent = o.dataset.origin || o.textContent; return; }
+                if (!o.dataset.origin) o.dataset.origin = o.textContent;
+                if (info.available) {
+                    o.disabled = false;
+                    o.textContent = o.dataset.origin;
+                } else {
+                    o.disabled = true;
+                    o.textContent = o.dataset.origin + ' — đã kín lịch 🔒';
+                }
+            });
+            // Nếu BS đang chọn bị disable thì auto bỏ chọn
+            if (bacSi.selectedOptions[0] && bacSi.selectedOptions[0].disabled) {
+                bacSi.value = '';
+            }
+            if (bsHint) bsHint.textContent = '';
+        } catch (e) {
+            if (e.name !== 'AbortError' && bsHint) bsHint.textContent = '';
+        }
+    }
+    if (bacSi) {
+        if (dichVu) {
+            dichVu.addEventListener('change', () => { loadBacSi(); loadSlots(); });
+        }
+        if (khung) khung.addEventListener('change', loadBacSi);
+        if (ngay) ngay.addEventListener('change', loadBacSi);
+        bacSi.addEventListener('change', loadSlots);
+        loadBacSi();
     }
 
     // Kiểm tra trùng số điện thoại

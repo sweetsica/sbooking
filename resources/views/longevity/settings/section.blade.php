@@ -15,7 +15,10 @@
     }
     $defaults = ['active' => 1, 'loai' => 'cong_dong', 'trang_thai' => 'hoat_dong',
         'so_slot_toi_da' => 1, 'gio_mo' => '08:00', 'gio_dong' => '21:00', 'chuc_danh' => '', 'ten' => '',
-        'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00'];
+        'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00',
+        'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac',
+        'phut_tu_van' => 30, 'phut_kham_ls' => 5,
+        'kieu_phong' => 'phong_kham', 'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => ''];
     $hasExtra = in_array($key, ['phong']);
     $colspan = count($cols) + ($hasExtra ? 1 : 0) + 1;
 @endphp
@@ -38,7 +41,9 @@
 </div>
 </div>
 
-@if ($key === 'quyen')
+@if ($key === 'bao-cao')
+@include('longevity.settings.bao-cao')
+@elseif ($key === 'quyen')
 {{-- Ma trận phân quyền: vai trò × trường, gom theo nhóm --}}
 @php $vaiTros = $quyen['vaiTros']; $groups = $quyen['groups']; $allowed = $quyen['allowed']; @endphp
 <form method="POST" action="{{ $action }}">
@@ -187,6 +192,52 @@
 </form>
 </div>
 </div>
+@endif
+
+@if ($key === 'nguoi-dung' && $userFilters)
+{{-- Form lọc người dùng --}}
+<form method="GET" action="{{ $action }}" class="mb-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Tên</label>
+<input type="text" name="q" value="{{ $userFilters['current']['q'] ?? '' }}" placeholder="Tìm theo họ tên..."
+class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Vai trò</label>
+<select name="vai_tro_id" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
+<option value="">— Tất cả —</option>
+@foreach ($userFilters['vaiTros'] as $vt)
+<option value="{{ $vt->id }}" @selected(($userFilters['current']['vai_tro_id'] ?? '') == $vt->id)>{{ $vt->ten }}</option>
+@endforeach
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Chức danh</label>
+<select name="chuc_danh" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
+<option value="">— Tất cả —</option>
+@foreach ($userFilters['chucDanhs'] as $cd)
+<option value="{{ $cd }}" @selected(($userFilters['current']['chuc_danh'] ?? '') === $cd)>{{ $cd }}</option>
+@endforeach
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Trạng thái tư vấn</label>
+<select name="is_tu_van" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
+<option value="">— Tất cả —</option>
+<option value="1" @selected(($userFilters['current']['is_tu_van'] ?? '') === '1')>Bật</option>
+<option value="0" @selected(($userFilters['current']['is_tu_van'] ?? '') === '0')>Tắt</option>
+</select>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-3">
+<button type="submit" class="px-4 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
+<span class="material-symbols-outlined text-[20px]">search</span> Lọc
+</button>
+<a href="{{ $action }}" class="px-4 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg">Xóa lọc</a>
+<span class="text-body-sm text-on-surface-variant ml-auto">{{ $rows->count() }} người dùng</span>
+</div>
+</form>
 @endif
 
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">

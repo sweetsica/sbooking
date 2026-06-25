@@ -10,7 +10,11 @@ class Phong extends Model
 {
     protected $table = 'phong';
 
-    protected $fillable = ['co_so_id', 'ten', 'loai', 'so_slot_toi_da', 'trang_thai'];
+    protected $fillable = ['co_so_id', 'ten', 'loai', 'kieu_phong', 'so_slot_toi_da', 'phut_moi_khach', 'ktv_mac_dinh_id', 'trang_thai'];
+
+    protected $casts = [
+        'phut_moi_khach' => 'integer',
+    ];
 
     public function coSo(): BelongsTo
     {
@@ -20,5 +24,10 @@ class Phong extends Model
     public function khungGios(): HasMany
     {
         return $this->hasMany(KhungGio::class, 'phong_id')->orderBy('thu_tu');
+    }
+
+    public function ktvMacDinh(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'ktv_mac_dinh_id');
     }
 }

@@ -1,5 +1,9 @@
 @php
     $active = $active ?? 'lich-hen';
+    // Phân biệt active giữa "Đặt lịch phòng khám" và "Đặt lịch dịch vụ" qua param ?kieu=dich_vu
+    if ($active === 'lich-hen' && request('kieu') === 'dich_vu') {
+        $active = 'dich-vu';
+    }
     $isAdmin = auth()->check() && auth()->user()->is_admin;
     $vaiTroMa = auth()->user()?->vaiTro?->ma;
 
@@ -10,10 +14,10 @@
     })->where('truong', 'duyet_booking')->exists();
 
     $items = [
-        ['key' => 'lich-hen',  'label' => 'Đặt phòng',       'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
-        ['key' => 'tu-van',    'label' => 'Đặt lịch bác sĩ', 'icon' => 'medical_services', 'href' => '/'.$coSo->slug.'/lich-tu-van'],
-        ['key' => 'bac-si',    'label' => 'Bác sĩ',           'icon' => 'stethoscope',    'href' => '/'.$coSo->slug.'/bac-si'],
-        ['key' => 'phong',     'label' => 'Phòng Dịch vụ',    'icon' => 'meeting_room',   'href' => '/'.$coSo->slug.'/phong'],
+        ['key' => 'lich-hen',  'label' => 'Đặt lịch phòng khám', 'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
+        ['key' => 'dich-vu',   'label' => 'Đặt lịch dịch vụ',    'icon' => 'spa',            'href' => '/'.$coSo->slug.'/lich-hen?kieu=dich_vu'],
+        ['key' => 'bac-si',    'label' => 'Bác sĩ',              'icon' => 'stethoscope',    'href' => '/'.$coSo->slug.'/bac-si'],
+        ['key' => 'phong',     'label' => 'Phòng Dịch vụ',       'icon' => 'meeting_room',   'href' => '/'.$coSo->slug.'/phong'],
     ];
 
     // "Duyệt lịch": chỉ hiện cho người có quyền duyệt.
@@ -23,9 +27,9 @@
         ]);
     }
 
-    // Nhân viên: chỉ thấy "Đặt phòng" và "Đặt lịch bác sĩ".
+    // Nhân viên: chỉ thấy 2 loại đặt lịch.
     if ($vaiTroMa === 'nhan_vien') {
-        $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'tu-van'], true)));
+        $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'dich-vu'], true)));
     }
     // "Thiết lập" đã có icon bánh răng ở góc phải -> không lặp lại trong menu.
 @endphp

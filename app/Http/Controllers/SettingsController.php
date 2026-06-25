@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\DichVu;
+use App\Models\LichHen;
 use App\Models\Menu;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
@@ -28,6 +30,7 @@ class SettingsController extends Controller
         'nguoi-dung' => ['Người dùng', 'group', 'Thêm/sửa/xóa người dùng (bao gồm KTV, Bác sĩ, Lễ tân...).'],
         'dich-vu'    => ['Dịch vụ', 'spa', 'CRUD tên dịch vụ — đưa vào form tạo mới.'],
         'menu'       => ['Menu', 'restaurant_menu', 'CRUD tên Menu — đưa vào form tạo mới (dạng ô tick).'],
+        'bao-cao'    => ['Báo cáo', 'analytics', 'Tổng hợp lịch đặt phòng + lịch tư vấn theo bộ lọc, xuất Excel.'],
     ];
 
     // Cấu hình các mục có CRUD
@@ -40,6 +43,8 @@ class SettingsController extends Controller
         return [
             'dich-vu' => $catalog(DichVu::class, [
                 'ten'    => ['label' => 'Tên dịch vụ', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                'thoi_gian_phut' => ['label' => 'Thời gian (phút/khách)', 'type' => 'number', 'rules' => ['required', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 30'],
+                'thuoc_nhom' => ['label' => 'Thuộc nhóm', 'type' => 'select', 'options' => ['khac' => 'Khác', 'tu_van' => 'Tư vấn', 'kham_ls' => 'Thăm khám lâm sàng'], 'rules' => ['required', 'in:tu_van,kham_ls,khac']],
                 'active' => ['label' => 'Kích hoạt', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
             ]),
             'menu' => $catalog(Menu::class, [
@@ -48,8 +53,11 @@ class SettingsController extends Controller
             ]),
             'phong' => $catalog(Phong::class, [
                 'ten'            => ['label' => 'Tên phòng', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                'kieu_phong'    => ['label' => 'Kiểu phòng', 'type' => 'select', 'options' => ['phong_kham' => 'Phòng khám', 'phong_dich_vu' => 'Phòng dịch vụ'], 'rules' => ['required', Rule::in(['phong_kham', 'phong_dich_vu'])]],
                 'loai'          => ['label' => 'Loại', 'type' => 'select', 'options' => ['kham' => 'Khám', 'vip' => 'VIP', 'cong_dong' => 'Cộng đồng'], 'rules' => ['required', 'string', 'max:30']],
                 'so_slot_toi_da' => ['label' => 'Số slot tối đa', 'type' => 'number', 'rules' => ['required', 'integer', 'min:1', 'max:99']],
+                'phut_moi_khach' => ['label' => 'Phút/khách (phòng dịch vụ)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 30', 'hint' => 'Chỉ dùng cho phòng dịch vụ'],
+                'ktv_mac_dinh_id' => ['label' => 'KTV mặc định', 'type' => 'select', 'options' => ['' => '— Không —'] + \App\Models\User::whereHas('vaiTro', fn ($q) => $q->where('ma', 'ktv'))->orderBy('name')->pluck('name', 'id')->all(), 'rules' => ['nullable', Rule::exists('users', 'id')], 'hint' => 'Auto chọn khi khách đặt phòng dịch vụ'],
                 'trang_thai'    => ['label' => 'Trạng thái', 'type' => 'select', 'options' => ['hoat_dong' => 'Hoạt động', 'bao_tri' => 'Bảo trì'], 'rules' => ['required', Rule::in(['hoat_dong', 'bao_tri'])]],
                 'gio_mo'        => ['label' => 'Giờ mở cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
                 'gio_dong'      => ['label' => 'Giờ đóng cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
@@ -71,6 +79,10 @@ class SettingsController extends Controller
                     'vai_tro_id'     => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
                     // Ẩn toggle "Quản trị (mọi cơ sở)": muốn cấp quyền admin thì chọn vai trò "Quản trị hệ thống" (tự bật is_admin).
                     'is_tu_van'      => ['label' => 'Tư vấn (xuất hiện mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                    'nhan_tu_van'    => ['label' => 'Tư vấn / Đọc kết quả', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                    'phut_tu_van'    => ['label' => 'Số phút thực hiện (tư vấn)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 30'],
+                    'nhan_kham_ls'   => ['label' => 'Thăm khám lâm sàng', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                    'phut_kham_ls'   => ['label' => 'Số phút thực hiện (khám LS)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 5'],
                     'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
                     'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
                 ],
@@ -104,7 +116,7 @@ class SettingsController extends Controller
         return view('longevity.settings.index', ['coSo' => $co_so, 'sections' => self::SECTIONS]);
     }
 
-    public function section(CoSo $co_so, string $section)
+    public function section(CoSo $co_so, string $section, Request $request)
     {
         abort_unless(isset(self::SECTIONS[$section]), 404);
         $config = $this->editableConfig()[$this->resolveSection($section)] ?? null;
@@ -114,13 +126,34 @@ class SettingsController extends Controller
             'dich-vu'    => $co_so->dichVus()->get(),
             'menu'       => $co_so->menus()->get(),
             'nguoi-dung' => User::with(['phongBan', 'vaiTro'])
-                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id')) // gồm cả quản trị toàn hệ thống
+                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
+                ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->query('q').'%'))
+                ->when($request->filled('vai_tro_id'), fn ($q) => $q->where('vai_tro_id', $request->query('vai_tro_id')))
+                ->when($request->filled('chuc_danh'), fn ($q) => $q->where('chuc_danh', $request->query('chuc_danh')))
+                ->when($request->filled('is_tu_van'), fn ($q) => $q->where('is_tu_van', $request->query('is_tu_van') === '1'))
                 ->orderByDesc('is_admin')->orderBy('name')->get(),
             'co-so'      => CoSo::orderBy('id')->get(),
             'phong-ban'  => PhongBan::orderBy('id')->get(),
             'vai-tro'    => VaiTro::orderBy('id')->get(),
             default      => collect(),
         };
+
+        // Dữ liệu báo cáo (filter + counter)
+        $baoCao = null;
+        if ($section === 'bao-cao') {
+            $baoCao = $this->buildBaoCao($co_so, $request);
+        }
+
+        // Dữ liệu cho form lọc người dùng
+        $userFilters = null;
+        if ($section === 'nguoi-dung') {
+            $userFilters = [
+                'vaiTros' => VaiTro::orderBy('id')->get(),
+                'chucDanhs' => User::whereNotNull('chuc_danh')->where('chuc_danh', '!=', '')
+                    ->distinct()->orderBy('chuc_danh')->pluck('chuc_danh'),
+                'current' => $request->only(['q', 'vai_tro_id', 'chuc_danh', 'is_tu_van']),
+            ];
+        }
 
         // Dữ liệu cho ma trận phân quyền sửa trường (theo Vai trò)
         $quyen = null;
@@ -145,7 +178,92 @@ class SettingsController extends Controller
             'rows' => $rows,
             'config' => $config,
             'quyen' => $quyen,
+            'userFilters' => $userFilters,
+            'baoCao' => $baoCao,
         ]);
+    }
+
+    /**
+     * Build dữ liệu báo cáo theo filter.
+     * Trả về: ['bookings' => Collection, 'lichHens' => Collection, 'counter' => array, 'filters' => array, 'options' => array]
+     */
+    public function buildBaoCao(CoSo $co_so, Request $request): array
+    {
+        $loai = $request->query('loai', 'all'); // all | booking | tu_van
+        $tu = $request->query('tu');             // ngày từ
+        $den = $request->query('den');           // ngày đến
+        $bacSiId = $request->query('bac_si_id');
+        $saleId = $request->query('sale_id');
+        $ktvId = $request->query('ktv_id');
+
+        // ----- BOOKING query -----
+        $bookings = collect();
+        if ($loai !== 'tu_van') {
+            $bq = Booking::where('co_so_id', $co_so->id)
+                ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
+                ->when($tu, fn ($q) => $q->whereDate('ngay_dat', '>=', $tu))
+                ->when($den, fn ($q) => $q->whereDate('ngay_dat', '<=', $den))
+                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
+                ->when($saleId, fn ($q) => $q->where('sale_id', $saleId))
+                ->when($ktvId, fn ($q) => $q->where('ktv_user_id', $ktvId))
+                ->orderByDesc('ngay_dat')->orderBy('id');
+            $bookings = $bq->get();
+        }
+
+        // ----- LICH HEN query -----
+        $lichHens = collect();
+        if ($loai !== 'booking') {
+            // Lưu ý: lich_hen không có ktv_user_id → nếu lọc theo KTV thì lich_hen không match → trả về rỗng.
+            $lq = LichHen::where('co_so_id', $co_so->id)
+                ->with(['khachHang', 'bacSiTuVan', 'caKham', 'sale'])
+                ->when($tu, fn ($q) => $q->whereDate('ngay_hen', '>=', $tu))
+                ->when($den, fn ($q) => $q->whereDate('ngay_hen', '<=', $den))
+                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
+                ->when($saleId, fn ($q) => $q->where('sale_id', $saleId))
+                ->orderByDesc('ngay_hen')->orderBy('id');
+            $lichHens = $ktvId ? collect() : $lq->get();
+        }
+
+        // ----- Counter -----
+        $countByStatus = fn ($coll, $field = 'trang_thai') => [
+            'total'    => $coll->count(),
+            'da_duyet' => $coll->where($field, 'da_duyet')->count(),
+            'cho_duyet'=> $coll->where($field, 'cho_duyet')->count(),
+            'tu_choi'  => $coll->where($field, 'tu_choi')->count(),
+            'da_xong'  => $coll->where($field, 'da_xong')->count(),
+        ];
+
+        $counter = [
+            'booking' => $countByStatus($bookings),
+            'tu_van'  => $countByStatus($lichHens),
+        ];
+        $counter['tong'] = [
+            'total'    => $counter['booking']['total'] + $counter['tu_van']['total'],
+            'da_duyet' => $counter['booking']['da_duyet'] + $counter['tu_van']['da_duyet'],
+            'cho_duyet'=> $counter['booking']['cho_duyet'] + $counter['tu_van']['cho_duyet'],
+            'tu_choi'  => $counter['booking']['tu_choi'] + $counter['tu_van']['tu_choi'],
+            'da_xong'  => $counter['booking']['da_xong'],
+        ];
+
+        // ----- Options cho dropdown filter -----
+        $bacSiVaiTroIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+        $bacSis = User::whereIn('vai_tro_id', $bacSiVaiTroIds)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
+
+        $vrKtv = VaiTro::where('ma', 'ktv')->first();
+        $ktvs = $vrKtv ? User::where('vai_tro_id', $vrKtv->id)->where('co_so_id', $co_so->id)
+            ->orderBy('name')->get(['id', 'name']) : collect();
+
+        $sales = $co_so->nguoiDungs()->orderBy('name')->get(['users.id', 'users.name']);
+
+        return [
+            'bookings' => $bookings,
+            'lichHens' => $lichHens,
+            'counter'  => $counter,
+            'filters'  => compact('loai', 'tu', 'den', 'bacSiId', 'saleId', 'ktvId'),
+            'options'  => compact('bacSis', 'ktvs', 'sales'),
+        ];
     }
 
     public function store(CoSo $co_so, Request $request, string $section)
@@ -250,6 +368,10 @@ class SettingsController extends Controller
             'vai_tro_id'     => ['nullable', Rule::exists('vai_tro', 'id')],
             'is_admin'       => ['nullable', 'boolean'],
             'is_tu_van'      => ['nullable', 'boolean'],
+            'nhan_tu_van'    => ['nullable', 'boolean'],
+            'nhan_kham_ls'   => ['nullable', 'boolean'],
+            'phut_tu_van'    => ['nullable', 'integer', 'min:1', 'max:240'],
+            'phut_kham_ls'   => ['nullable', 'integer', 'min:1', 'max:240'],
             'gio_bat_dau'    => ['nullable', 'string', 'max:5'],
             'gio_ket_thuc'   => ['nullable', 'string', 'max:5'],
             'password'       => [$user ? 'nullable' : 'required', 'string', 'min:6'],
@@ -278,6 +400,10 @@ class SettingsController extends Controller
             'vai_tro_id'     => $vaiTroId,
             'is_admin'       => $isAdmin,
             'is_tu_van'      => $request->boolean('is_tu_van'),
+            'nhan_tu_van'    => $request->boolean('nhan_tu_van'),
+            'nhan_kham_ls'   => $request->boolean('nhan_kham_ls'),
+            'phut_tu_van'    => $request->integer('phut_tu_van') ?: 30,
+            'phut_kham_ls'   => $request->integer('phut_kham_ls') ?: 5,
             'gio_bat_dau'    => ($data['gio_bat_dau'] ?? null) ?: null,
             'gio_ket_thuc'   => ($data['gio_ket_thuc'] ?? null) ?: null,
             'co_so_id'       => $isAdmin ? null : $co_so->id,

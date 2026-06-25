@@ -40,6 +40,11 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::get('/tao-moi/khung-gio', [BookingController::class, 'khungGio'])->name('booking.khunggio');
         Route::get('/tao-moi/check-sdt', [BookingController::class, 'checkPhone'])->name('booking.checksdt');
         Route::get('/tao-moi/check-ktv', [BookingController::class, 'checkKtv'])->name('booking.checkktv');
+        Route::get('/tao-moi/check-bac-si', [BookingController::class, 'checkBacSi'])->name('booking.checkbs');
+
+        // Đặt lịch dịch vụ (chỉ phòng + KTV, không có BS)
+        Route::get('/dat-lich-dich-vu',  [BookingController::class, 'createDichVu'])->name('booking.dichvu.create');
+        Route::post('/dat-lich-dich-vu', [BookingController::class, 'storeDichVu'])->name('booking.dichvu.store');
 
         Route::get('/dat-kham',            [LichHenController::class, 'create'])->name('lichhen.create');
         Route::post('/dat-kham',           [LichHenController::class, 'store'])->name('lichhen.store');
@@ -84,6 +89,7 @@ Route::prefix('{co_so:slug}')->group(function () {
         // ----- CHỈ ADMIN: Thiết lập -----
         Route::middleware('admin')->prefix('thiet-lap')->name('settings.')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');
+            Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('baocao.xuat');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
             Route::post('/{section}', [SettingsController::class, 'store'])->name('store');
             Route::put('/{section}/{id}', [SettingsController::class, 'update'])->name('update');

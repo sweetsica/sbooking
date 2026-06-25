@@ -187,6 +187,24 @@
 </select>
 </div>
 <div class="flex flex-col gap-1.5">
+<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">BÁC SĨ</label>
+<select name="bac_si_id" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<option value="">Tất cả bác sĩ</option>
+@foreach ($bacSis as $bs)
+<option value="{{ $bs->id }}" @selected(($filters['bac_si_id'] ?? '')==$bs->id)>{{ trim(($bs->chuc_danh ? $bs->chuc_danh.' ' : '').$bs->name) }}</option>
+@endforeach
+</select>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">NV PHỤ TRÁCH</label>
+<select name="sale_id" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<option value="">Tất cả NV</option>
+@foreach ($sales as $s)
+<option value="{{ $s->id }}" @selected(($filters['sale_id'] ?? '')==$s->id)>{{ $s->name }}{{ $s->chuc_danh ? ' ('.$s->chuc_danh.')' : '' }}</option>
+@endforeach
+</select>
+</div>
+<div class="flex flex-col gap-1.5">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">NGUỒN</label>
 <select name="nguon" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
 <option value="">Tất cả nguồn</option>
@@ -354,7 +372,7 @@
 <span class="material-symbols-outlined text-[40px] opacity-50">{{ $approvalMode ? 'task_alt' : 'event_busy' }}</span>
 <p class="text-body-md">{{ $approvalMode ? 'Không còn đơn nào đang chờ duyệt.' : 'Chưa có lịch hẹn nào khớp bộ lọc.' }}</p>
 @unless ($approvalMode)
-<a href="/{{ $coSo->slug }}/tao-moi" class="mt-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg font-semibold text-body-sm">+ Tạo lịch hẹn</a>
+<a href="/{{ $coSo->slug }}/tao-moi" class="mt-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg font-semibold text-body-sm">+ Đặt lịch phòng khám</a>
 @endunless
 </div>
 </td>

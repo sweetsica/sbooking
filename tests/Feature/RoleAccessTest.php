@@ -40,6 +40,28 @@ class RoleAccessTest extends TestCase
             ->assertOk();
     }
 
+    public function test_D1_admin_bao_cao_ok(): void
+    {
+        $this->actingAs($this->admin)
+            ->get("/{$this->coSo->slug}/thiet-lap/bao-cao")
+            ->assertOk();
+    }
+
+    public function test_D1_admin_bao_cao_xuat_excel(): void
+    {
+        $this->actingAs($this->admin)
+            ->get("/{$this->coSo->slug}/thiet-lap/bao-cao/xuat")
+            ->assertOk()
+            ->assertDownload();
+    }
+
+    public function test_D2_van_hanh_bao_cao_403(): void
+    {
+        $this->actingAs($this->vanHanh)
+            ->get("/{$this->coSo->slug}/thiet-lap/bao-cao")
+            ->assertForbidden();
+    }
+
     public function test_D1_admin_tao_booking_ok(): void
     {
         $this->actingAs($this->admin)

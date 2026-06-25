@@ -50,7 +50,7 @@ Nhập tên hoặc số điện thoại khách hàng vào ô tìm kiếm phía t
 <section class="mb-10">
 <div class="flex items-center gap-2 mb-3">
 <span class="material-symbols-outlined text-secondary">calendar_month</span>
-<h3 class="font-headline-md text-headline-md">Đặt phòng ({{ $bookings->count() }})</h3>
+<h3 class="font-headline-md text-headline-md">Đặt lịch phòng khám / dịch vụ ({{ $bookings->count() }})</h3>
 </div>
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
 <table class="w-full text-body-sm">
@@ -85,8 +85,8 @@ Nhập tên hoặc số điện thoại khách hàng vào ô tìm kiếm phía t
 </section>
 @endif
 
-<!-- Lịch tư vấn -->
-@if ($lichHens->isNotEmpty())
+{{-- Lịch tư vấn (LichHen) đã bị ẩn theo yêu cầu - giữ data cũ nhưng không hiển thị --}}
+@if (false && $lichHens->isNotEmpty())
 <section class="mb-10">
 <div class="flex items-center gap-2 mb-3">
 <span class="material-symbols-outlined text-secondary">stethoscope</span>

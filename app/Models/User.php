@@ -31,6 +31,10 @@ class User extends Authenticatable
         'vai_tro_id',
         'is_admin',
         'is_tu_van',
+        'nhan_tu_van',
+        'phut_tu_van',
+        'nhan_kham_ls',
+        'phut_kham_ls',
         'thoi_gian_kham',
         'gio_bat_dau',
         'gio_ket_thuc',
@@ -102,6 +106,10 @@ class User extends Authenticatable
             'password' => 'hashed',
             'is_admin' => 'boolean',
             'is_tu_van' => 'boolean',
+            'nhan_tu_van' => 'boolean',
+            'nhan_kham_ls' => 'boolean',
+            'phut_tu_van' => 'integer',
+            'phut_kham_ls' => 'integer',
         ];
     }
 }

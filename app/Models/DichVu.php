@@ -9,9 +9,9 @@ class DichVu extends Model
 {
     protected $table = 'dich_vu';
 
-    protected $fillable = ['co_so_id', 'ten', 'active'];
+    protected $fillable = ['co_so_id', 'ten', 'thoi_gian_phut', 'thuoc_nhom', 'active'];
 
-    protected $casts = ['active' => 'boolean'];
+    protected $casts = ['active' => 'boolean', 'thoi_gian_phut' => 'integer'];
 
     public function coSo(): BelongsTo
     {

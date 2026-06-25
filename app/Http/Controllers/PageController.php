@@ -196,8 +196,12 @@ class PageController extends Controller
 
     public function timeline(CoSo $co_so, Request $request)
     {
-        // Trang chủ Lịch hẹn: mọi tài khoản đã đăng nhập đều xem được (không khóa theo quyền)
-        $rooms = $co_so->phongs()->orderBy('id')->get();
+        // Lọc phòng theo kiểu: 'phong_kham' (mặc định) hoặc 'phong_dich_vu'
+        $kieu = $request->query('kieu') === 'dich_vu' ? 'phong_dich_vu' : 'phong_kham';
+
+        $rooms = $co_so->phongs()
+            ->where('kieu_phong', $kieu)
+            ->orderBy('id')->get();
         $date = $request->date('ngay') ?? now();
         $view = $request->query('view') === 'thang' ? 'thang' : 'ngay';
 
@@ -222,6 +226,7 @@ class PageController extends Controller
                 'room' => $room,
                 'date' => $date,
                 'view' => $view,
+                'kieu' => $kieu,
                 'monthCells' => $month['cells'],
                 'monthStart' => $month['monthStart'],
             ]);
@@ -358,6 +363,7 @@ class PageController extends Controller
             'room' => $room,
             'date' => $date,
             'view' => $view,
+            'kieu' => $kieu,
             'beds' => $nbeds,
             'bedColumns' => $bedColumns,
             'hours' => $hours,
@@ -397,6 +403,12 @@ class PageController extends Controller
         if ($request->filled('phong_id')) {
             $query->where('phong_id', $request->query('phong_id'));
         }
+        if ($request->filled('bac_si_id')) {
+            $query->where('bac_si_user_id', $request->query('bac_si_id'));
+        }
+        if ($request->filled('sale_id')) {
+            $query->where('sale_id', $request->query('sale_id'));
+        }
         if ($request->filled('nguon')) {
             $query->where('nguon', $request->query('nguon'));
         }
@@ -408,13 +420,28 @@ class PageController extends Controller
 
         $bookings = $query->paginate(20)->withQueryString();
 
+        // BS để filter: thuộc cơ sở hoặc global (is_tu_van=true)
+        $vrBacSiIds = \App\Models\VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+        $bacSis = \App\Models\User::whereIn('vai_tro_id', $vrBacSiIds)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
+
+        // Sale để filter: nhân viên phụ trách đơn (tư vấn viên / lễ tân / nhân viên)
+        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'le_tan', 'nhan_vien'])->pluck('id');
+        $sales = \App\Models\User::whereIn('vai_tro_id', $vrSaleIds)
+            ->where('co_so_id', $co_so->id)
+            ->where('is_admin', false)
+            ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
+
         return view('longevity.bookings', [
             'coSo' => $co_so,
             'bookings' => $bookings,
             'phongs' => $co_so->phongs()->get(),
+            'bacSis' => $bacSis,
+            'sales' => $sales,
             'nguons' => Booking::where('co_so_id', $co_so->id)
                 ->whereNotNull('nguon')->distinct()->pluck('nguon'),
-            'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'nguon', 'trang_thai']),
+            'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
             'approvalMode' => $approvalMode,
         ]);
     }

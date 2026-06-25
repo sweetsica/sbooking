@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\BaoCaoExport;
 use App\Exports\BookingExport;
 use App\Exports\LichHenExport;
+use App\Http\Controllers\SettingsController;
 use App\Imports\BookingImport;
 use App\Imports\LichHenImport;
 use App\Models\CoSo;
@@ -40,6 +42,14 @@ class ExcelController extends Controller
         Excel::import($import, $request->file('file'));
 
         return back()->with('ok', "Đã nhập {$import->imported} dòng booking.");
+    }
+
+    public function exportBaoCao(CoSo $co_so, Request $request, SettingsController $settings)
+    {
+        // Route đã được gate qua middleware 'admin' nên không cần check thêm.
+        $data = $settings->buildBaoCao($co_so, $request);
+        $name = 'bao-cao-' . $co_so->slug . '-' . now()->format('Ymd-His') . '.xlsx';
+        return Excel::download(new BaoCaoExport($data), $name);
     }
 
     public function importLichHen(CoSo $co_so, Request $request)

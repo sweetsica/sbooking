@@ -18,10 +18,19 @@ trait BookingTestSetup
     protected CoSo $coSo2;
     protected Phong $phongSlot2;
     protected Phong $phongSlot1;
+    protected Phong $phongBig;
+    protected Phong $phongDichVu;
+    protected KhungGio $khung9Big;
+    protected KhungGio $khung9DV;
     protected KhungGio $khung9;
     protected KhungGio $khung10;
     protected KhungGio $khung9_p1;
     protected DichVu $dichVu;
+    protected DichVu $dichVuTuVan;
+    protected DichVu $dichVuKhamLs;
+    protected User $bsCaHai;
+    protected User $bsChiTuVan;
+    protected User $bsChiKhamLs;
 
     protected User $admin;
     protected User $vanHanh;
@@ -53,6 +62,26 @@ trait BookingTestSetup
             'co_so_id' => $this->coSo->id, 'ten' => 'Phòng B',
             'loai' => 'vip', 'so_slot_toi_da' => 1, 'trang_thai' => 'hoat_dong',
         ]);
+        $this->phongBig = Phong::create([
+            'co_so_id' => $this->coSo->id, 'ten' => 'Phòng Big',
+            'loai' => 'cong_dong', 'so_slot_toi_da' => 20, 'trang_thai' => 'hoat_dong',
+        ]);
+        $this->khung9Big = KhungGio::create([
+            'phong_id' => $this->phongBig->id,
+            'gio_bat_dau' => '09:00:00', 'gio_ket_thuc' => '10:00:00', 'thu_tu' => 0,
+        ]);
+
+        // Phòng dịch vụ: slot=1, 30p/khách, KTV mặc định = $this->ktv
+        $this->phongDichVu = Phong::create([
+            'co_so_id' => $this->coSo->id, 'ten' => 'Phòng Xông T4',
+            'kieu_phong' => 'phong_dich_vu',
+            'loai' => 'cong_dong', 'so_slot_toi_da' => 1, 'trang_thai' => 'hoat_dong',
+            'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => null, // set sau khi tạo ktv
+        ]);
+        $this->khung9DV = KhungGio::create([
+            'phong_id' => $this->phongDichVu->id,
+            'gio_bat_dau' => '09:00:00', 'gio_ket_thuc' => '10:00:00', 'thu_tu' => 0,
+        ]);
 
         $this->khung9 = KhungGio::create([
             'phong_id' => $this->phongSlot2->id,
@@ -69,6 +98,15 @@ trait BookingTestSetup
 
         $this->dichVu = DichVu::create([
             'co_so_id' => $this->coSo->id, 'ten' => 'Massage', 'active' => true,
+            'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac',
+        ]);
+        $this->dichVuTuVan = DichVu::create([
+            'co_so_id' => $this->coSo->id, 'ten' => 'Tư vấn', 'active' => true,
+            'thoi_gian_phut' => 30, 'thuoc_nhom' => 'tu_van',
+        ]);
+        $this->dichVuKhamLs = DichVu::create([
+            'co_so_id' => $this->coSo->id, 'ten' => 'Khám LS', 'active' => true,
+            'thoi_gian_phut' => 5, 'thuoc_nhom' => 'kham_ls',
         ]);
 
         // Vai trò
@@ -101,6 +139,9 @@ trait BookingTestSetup
         $this->vanHanh = $this->mkUser('Vận hành', 'vanhanh', $this->vrVanHanh->id);
         $this->tuVanVien = $this->mkUser('Tư vấn viên', 'tvvien', $this->vrTuVanVien->id);
         $this->bacSi = $this->mkUser('BS Z', 'bsz', $this->vrBacSi->id);
+        $this->bsCaHai = $this->mkUser('BS Cả Hai', 'bscahai', $this->vrBacSi->id, ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
+        $this->bsChiTuVan = $this->mkUser('BS Chỉ Tư Vấn', 'bstv', $this->vrBacSi->id, ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
+        $this->bsChiKhamLs = $this->mkUser('BS Chỉ Khám LS', 'bskls', $this->vrBacSi->id, ['nhan_tu_van' => false, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
         $this->bacSiGlobal = $this->mkUser('BS Global', 'bsglobal', $this->vrBacSiTuVan->id, ['is_tu_van' => true, 'co_so_id' => $this->coSo2->id]);
         $this->ktv = $this->mkUser('KTV X', 'ktvx', $this->vrKtv->id);
         $this->sale = $this->mkUser('Sale S', 'sales', $this->vrNhanVien->id);

@@ -3,7 +3,9 @@
 namespace Database\Seeders;
 
 use App\Models\CoSo;
+use App\Models\DichVu;
 use App\Models\KhungGio;
+use App\Models\Menu;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\PhongBan;
@@ -44,8 +46,8 @@ class LongevitySeeder extends Seeder
             $vrTuVanVien->id => ['xem_booking', 'sua_booking', 'sua_lich_tu_van'],
             // Nhân viên: thêm + xem booking (danh sách chỉ đọc)
             $vrNhanVien->id  => ['them_booking', 'xem_booking'],
-            // Quản trị vận hành: xem + duyệt (đặt phòng & tư vấn)
-            $vrVanHanh->id   => ['xem_booking', 'duyet_booking', 'duyet_tu_van'],
+            // Quản trị vận hành: xem + thêm + duyệt (đặt phòng & tư vấn)
+            $vrVanHanh->id   => ['xem_booking', 'them_booking', 'duyet_booking', 'duyet_tu_van'],
             // KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân: chỉ xem booking
             $vrKtv->id       => ['xem_booking'],
             $vrBacSi->id     => ['xem_booking'],
@@ -90,6 +92,16 @@ class LongevitySeeder extends Seeder
             'is_admin'     => true,
         ]);
 
+        User::updateOrCreate(['username' => 'adminvh'], [
+            'name'         => 'Admin Vận hành',
+            'email'        => 'adminvh@sweetsica.com',
+            'password'     => Hash::make('59@ntn'),
+            'co_so_id'     => null,
+            'phong_ban_id' => null,
+            'vai_tro_id'   => $vrVanHanh->id,
+            'is_admin'     => false,
+        ]);
+
         // =============================================
         // CƠ SỞ 1 — 59 Ngô Thì Nhậm (8h - 18h)
         // =============================================
@@ -106,6 +118,10 @@ class LongevitySeeder extends Seeder
             'phong_ban_id'   => $pbKhamNgoai->id,
             'vai_tro_id'     => $vrBsTuVan->id,
             'is_admin'       => false,
+            'nhan_tu_van'    => true,
+            'phut_tu_van'    => 30,
+            'nhan_kham_ls'   => true,
+            'phut_kham_ls'   => 5,
             'thoi_gian_kham' => 30,
             'gio_bat_dau'    => '08:00',
             'gio_ket_thuc'   => '18:00',
@@ -131,6 +147,10 @@ class LongevitySeeder extends Seeder
             'phong_ban_id'   => $pbChuyenGia->id,
             'vai_tro_id'     => $vrBsTuVan->id,
             'is_admin'       => false,
+            'nhan_tu_van'    => true,
+            'phut_tu_van'    => 30,
+            'nhan_kham_ls'   => true,
+            'phut_kham_ls'   => 5,
             'thoi_gian_kham' => 30,
             'gio_bat_dau'    => '08:00',
             'gio_ket_thuc'   => '18:00',
@@ -156,6 +176,10 @@ class LongevitySeeder extends Seeder
             'phong_ban_id'   => $pbKhamNoi1->id,
             'vai_tro_id'     => $vrBacSi->id,
             'is_admin'       => false,
+            'nhan_tu_van'    => true,
+            'phut_tu_van'    => 30,
+            'nhan_kham_ls'   => true,
+            'phut_kham_ls'   => 5,
             'thoi_gian_kham' => 5,
             'gio_bat_dau'    => '08:00',
             'gio_ket_thuc'   => '18:00',
@@ -181,6 +205,9 @@ class LongevitySeeder extends Seeder
             'phong_ban_id'   => $pbKhamNoi2->id,
             'vai_tro_id'     => $vrBacSi->id,
             'is_admin'       => false,
+            'nhan_tu_van'    => false,
+            'nhan_kham_ls'   => true,
+            'phut_kham_ls'   => 5,
             'thoi_gian_kham' => 5,
             'gio_bat_dau'    => '08:00',
             'gio_ket_thuc'   => '18:00',
@@ -194,6 +221,9 @@ class LongevitySeeder extends Seeder
             'phong_ban_id'   => $pbKhamNoi2->id,
             'vai_tro_id'     => $vrBacSi->id,
             'is_admin'       => false,
+            'nhan_tu_van'    => true,
+            'phut_tu_van'    => 30,
+            'nhan_kham_ls'   => false,
             'thoi_gian_kham' => 30,
             'gio_bat_dau'    => '08:00',
             'gio_ket_thuc'   => '18:00',
@@ -234,13 +264,19 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // --- Phòng dịch vụ 59 NTN: 5 phòng, 12 slot mỗi phòng ---
+        // --- Phòng khám 59 NTN: 5 phòng khám, 12 slot mỗi phòng ---
         $this->seedPhong($cs59ntn, [
             'Phòng khám Ngoại' => 12,
             'Phòng chuyên gia' => 12,
             'Phòng khám Nội 1' => 12,
             'Phòng khám Nội 2' => 12,
             'Phòng siêu âm'   => 12,
+        ]);
+
+        // --- Phòng dịch vụ 59 NTN (Xông T4: 10 slot × 30p, YHCT T4: 12 slot × 60p) ---
+        $this->seedPhong($cs59ntn, [
+            'Phòng Xông T4'          => ['kieu' => 'phong_dich_vu', 'so_slot' => 10, 'phut' => 30, 'ktv_username' => 'ktv4'],
+            'Phòng trị liệu YHCT T4' => ['kieu' => 'phong_dich_vu', 'so_slot' => 12, 'phut' => 60, 'ktv_username' => 'ktv5'],
         ]);
 
         // Tạo ca khám cho tất cả bác sĩ (cả tư vấn lẫn thăm khám)
@@ -326,23 +362,73 @@ class LongevitySeeder extends Seeder
         // CƠ SỞ 4 — 137 NCT HCM (8h - 18h)
         // =============================================
         $this->seedPhong($cs137nct, ['Phòng khám' => 1]);
+
+        // =============================================
+        // MENU dùng chung (co_so_id = null) - hiển thị mọi cơ sở
+        // =============================================
+        foreach (['Trà', 'Hoa quả', 'Bánh kẹo'] as $tenMenu) {
+            Menu::updateOrCreate(
+                ['co_so_id' => null, 'ten' => $tenMenu],
+                ['active' => true]
+            );
+        }
+
+        // =============================================
+        // DỊCH VỤ chính (dùng chung) — danh mục thăm khám
+        // =============================================
+        $services = [
+            ['ten' => 'Thăm khám lâm sàng (trừ tim mạch)', 'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
+            ['ten' => 'Thăm khám tim mạch',                 'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30],
+            ['ten' => 'Thực hiện lâm sàng',                 'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
+            ['ten' => 'Siêu âm',                            'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25],
+            ['ten' => 'Chụp XQuang',                        'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15],
+            ['ten' => 'Lấy máu',                            'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10],
+            ['ten' => 'Đọc kết quả Gene',                   'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
+            ['ten' => 'Tư vấn - đọc kết quả',               'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
+            // Dịch vụ cho phòng dịch vụ (không liên quan tới tư vấn/thăm khám)
+            ['ten' => 'Xông hơi',                           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30],
+            ['ten' => 'Trị liệu YHCT',                      'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60],
+        ];
+        foreach ($services as $s) {
+            DichVu::updateOrCreate(
+                ['co_so_id' => null, 'ten' => $s['ten']],
+                ['thoi_gian_phut' => $s['thoi_gian_phut'], 'thuoc_nhom' => $s['thuoc_nhom'], 'active' => true]
+            );
+        }
     }
 
     private function seedPhong(CoSo $coSo, array $phongs): void
     {
-        foreach ($phongs as $ten => $soSlot) {
+        foreach ($phongs as $ten => $cfg) {
+            // Backward compat: int = so_slot_toi_da
+            if (is_int($cfg)) $cfg = ['so_slot' => $cfg];
+            $attrs = [
+                'loai' => 'kham',
+                'kieu_phong' => $cfg['kieu'] ?? 'phong_kham',
+                'so_slot_toi_da' => $cfg['so_slot'] ?? 1,
+                'phut_moi_khach' => $cfg['phut'] ?? null,
+                'trang_thai' => 'hoat_dong',
+            ];
+            if (! empty($cfg['ktv_username'])) {
+                $attrs['ktv_mac_dinh_id'] = User::where('username', $cfg['ktv_username'])->value('id');
+            }
+
             $phong = Phong::updateOrCreate(
                 ['co_so_id' => $coSo->id, 'ten' => $ten],
-                ['loai' => 'kham', 'so_slot_toi_da' => $soSlot, 'trang_thai' => 'hoat_dong']
+                $attrs
             );
 
             if ($phong->khungGios()->count() === 0) {
-                for ($i = 0; $i < 12; $i++) {
-                    $startMin = 8 * 60 + $i * 50;
+                // Phòng dịch vụ: 10 khung 60p (8h-18h); phòng khám: 12 khung 50p (cũ)
+                $khungLen = $phong->kieu_phong === 'phong_dich_vu' ? 60 : 50;
+                $soKhung = $phong->kieu_phong === 'phong_dich_vu' ? 10 : 12;
+                for ($i = 0; $i < $soKhung; $i++) {
+                    $startMin = 8 * 60 + $i * $khungLen;
+                    $endMin = $startMin + $khungLen;
                     KhungGio::create([
                         'phong_id'     => $phong->id,
                         'gio_bat_dau'  => sprintf('%02d:%02d:00', intdiv($startMin, 60), $startMin % 60),
-                        'gio_ket_thuc' => sprintf('%02d:%02d:00', intdiv($startMin + 50, 60), ($startMin + 50) % 60),
+                        'gio_ket_thuc' => sprintf('%02d:%02d:00', intdiv($endMin, 60), $endMin % 60),
                         'thu_tu'       => $i,
                     ]);
                 }

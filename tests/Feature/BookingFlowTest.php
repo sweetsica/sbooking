@@ -166,9 +166,51 @@ class BookingFlowTest extends TestCase
 
     public function test_A7_3_gio_thuc_hien_regex(): void
     {
+        // Sai format HH:MM bị reject
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['gio_thuc_hien' => '09:15']))
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['gio_thuc_hien' => '9-15']))
             ->assertSessionHasErrors(['gio_thuc_hien']);
+    }
+
+    public function test_A7_3c_gio_truoc_khung_bi_chan(): void
+    {
+        // Khung 09:00-10:00, đặt giờ thực hiện 08:30 → chặn
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+                'gio_thuc_hien' => '08:30', 'gio_ket_thuc' => '09:30',
+            ]))
+            ->assertSessionHasErrors(['gio_thuc_hien']);
+    }
+
+    public function test_A7_3d_gio_ket_thuc_vuot_khung_bi_chan(): void
+    {
+        // Khung 09:00-10:00, kết thúc 10:30 → chặn
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+                'gio_thuc_hien' => '09:00', 'gio_ket_thuc' => '10:30',
+            ]))
+            ->assertSessionHasErrors(['gio_ket_thuc']);
+    }
+
+    public function test_A7_3e_ket_thuc_truoc_bat_dau_bi_chan(): void
+    {
+        // 09:30 → 09:00 (ngược) → chặn
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+                'gio_thuc_hien' => '09:30', 'gio_ket_thuc' => '09:00',
+            ]))
+            ->assertSessionHasErrors(['gio_ket_thuc']);
+    }
+
+    public function test_A7_3b_gio_25_phut_chap_nhan(): void
+    {
+        // Phút bất kỳ HH:MM (vd 25) phải chấp nhận để hỗ trợ BS có phút riêng (Bác Hồng 25p)
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+                'gio_thuc_hien' => '09:00',
+                'gio_ket_thuc' => '09:25',
+            ]))
+            ->assertSessionHasNoErrors();
     }
 
     public function test_A7_4_sdt_co_space_duoc_trim(): void
@@ -241,6 +283,375 @@ class BookingFlowTest extends TestCase
         $this->actingAs($this->vanHanh)
             ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['bac_si_user_id' => $this->bacSi->id]))
             ->assertSessionHas('warning');
+    }
+
+    // ===== A8. Capacity bác sĩ theo phút (tư vấn 30p / khám LS 5p) =====
+    public function test_A8_1_tu_van_2_khach_full_block_thu_3(): void
+    {
+        $p = $this->bookingPayload([
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+            'dich_vu_id' => $this->dichVuTuVan->id,
+        ]);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000001']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000002']));
+
+        // booking #3 cùng khung + BS → vượt 60p, bị chặn
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000003']))
+            ->assertSessionHasErrors(['bac_si_user_id']);
+
+        $this->assertSame(2, Booking::count());
+    }
+
+    public function test_A8_2_kham_ls_12_khach_full_block_thu_13(): void
+    {
+        $p = $this->bookingPayload([
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+            'dich_vu_id' => $this->dichVuKhamLs->id,
+        ]);
+        for ($i = 1; $i <= 12; $i++) {
+            $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '09300000'.sprintf('%02d', $i)]));
+        }
+        // booking #13 → 12×5=60 đã full
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000099']))
+            ->assertSessionHasErrors(['bac_si_user_id']);
+
+        $this->assertSame(12, Booking::count());
+    }
+
+    public function test_A8_3_mix_1_tu_van_6_kham_ls_full(): void
+    {
+        // 1 tư vấn (30) + 6 khám LS (5×6=30) = 60 phút
+        $base = [
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+        ];
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload($base + [
+            'dich_vu_id' => $this->dichVuTuVan->id,
+            'so_dien_thoai' => '0930000010',
+        ]));
+        for ($i = 1; $i <= 6; $i++) {
+            $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload($base + [
+                'dich_vu_id' => $this->dichVuKhamLs->id,
+                'so_dien_thoai' => '09300001'.sprintf('%02d', $i),
+            ]));
+        }
+        $this->assertSame(7, Booking::count());
+
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload($base + [
+                'dich_vu_id' => $this->dichVuKhamLs->id,
+                'so_dien_thoai' => '0930000098',
+            ]))
+            ->assertSessionHasErrors(['bac_si_user_id']);
+    }
+
+    public function test_A8_4_bs_khong_nhan_tu_van_bi_chan(): void
+    {
+        // BS chỉ nhận khám LS, nhưng đặt dịch vụ tư vấn → chặn
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+                'bac_si_user_id' => $this->bsChiKhamLs->id,
+                'dich_vu_id' => $this->dichVuTuVan->id,
+            ]))
+            ->assertSessionHasErrors(['bac_si_user_id']);
+    }
+
+    public function test_A8_5_bs_khong_nhan_kham_ls_bi_chan(): void
+    {
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+                'bac_si_user_id' => $this->bsChiTuVan->id,
+                'dich_vu_id' => $this->dichVuKhamLs->id,
+            ]))
+            ->assertSessionHasErrors(['bac_si_user_id']);
+    }
+
+    public function test_A8_6_bs_full_van_dat_duoc_bs_khac(): void
+    {
+        // BS Cả Hai đầy với 2 tư vấn trong phòng Big
+        $p = $this->bookingPayload([
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+            'dich_vu_id' => $this->dichVuTuVan->id,
+        ]);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0931000001']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0931000002']));
+
+        // Chuyển sang BS khác (Chỉ Tư Vấn) → OK (capacity tính riêng từng BS)
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+                'phong_id' => $this->phongBig->id,
+                'khung_gio_id' => $this->khung9Big->id,
+                'bac_si_user_id' => $this->bsChiTuVan->id,
+                'dich_vu_id' => $this->dichVuTuVan->id,
+                'so_dien_thoai' => '0931000003',
+            ]))
+            ->assertSessionHasNoErrors();
+    }
+
+    // ===== A8.7 Dịch vụ nhóm "khac" → phút lấy từ DichVu (vd siêu âm 25p) =====
+    public function test_A8_7_dich_vu_khac_dung_phut_dich_vu(): void
+    {
+        // BS Hồng: không nhận tu_van, không nhận kham_ls (default phút BS không matter cho nhóm khác)
+        $bsHong = $this->mkUser('BS Hồng', 'bshong', $this->vrBacSi->id, ['nhan_tu_van' => false, 'nhan_kham_ls' => false]);
+        $sieuAm = \App\Models\DichVu::create([
+            'co_so_id' => $this->coSo->id, 'ten' => 'Siêu âm',
+            'thoi_gian_phut' => 25, 'thuoc_nhom' => 'khac', 'active' => true,
+        ]);
+
+        // 2 siêu âm × 25 = 50p → OK
+        $p = $this->bookingPayload([
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $bsHong->id,
+            'dich_vu_id' => $sieuAm->id,
+        ]);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0932000001']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0932000002']));
+
+        // booking #3 (25p nữa) → 75p > 60 → chặn
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0932000003']))
+            ->assertSessionHasErrors(['bac_si_user_id']);
+    }
+
+    // ===== A9. Capacity BS cross-cơ sở (BS global) =====
+    public function test_A9_1_bs_global_da_co_lich_co_so_khac_bi_chan(): void
+    {
+        // bsGlobal đã có lịch tư vấn 30p ở cơ sở 1 khung 09:00-10:00
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+            'dich_vu_id' => $this->dichVuTuVan->id,
+            'so_dien_thoai' => '0940000001',
+        ]));
+
+        // Tạo phòng + khung 09:00-10:00 ở CƠ SỞ 2
+        $phongCs2 = \App\Models\Phong::create([
+            'co_so_id' => $this->coSo2->id, 'ten' => 'Phòng CS2 Big',
+            'loai' => 'cong_dong', 'so_slot_toi_da' => 5, 'trang_thai' => 'hoat_dong',
+        ]);
+        $khungCs2 = \App\Models\KhungGio::create([
+            'phong_id' => $phongCs2->id,
+            'gio_bat_dau' => '09:00:00', 'gio_ket_thuc' => '10:00:00', 'thu_tu' => 0,
+        ]);
+        $dvCs2 = \App\Models\DichVu::create([
+            'co_so_id' => $this->coSo2->id, 'ten' => 'Tư vấn CS2',
+            'thoi_gian_phut' => 30, 'thuoc_nhom' => 'tu_van', 'active' => true,
+        ]);
+        // Cập nhật vanHanh có quyền ở cs2 (dùng admin cho gọn)
+
+        // Đặt BS Cả Hai (global) tại cơ sở 2 cùng giờ → vượt 60p vì đã dùng 30p cs1
+        // 2 booking 30p mỗi cái = 60p, OK. Thêm cái thứ 2 ở cs2 nữa thì 90p > 60 → chặn
+        $this->actingAs($this->admin)->post("/{$this->coSo2->slug}/tao-moi", $this->bookingPayload([
+            'phong_id' => $phongCs2->id,
+            'khung_gio_id' => $khungCs2->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+            'dich_vu_id' => $dvCs2->id,
+            'sale_id' => $this->admin->id,
+            'so_dien_thoai' => '0940000002',
+        ]));
+        $this->assertSame(2, Booking::count()); // 30+30=60 vừa đầy
+
+        // Thêm 1 cái nữa cùng giờ → vượt
+        $this->actingAs($this->admin)
+            ->post("/{$this->coSo2->slug}/tao-moi", $this->bookingPayload([
+                'phong_id' => $phongCs2->id,
+                'khung_gio_id' => $khungCs2->id,
+                'bac_si_user_id' => $this->bsCaHai->id,
+                'dich_vu_id' => $dvCs2->id,
+                'sale_id' => $this->admin->id,
+                'so_dien_thoai' => '0940000003',
+            ]))
+            ->assertSessionHasErrors(['bac_si_user_id']);
+
+        $this->assertSame(2, Booking::count());
+    }
+
+    // ===== A9.2 API check-bac-si trả về list với availability =====
+    public function test_A9_2_check_bac_si_api(): void
+    {
+        // bsCaHai có 1 booking 30p ở khung9Big
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+            'dich_vu_id' => $this->dichVuTuVan->id,
+            'so_dien_thoai' => '0941000001',
+        ]));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            'phong_id' => $this->phongBig->id,
+            'khung_gio_id' => $this->khung9Big->id,
+            'bac_si_user_id' => $this->bsCaHai->id,
+            'dich_vu_id' => $this->dichVuTuVan->id,
+            'so_dien_thoai' => '0941000002',
+        ]));
+
+        // API: chọn tu_van, khung 09:00 → bsCaHai đầy, bsChiTuVan còn rảnh
+        $resp = $this->actingAs($this->vanHanh)
+            ->getJson("/{$this->coSo->slug}/tao-moi/check-bac-si?khung_gio_id={$this->khung9Big->id}&dich_vu_id={$this->dichVuTuVan->id}&ngay=".now()->addDay()->toDateString());
+
+        $resp->assertOk();
+        $list = collect($resp->json('list'));
+        $caHai = $list->firstWhere('id', $this->bsCaHai->id);
+        $chiTuVan = $list->firstWhere('id', $this->bsChiTuVan->id);
+        $chiKhamLs = $list->firstWhere('id', $this->bsChiKhamLs->id);
+
+        $this->assertFalse($caHai['available']);
+        $this->assertTrue($chiTuVan['available']);
+        $this->assertFalse($chiKhamLs['available']); // không nhận tư vấn
+    }
+
+    // ===== A10. Đặt lịch dịch vụ (không có BS) =====
+    public function test_A10_1_dat_lich_dich_vu_ok(): void
+    {
+        $resp = $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/dat-lich-dich-vu", $this->bookingPayload([
+                'ktv_user_id' => $this->ktv->id,
+                'bac_si_user_id' => null,
+            ]));
+
+        $resp->assertRedirect();
+        $bk = Booking::first();
+        $this->assertSame('dich_vu', $bk->loai_dat_lich);
+        $this->assertNull($bk->bac_si_user_id);
+        $this->assertSame($this->ktv->id, $bk->ktv_user_id);
+    }
+
+    public function test_A10_2_dat_lich_phong_kham_van_ok(): void
+    {
+        $resp = $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload());
+
+        $resp->assertRedirect();
+        $bk = Booking::first();
+        $this->assertSame('phong_kham', $bk->loai_dat_lich);
+    }
+
+    public function test_A10_4_form_kham_chi_show_phong_kham(): void
+    {
+        $resp = $this->actingAs($this->vanHanh)
+            ->get("/{$this->coSo->slug}/tao-moi");
+
+        $resp->assertOk();
+        $resp->assertSee('Phòng A');
+        $resp->assertDontSee('Phòng Xông T4');
+    }
+
+    public function test_A10_5_form_dich_vu_chi_show_phong_dich_vu(): void
+    {
+        $resp = $this->actingAs($this->vanHanh)
+            ->get("/{$this->coSo->slug}/dat-lich-dich-vu");
+
+        $resp->assertOk();
+        $resp->assertSee('Phòng Xông T4');
+        $resp->assertDontSee('Phòng A (2 slot)');
+    }
+
+    public function test_A10_6_phong_dich_vu_slot1_30p_chan_thu_3(): void
+    {
+        // Phòng dịch vụ slot=1, 30p → khung 09-10 có 2 sub-slot. 2 booking đầy.
+        $p = $this->bookingPayload([
+            'phong_id' => $this->phongDichVu->id,
+            'khung_gio_id' => $this->khung9DV->id,
+            'gio_thuc_hien' => '09:00', 'gio_ket_thuc' => '09:30',
+            'bac_si_user_id' => null, 'ktv_user_id' => $this->ktv->id,
+        ]);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-dich-vu", array_merge($p, ['so_dien_thoai' => '0950000001']));
+
+        $p2 = array_merge($p, [
+            'gio_thuc_hien' => '09:30', 'gio_ket_thuc' => '10:00',
+            'so_dien_thoai' => '0950000002',
+        ]);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-dich-vu", $p2);
+
+        $this->assertSame(2, Booking::count());
+
+        // 3rd booking overlap với 1 trong 2 → bị chặn (slot=1 full ở 09:00-09:30)
+        $p3 = array_merge($p, [
+            'gio_thuc_hien' => '09:00', 'gio_ket_thuc' => '09:30',
+            'so_dien_thoai' => '0950000003',
+        ]);
+        $resp = $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-dich-vu", $p3);
+        // Bị chặn (có thể do KTV trùng giờ hoặc slot phòng đầy - một trong hai key)
+        $resp->assertSessionHasErrors();
+        $this->assertSame(2, Booking::count());
+    }
+
+    public function test_A10_7_phong_dich_vu_3_booking_khong_overlap_ok(): void
+    {
+        // Tạo phòng dịch vụ slot=2 (cho 2 slot song song)
+        $phong2 = \App\Models\Phong::create([
+            'co_so_id' => $this->coSo->id, 'ten' => 'Phòng Dịch vụ Big',
+            'kieu_phong' => 'phong_dich_vu',
+            'loai' => 'cong_dong', 'so_slot_toi_da' => 2,
+            'phut_moi_khach' => 30, 'trang_thai' => 'hoat_dong',
+        ]);
+        $kg = \App\Models\KhungGio::create([
+            'phong_id' => $phong2->id,
+            'gio_bat_dau' => '09:00:00', 'gio_ket_thuc' => '10:00:00', 'thu_tu' => 0,
+        ]);
+
+        // 2 booking 09:00-09:30 song song (slot=2) → OK
+        $p = $this->bookingPayload([
+            'phong_id' => $phong2->id, 'khung_gio_id' => $kg->id,
+            'gio_thuc_hien' => '09:00', 'gio_ket_thuc' => '09:30',
+            'bac_si_user_id' => null, 'ktv_user_id' => null,
+        ]);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-dich-vu", array_merge($p, ['so_dien_thoai' => '0960000001']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-dich-vu", array_merge($p, ['so_dien_thoai' => '0960000002']));
+        $this->assertSame(2, Booking::count());
+
+        // 3rd cùng giờ → vượt slot=2 → chặn
+        $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/dat-lich-dich-vu", array_merge($p, ['so_dien_thoai' => '0960000003']))
+            ->assertSessionHasErrors(['khung_gio_id']);
+    }
+
+    public function test_A10_8_dich_vu_khong_can_sale_va_dich_vu_id(): void
+    {
+        // Đặt lịch dịch vụ chỉ với phòng + KTV → không cần sale_id và dich_vu_id
+        $resp = $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/dat-lich-dich-vu", [
+                'ho_ten' => 'Khách DV', 'so_dien_thoai' => '0970000001',
+                'ngay_dat' => now()->addDay()->toDateString(),
+                'phong_id' => $this->phongDichVu->id,
+                'khung_gio_id' => $this->khung9DV->id,
+                'gio_thuc_hien' => '09:00', 'gio_ket_thuc' => '09:30',
+                'ktv_user_id' => $this->ktv->id,
+            ]);
+
+        $resp->assertRedirect();
+        $resp->assertSessionHasNoErrors();
+        $bk = Booking::first();
+        $this->assertNull($bk->sale_id);
+        $this->assertNull($bk->dich_vu_id);
+        $this->assertSame('dich_vu', $bk->loai_dat_lich);
+    }
+
+    public function test_A10_9_phong_kham_van_can_sale_va_dich_vu(): void
+    {
+        // Đặt phòng khám thiếu sale_id → vẫn báo lỗi
+        $resp = $this->actingAs($this->vanHanh)
+            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['sale_id' => null]));
+
+        $resp->assertSessionHasErrors(['sale_id']);
+    }
+
+    public function test_A10_3_form_dich_vu_load_ok(): void
+    {
+        $this->actingAs($this->vanHanh)
+            ->get("/{$this->coSo->slug}/dat-lich-dich-vu")
+            ->assertOk();
     }
 
     // ===== A1.2/3 Tùy chọn BS/KTV để trống =====
