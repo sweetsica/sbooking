@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Booking;
+use App\Models\CaKham;
 use App\Models\CoSo;
 use App\Models\KhachHang;
 use App\Models\LichHen;
@@ -123,7 +125,7 @@ class LichHenController extends Controller
             'ho_ten'            => ['required', 'string', 'max:255'],
             'so_dien_thoai'     => ['required', 'string', 'max:30'],
             'email'             => ['nullable', 'email', 'max:255'],
-            'ngay_hen'          => ['required', 'date'],
+            'ngay_hen'          => ['required', 'date', 'after_or_equal:today'],
             'bac_si_user_id'    => ['required', Rule::exists('users', 'id')],
             'ca_kham_id'        => ['required', Rule::exists('ca_kham', 'id')],
             'sale_id'           => ['required', Rule::exists('users', 'id')],
@@ -135,13 +137,15 @@ class LichHenController extends Controller
             'bac_si_user_id.required'   => 'Vui lòng chọn bác sĩ tư vấn.',
             'ca_kham_id.required'       => 'Vui lòng chọn ca khám.',
             'sale_id.required'          => 'Vui lòng chọn sale phụ trách.',
+            'ngay_hen.after_or_equal'   => 'Ngày hẹn không được nhỏ hơn ngày hôm nay.',
         ]);
 
-        // Check slot availability
+        // Check slot availability (đơn tu_choi không tính)
         $booked = LichHen::where('co_so_id', $co_so->id)
             ->where('bac_si_user_id', $data['bac_si_user_id'])
             ->where('ca_kham_id', $data['ca_kham_id'])
             ->whereDate('ngay_hen', $data['ngay_hen'])
+            ->where('trang_thai', '!=', 'tu_choi')
             ->exists();
 
         if ($booked) {
@@ -156,6 +160,8 @@ class LichHenController extends Controller
         $kh->email = $data['email'] ?? $kh->email;
         $kh->save();
 
+        $canhBaoBooking = $this->bacSiTrungBooking($co_so, (int) $data['bac_si_user_id'], $data['ngay_hen'], (int) $data['ca_kham_id']);
+
         LichHen::create([
             'co_so_id'         => $co_so->id,
             'khach_hang_id'    => $kh->id,
@@ -169,7 +175,44 @@ class LichHenController extends Controller
         ]);
 
         return redirect("/{$co_so->slug}/ds-tu-van")
-            ->with('ok', 'Đã tạo lịch tư vấn cho ' . $kh->ho_ten . '.');
+            ->with('ok', 'Đã tạo lịch tư vấn cho ' . $kh->ho_ten . '.')
+            ->with('warning', $canhBaoBooking);
+    }
+
+    /**
+     * Cảnh báo khi BS đã có lịch ĐẶT PHÒNG trùng giờ với ca khám này.
+     */
+    private function bacSiTrungBooking(CoSo $co_so, int $bacSiId, string $ngay, int $caKhamId, ?int $exceptId = null): ?string
+    {
+        $ck = CaKham::find($caKhamId);
+        if (! $ck) return null;
+        $toMin = fn (?string $t) => $t ? ((int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2)) : null;
+        $s = $toMin(substr($ck->gio_bat_dau, 0, 5));
+        $e = $toMin(substr($ck->gio_ket_thuc, 0, 5));
+        if ($s === null || $e === null) return null;
+
+        $bookings = Booking::where('co_so_id', $co_so->id)
+            ->where('bac_si_user_id', $bacSiId)
+            ->whereDate('ngay_dat', $ngay)
+            ->where('trang_thai', '!=', 'tu_choi')
+            ->with(['phong', 'khungGio'])
+            ->get();
+
+        foreach ($bookings as $b) {
+            $obd = $b->gio_thuc_hien ?: $b->khungGio?->gio_bat_dau;
+            $okt = $b->gio_ket_thuc ?: $b->khungGio?->gio_ket_thuc;
+            $os = $toMin($obd ? substr($obd, 0, 5) : null);
+            if ($os === null) continue;
+            $oe = $toMin($okt ? substr($okt, 0, 5) : null) ?? ($os + 60);
+
+            if ($s < $oe && $os < $e) {
+                $bs = User::find($bacSiId);
+                return 'Lưu ý: ' . ($bs?->ten_day_du ?? 'Bác sĩ') . ' đã có lịch ĐẶT PHÒNG lúc '
+                    . substr($obd, 0, 5) . ' tại ' . ($b->phong?->ten ?? 'phòng khác')
+                    . ' trong ngày này (trùng giờ) — lịch vẫn được lưu.';
+            }
+        }
+        return null;
     }
 
     public function update(CoSo $co_so, LichHen $lich_hen, Request $request)
@@ -195,11 +238,12 @@ class LichHenController extends Controller
             'sale_id.required'          => 'Vui lòng chọn sale phụ trách.',
         ]);
 
-        // Ca khám đã có người đặt (trừ chính lịch đang sửa)?
+        // Ca khám đã có người đặt (trừ chính lịch đang sửa, không tính tu_choi)?
         $booked = LichHen::where('co_so_id', $co_so->id)
             ->where('bac_si_user_id', $data['bac_si_user_id'])
             ->where('ca_kham_id', $data['ca_kham_id'])
             ->whereDate('ngay_hen', $data['ngay_hen'])
+            ->where('trang_thai', '!=', 'tu_choi')
             ->where('id', '!=', $lich_hen->id)
             ->exists();
 
@@ -225,8 +269,11 @@ class LichHenController extends Controller
             'ghi_chu'          => $data['ghi_chu'] ?? null,
         ]);
 
+        $canhBaoBooking = $this->bacSiTrungBooking($co_so, (int) $data['bac_si_user_id'], $data['ngay_hen'], (int) $data['ca_kham_id'], $lich_hen->id);
+
         return redirect("/{$co_so->slug}/ds-tu-van")
-            ->with('ok', 'Đã cập nhật lịch tư vấn của ' . $kh->ho_ten . '.');
+            ->with('ok', 'Đã cập nhật lịch tư vấn của ' . $kh->ho_ten . '.')
+            ->with('warning', $canhBaoBooking);
     }
 
     public function destroy(CoSo $co_so, LichHen $lich_hen)
@@ -234,10 +281,13 @@ class LichHenController extends Controller
         abort_unless($lich_hen->co_so_id === $co_so->id, 404);
 
         $user = auth()->user();
-        $ok = $user->is_admin || PhanQuyen::where(function ($q) use ($user) {
+        $ok = $user->is_admin || (
+            ($user->vai_tro_id || $user->phong_ban_id)
+            && PhanQuyen::where(function ($q) use ($user) {
                 if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
                 if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
-            })->where('truong', 'xoa_lich_tu_van')->exists();
+            })->where('truong', 'xoa_lich_tu_van')->exists()
+        );
         abort_unless($ok, 403, 'Bạn không có quyền xóa.');
 
         $ten = $lich_hen->khachHang?->ho_ten ?? 'khách';
@@ -253,13 +303,32 @@ class LichHenController extends Controller
         abort_unless($lich_hen->co_so_id === $co_so->id, 404);
 
         $user = auth()->user();
-        $ok = $user->is_admin || PhanQuyen::where(function ($q) use ($user) {
+        $ok = $user->is_admin || (
+            ($user->vai_tro_id || $user->phong_ban_id)
+            && PhanQuyen::where(function ($q) use ($user) {
                 if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
                 if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
-            })->where('truong', 'duyet_tu_van')->exists();
+            })->where('truong', 'duyet_tu_van')->exists()
+        );
         abort_unless($ok, 403, 'Bạn không có quyền duyệt.');
 
         $approve = $lich_hen->trang_thai !== 'da_duyet';
+        $wasRejected = $lich_hen->trang_thai === 'tu_choi';
+
+        // Khi duyệt lại đơn từ chối: ca khám có thể đã bị đơn khác chiếm.
+        if ($approve && $wasRejected) {
+            $taken = LichHen::where('co_so_id', $co_so->id)
+                ->where('bac_si_user_id', $lich_hen->bac_si_user_id)
+                ->where('ca_kham_id', $lich_hen->ca_kham_id)
+                ->whereDate('ngay_hen', $lich_hen->ngay_hen)
+                ->where('trang_thai', '!=', 'tu_choi')
+                ->where('id', '!=', $lich_hen->id)
+                ->exists();
+            if ($taken) {
+                return back()->with('error', 'Không duyệt được: ca khám này đã có đơn khác chiếm chỗ. Vui lòng đổi ca khám trước khi duyệt.');
+            }
+        }
+
         $lich_hen->trang_thai = $approve ? 'da_duyet' : 'cho_duyet';
         $lich_hen->save();
 
@@ -271,8 +340,15 @@ class LichHenController extends Controller
     private function authorizePerm(string $field): void
     {
         $user = auth()->user();
+        if (! $user) {
+            abort(401);
+        }
         if ($user->is_admin) {
             return;
+        }
+
+        if (! $user->vai_tro_id && ! $user->phong_ban_id) {
+            abort(403, 'Bạn không có quyền thực hiện thao tác này.');
         }
 
         $ok = PhanQuyen::where(function ($q) use ($user) {

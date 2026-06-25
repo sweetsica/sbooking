@@ -7,6 +7,7 @@ use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\KhachHang;
 use App\Models\KhungGio;
+use App\Models\LichHen;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\User;
@@ -131,6 +132,7 @@ class BookingController extends Controller
     }
 
     // Khung giờ đã kín chỗ (đủ số slot của phòng) cho phòng + ngày?
+    // Đơn `tu_choi` KHÔNG tính vào slot (để slot trống cho đơn mới).
     private function khungGioDayCho(CoSo $co_so, int $phongId, int $khungGioId, string $ngay, ?int $exceptId = null): bool
     {
         $capacity = max(1, (int) optional(Phong::find($phongId))->so_slot_toi_da);
@@ -138,6 +140,7 @@ class BookingController extends Controller
             ->where('phong_id', $phongId)
             ->where('khung_gio_id', $khungGioId)
             ->whereDate('ngay_dat', $ngay)
+            ->where('trang_thai', '!=', 'tu_choi')
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->count();
 
@@ -163,6 +166,7 @@ class BookingController extends Controller
         $others = Booking::where('co_so_id', $co_so->id)
             ->where('bac_si_user_id', $bacSiId)
             ->whereDate('ngay_dat', $ngay)
+            ->where('trang_thai', '!=', 'tu_choi')
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->with(['phong', 'khungGio'])
             ->get();
@@ -185,7 +189,68 @@ class BookingController extends Controller
             }
         }
 
+        // Check chéo với lịch tư vấn (LichHen) của cùng bác sĩ
+        $tuVans = LichHen::where('co_so_id', $co_so->id)
+            ->where('bac_si_user_id', $bacSiId)
+            ->whereDate('ngay_hen', $ngay)
+            ->where('trang_thai', '!=', 'tu_choi')
+            ->with('caKham')
+            ->get();
+
+        foreach ($tuVans as $lh) {
+            $os = $toMin($lh->caKham?->gio_bat_dau ? substr($lh->caKham->gio_bat_dau, 0, 5) : null);
+            $oe = $toMin($lh->caKham?->gio_ket_thuc ? substr($lh->caKham->gio_ket_thuc, 0, 5) : null);
+            if ($os === null || $oe === null) continue;
+
+            if ($s < $oe && $os < $e) {
+                $bs = User::find($bacSiId);
+                return 'Lưu ý: ' . ($bs?->ten_day_du ?? 'Bác sĩ') . ' đã có lịch TƯ VẤN lúc '
+                    . substr($lh->caKham->gio_bat_dau, 0, 5)
+                    . ' trong ngày này (trùng giờ) — lịch vẫn được lưu.';
+            }
+        }
+
         return null;
+    }
+
+    /**
+     * KTV bận theo khoảng giờ thực tế trong ngày — chặn (không cảnh báo)
+     * vì KTV chỉ phục vụ 1 khách 1 lúc, không như BS có thể tư vấn ngắn.
+     * So sánh theo khoảng giờ thực, không theo khung_gio_id (vì mỗi phòng có khung riêng).
+     */
+    private function ktvBanKhoangGio(CoSo $co_so, int $ktvId, string $ngay, int $khungGioId, ?string $gioThucHien, ?string $gioKetThuc, ?int $exceptId = null): bool
+    {
+        $toMin = fn (?string $t) => $t ? ((int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2)) : null;
+        $kg = KhungGio::find($khungGioId);
+
+        $bd = $gioThucHien ?: ($kg ? substr($kg->gio_bat_dau, 0, 5) : null);
+        $kt = $gioKetThuc ?: ($kg ? substr($kg->gio_ket_thuc, 0, 5) : null);
+        $s = $toMin($bd);
+        if ($s === null) {
+            return false;
+        }
+        $e = $toMin($kt) ?? ($s + 60);
+
+        $others = Booking::where('co_so_id', $co_so->id)
+            ->where('ktv_user_id', $ktvId)
+            ->whereDate('ngay_dat', $ngay)
+            ->where('trang_thai', '!=', 'tu_choi')
+            ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
+            ->with('khungGio')
+            ->get();
+
+        foreach ($others as $o) {
+            $obd = $o->gio_thuc_hien ?: $o->khungGio?->gio_bat_dau;
+            $okt = $o->gio_ket_thuc ?: $o->khungGio?->gio_ket_thuc;
+            $os = $toMin($obd ? substr($obd, 0, 5) : null);
+            if ($os === null) continue;
+            $oe = $toMin($okt ? substr($okt, 0, 5) : null) ?? ($os + 60);
+
+            if ($s < $oe && $os < $e) {
+                return true;
+            }
+        }
+        return false;
     }
 
     // Kiểm tra trùng số điện thoại trong cơ sở
@@ -212,7 +277,7 @@ class BookingController extends Controller
             'ho_ten'        => ['required', 'string', 'max:255'],
             'so_dien_thoai' => ['required', 'string', 'max:30'],
             'email'         => ['nullable', 'email', 'max:255'],
-            'ngay_dat'      => ['required', 'date'],
+            'ngay_dat'      => ['required', 'date', 'after_or_equal:today'],
             'phong_id'      => ['required', Rule::exists('phong', 'id')->where('co_so_id', $co_so->id)],
             'khung_gio_id'  => ['required', Rule::exists('khung_gio', 'id')],
             'gio_thuc_hien' => ['nullable', 'regex:/^\d{2}:(00|30)$/'], // phút fix 00 / 30
@@ -239,13 +304,9 @@ class BookingController extends Controller
             'gio_thuc_hien.regex'    => 'Phút thực hiện chỉ được là 00 hoặc 30.',
         ]);
 
-        // KTV conflict check
+        // KTV conflict check - theo khoảng giờ thực, chặn cả khi ở phòng khác
         if (! empty($data['ktv_user_id'])) {
-            $ktvBusy = Booking::where('co_so_id', $co_so->id)
-                ->where('ktv_user_id', $data['ktv_user_id'])
-                ->where('khung_gio_id', $data['khung_gio_id'])
-                ->whereDate('ngay_dat', $data['ngay_dat'])
-                ->exists();
+            $ktvBusy = $this->ktvBanKhoangGio($co_so, (int) $data['ktv_user_id'], $data['ngay_dat'], (int) $data['khung_gio_id'], $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
             if ($ktvBusy) {
                 return back()->withInput()->withErrors([
                     'ktv_user_id' => 'KTV đã được đặt, vui lòng chọn KTV khác.',
@@ -318,7 +379,7 @@ class BookingController extends Controller
             'ho_ten'        => ['required', 'string', 'max:255'],
             'so_dien_thoai' => ['required', 'string', 'max:30'],
             'email'         => ['nullable', 'email', 'max:255'],
-            'ngay_dat'      => ['required', 'date'],
+            'ngay_dat'      => ['required', 'date', 'after_or_equal:today'],
             'phong_id'      => ['required', Rule::exists('phong', 'id')->where('co_so_id', $co_so->id)],
             'khung_gio_id'  => ['required', Rule::exists('khung_gio', 'id')],
             'gio_thuc_hien' => ['nullable', 'regex:/^\d{2}:(00|30)$/'],
@@ -345,14 +406,9 @@ class BookingController extends Controller
             'gio_thuc_hien.regex'    => 'Phút thực hiện chỉ được là 00 hoặc 30.',
         ]);
 
-        // KTV conflict check (trừ booking hiện tại)
+        // KTV conflict check (trừ booking hiện tại) - theo khoảng giờ thực
         if (! empty($data['ktv_user_id'])) {
-            $ktvBusy = Booking::where('co_so_id', $co_so->id)
-                ->where('ktv_user_id', $data['ktv_user_id'])
-                ->where('khung_gio_id', $data['khung_gio_id'])
-                ->whereDate('ngay_dat', $data['ngay_dat'])
-                ->where('id', '!=', $booking->id)
-                ->exists();
+            $ktvBusy = $this->ktvBanKhoangGio($co_so, (int) $data['ktv_user_id'], $data['ngay_dat'], (int) $data['khung_gio_id'], $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null, $booking->id);
             if ($ktvBusy) {
                 return back()->withInput()->withErrors([
                     'ktv_user_id' => 'KTV đã được đặt, vui lòng chọn KTV khác.',
@@ -441,6 +497,27 @@ class BookingController extends Controller
         $this->authorizePerm('duyet_booking');
 
         $approve = ! $booking->da_duyet;
+        $wasRejected = $booking->trang_thai === 'tu_choi';
+
+        // Khi duyệt lại đơn TỪ CHỐI: slot/KTV/BS có thể đã bị đơn khác chiếm trong thời gian chờ.
+        // → Check lại các conflict trước khi cho phép duyệt.
+        $canhBao = [];
+        if ($approve && $wasRejected) {
+            if ($this->khungGioDayCho($co_so, (int) $booking->phong_id, (int) $booking->khung_gio_id, (string) $booking->ngay_dat->toDateString(), $booking->id)) {
+                return back()->with('error', 'Không duyệt được: khung giờ này đã được đặt kín bởi đơn khác. Vui lòng đổi khung giờ trước khi duyệt.');
+            }
+            if ($booking->ktv_user_id) {
+                $busy = $this->ktvBanKhoangGio($co_so, (int) $booking->ktv_user_id, (string) $booking->ngay_dat->toDateString(), (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
+                if ($busy) {
+                    return back()->with('error', 'Không duyệt được: KTV đã được đặt cho khung giờ này bởi đơn khác.');
+                }
+            }
+            if ($booking->bac_si_user_id) {
+                $msg = $this->bacSiTrungLich($co_so, (int) $booking->bac_si_user_id, (string) $booking->ngay_dat->toDateString(), (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
+                if ($msg) $canhBao[] = $msg;
+            }
+        }
+
         $booking->da_duyet = $approve;
         $booking->trang_thai = $approve ? 'da_duyet' : 'cho_duyet';
         $booking->ly_do_tu_choi = null; // duyệt lại thì xóa lý do từ chối cũ
@@ -448,7 +525,9 @@ class BookingController extends Controller
 
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
 
-        return back()->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch hẹn của ' . $ten . '.');
+        return back()
+            ->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch hẹn của ' . $ten . '.')
+            ->with('warning', implode(' ', $canhBao) ?: null);
     }
 
     /** Từ chối (không duyệt) lịch đặt phòng kèm lý do (chỉ người có quyền duyệt). */

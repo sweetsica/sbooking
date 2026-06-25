@@ -32,21 +32,20 @@ Route::prefix('{co_so:slug}')->group(function () {
     // Vào thẳng slug (không có path) -> chuyển về trang chủ Lịch hẹn
     Route::get('/', fn (CoSo $co_so) => redirect("/{$co_so->slug}/lich-hen"));
 
-    // ----- CÔNG KHAI: form tạo đặt phòng (không cần đăng nhập) -----
-    Route::get('/tao-moi',           [BookingController::class, 'create'])->name('booking.create');
-    Route::post('/tao-moi',          [BookingController::class, 'store'])->name('booking.store');
-    Route::get('/tao-moi/khung-gio', [BookingController::class, 'khungGio'])->name('booking.khunggio');
-    Route::get('/tao-moi/check-sdt', [BookingController::class, 'checkPhone'])->name('booking.checksdt');
-    Route::get('/tao-moi/check-ktv', [BookingController::class, 'checkKtv'])->name('booking.checkktv');
-
-    // ----- CÔNG KHAI: form đặt lịch tư vấn bác sĩ -----
-    Route::get('/dat-kham',            [LichHenController::class, 'create'])->name('lichhen.create');
-    Route::post('/dat-kham',           [LichHenController::class, 'store'])->name('lichhen.store');
-    Route::get('/dat-kham/ca-kham',    [LichHenController::class, 'caKham'])->name('lichhen.cakham');
-    Route::get('/dat-kham/check-sdt',  [LichHenController::class, 'checkPhone'])->name('lichhen.checksdt');
-
     // ----- CẦN ĐĂNG NHẬP -----
     Route::middleware('auth')->group(function () {
+        // Form tạo đặt phòng / lịch tư vấn — nhân viên đặt hộ khách (sale_id required).
+        Route::get('/tao-moi',           [BookingController::class, 'create'])->name('booking.create');
+        Route::post('/tao-moi',          [BookingController::class, 'store'])->name('booking.store');
+        Route::get('/tao-moi/khung-gio', [BookingController::class, 'khungGio'])->name('booking.khunggio');
+        Route::get('/tao-moi/check-sdt', [BookingController::class, 'checkPhone'])->name('booking.checksdt');
+        Route::get('/tao-moi/check-ktv', [BookingController::class, 'checkKtv'])->name('booking.checkktv');
+
+        Route::get('/dat-kham',            [LichHenController::class, 'create'])->name('lichhen.create');
+        Route::post('/dat-kham',           [LichHenController::class, 'store'])->name('lichhen.store');
+        Route::get('/dat-kham/ca-kham',    [LichHenController::class, 'caKham'])->name('lichhen.cakham');
+        Route::get('/dat-kham/check-sdt',  [LichHenController::class, 'checkPhone'])->name('lichhen.checksdt');
+
         Route::get('/phong',     [PageController::class, 'rooms'])->name('phong');
         Route::get('/lich-hen',  [PageController::class, 'timeline'])->name('timeline');
         Route::get('/danh-sach', [PageController::class, 'bookings'])->name('bookings');

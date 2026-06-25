@@ -20,6 +20,12 @@ trait AuthorizesByPhanQuyen
             return;
         }
 
+        // Guard: user không có cả vai_tro_id lẫn phong_ban_id → không thể có quyền.
+        // Nếu không guard, closure where() rỗng → query trở thành unbounded → bypass.
+        if (! $user->vai_tro_id && ! $user->phong_ban_id) {
+            abort(403, 'Bạn không có quyền thực hiện thao tác này.');
+        }
+
         $ok = PhanQuyen::where(function ($q) use ($user) {
                 if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
                 if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
@@ -38,6 +44,11 @@ trait AuthorizesByPhanQuyen
         if (! $user) return [];
         if ($user->is_admin) {
             return \App\Support\BookingFields::keys();
+        }
+
+        // Guard tương tự authorizePerm: tránh query unbounded.
+        if (! $user->vai_tro_id && ! $user->phong_ban_id) {
+            return [];
         }
 
         return PhanQuyen::where(function ($q) use ($user) {
