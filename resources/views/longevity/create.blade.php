@@ -274,9 +274,12 @@
 </div>
 </div>
 
-{{-- Khung tham khảo lịch trình bác sĩ / phòng theo cơ sở --}}
-@php $lichTrinh = config('lich-trinh.'.$coSo->slug); @endphp
-@if ($lichTrinh)
+{{-- Khung tham khảo quy tắc đặt lịch theo cơ sở + loại đặt lịch --}}
+@php
+    $lichTrinh = config('lich-trinh.'.$coSo->slug);
+    $rows = $lichTrinh[$isDichVu ? 'phong_dich_vu' : 'phong_kham'] ?? [];
+@endphp
+@if ($lichTrinh && count($rows))
 <details class="mt-4 bg-secondary-container/30 border border-outline-variant rounded-xl overflow-hidden" open>
 <summary class="px-4 py-2.5 cursor-pointer flex items-center gap-2 hover:bg-secondary-container/50 select-none">
 <span class="material-symbols-outlined text-secondary text-[20px]">info</span>
@@ -285,6 +288,26 @@
 </summary>
 <div class="overflow-x-auto bg-surface-container-lowest border-t border-outline-variant">
 <table class="w-full text-body-sm">
+@if ($isDichVu)
+{{-- Bảng phòng dịch vụ: 3 cột --}}
+<thead class="bg-surface-container-low text-left text-label-caps font-label-caps uppercase text-on-surface-variant">
+<tr>
+<th class="px-3 py-2">Tên chuyên khoa</th>
+<th class="px-3 py-2">Địa điểm</th>
+<th class="px-3 py-2">Slot</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40">
+@foreach ($rows as $r)
+<tr class="hover:bg-surface-container-low/50 align-top">
+<td class="px-3 py-2 font-medium whitespace-nowrap">{{ $r['phong'] }}</td>
+<td class="px-3 py-2 text-on-surface-variant">{{ $r['dia_chi'] }}</td>
+<td class="px-3 py-2">{{ $r['slot'] }}</td>
+</tr>
+@endforeach
+</tbody>
+@else
+{{-- Bảng phòng khám: 4 cột --}}
 <thead class="bg-surface-container-low text-left text-label-caps font-label-caps uppercase text-on-surface-variant">
 <tr>
 <th class="px-3 py-2">Phòng</th>
@@ -294,7 +317,7 @@
 </tr>
 </thead>
 <tbody class="divide-y divide-outline-variant/40">
-@foreach ($lichTrinh['rows'] as $r)
+@foreach ($rows as $r)
 <tr class="hover:bg-surface-container-low/50 align-top">
 <td class="px-3 py-2 font-medium whitespace-nowrap">{{ $r['phong'] }}</td>
 <td class="px-3 py-2">
@@ -323,6 +346,7 @@
 </tr>
 @endforeach
 </tbody>
+@endif
 </table>
 </div>
 </details>

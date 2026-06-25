@@ -154,7 +154,7 @@ $textClass = match($st) {
 @if ($isMaintenance)
 <button class="flex-1 py-2 px-4 bg-surface-container text-outline font-body-sm text-body-sm font-bold rounded-lg cursor-not-allowed">Chi tiết Lịch</button>
 @else
-<a href="/{{ $coSo->slug }}/lich-hen?phong_id={{ $phong->id }}&ngay={{ $date->toDateString() }}" class="flex-1 py-2 px-4 border border-secondary text-secondary font-body-sm text-body-sm font-bold rounded-lg hover:bg-secondary-container/10 transition-colors text-center">Chi tiết Lịch</a>
+<a href="/{{ $coSo->slug }}/lich-hen?phong_id={{ $phong->id }}&ngay={{ $date->toDateString() }}{{ $phong->kieu_phong === 'phong_dich_vu' ? '&kieu=dich_vu' : '' }}" class="flex-1 py-2 px-4 border border-secondary text-secondary font-body-sm text-body-sm font-bold rounded-lg hover:bg-secondary-container/10 transition-colors text-center">Chi tiết Lịch</a>
 @endif
 </div>
 </div>
