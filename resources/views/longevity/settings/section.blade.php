@@ -16,7 +16,7 @@
     $defaults = ['active' => 1, 'loai' => 'cong_dong', 'trang_thai' => 'hoat_dong',
         'so_slot_toi_da' => 1, 'gio_mo' => '08:00', 'gio_dong' => '21:00', 'chuc_danh' => '', 'ten' => '',
         'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00',
-        'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac',
+        'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => 0,
         'phut_tu_van' => 30, 'phut_kham_ls' => 5,
         'kieu_phong' => 'phong_kham', 'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => ''];
     $hasExtra = in_array($key, ['phong']);

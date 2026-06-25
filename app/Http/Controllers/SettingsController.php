@@ -28,7 +28,7 @@ class SettingsController extends Controller
         'co-so'      => ['Cơ sở', 'store', 'Mỗi cơ sở (chi nhánh) có nhân sự, bác sĩ, phòng riêng.'],
         'quyen'      => ['Quyền', 'admin_panel_settings', 'Vai trò nào được Xem / Thêm / Sửa / Xóa booking.'],
         'nguoi-dung' => ['Người dùng', 'group', 'Thêm/sửa/xóa người dùng (bao gồm KTV, Bác sĩ, Lễ tân...).'],
-        'dich-vu'    => ['Dịch vụ', 'spa', 'CRUD tên dịch vụ — đưa vào form tạo mới.'],
+        'dich-vu'    => ['Liệu pháp', 'spa', 'Liệu pháp / Dịch vụ — đưa vào form đặt lịch.'],
         'menu'       => ['Menu', 'restaurant_menu', 'CRUD tên Menu — đưa vào form tạo mới (dạng ô tick).'],
         'bao-cao'    => ['Báo cáo', 'analytics', 'Tổng hợp lịch đặt phòng + lịch tư vấn theo bộ lọc, xuất Excel.'],
     ];
@@ -42,9 +42,10 @@ class SettingsController extends Controller
 
         return [
             'dich-vu' => $catalog(DichVu::class, [
-                'ten'    => ['label' => 'Tên dịch vụ', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
+                'ten'    => ['label' => 'Tên liệu pháp', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 'thoi_gian_phut' => ['label' => 'Thời gian (phút/khách)', 'type' => 'number', 'rules' => ['required', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 30'],
                 'thuoc_nhom' => ['label' => 'Thuộc nhóm', 'type' => 'select', 'options' => ['khac' => 'Khác', 'tu_van' => 'Tư vấn', 'kham_ls' => 'Thăm khám lâm sàng'], 'rules' => ['required', 'in:tu_van,kham_ls,khac']],
+                'la_dich_vu' => ['label' => 'Là dịch vụ (chỉ hiện ở đặt lịch dịch vụ)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean'], 'hint' => 'Tắt = Thăm khám (hiện ở form đặt lịch phòng khám). Bật = Dịch vụ (vd Xông hơi, YHCT).'],
                 'active' => ['label' => 'Kích hoạt', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
             ]),
             'menu' => $catalog(Menu::class, [
@@ -123,8 +124,8 @@ class SettingsController extends Controller
 
         $rows = match ($section) {
             'phong'      => $co_so->phongs()->with('khungGios')->get(),
-            'dich-vu'    => $co_so->dichVus()->get(),
-            'menu'       => $co_so->menus()->get(),
+            'dich-vu'    => \App\Models\DichVu::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))->orderBy('ten')->get(),
+            'menu'       => \App\Models\Menu::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))->orderBy('ten')->get(),
             'nguoi-dung' => User::with(['phongBan', 'vaiTro'])
                 ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
                 ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->query('q').'%'))

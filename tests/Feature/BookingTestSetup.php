@@ -98,15 +98,15 @@ trait BookingTestSetup
 
         $this->dichVu = DichVu::create([
             'co_so_id' => $this->coSo->id, 'ten' => 'Massage', 'active' => true,
-            'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac',
+            'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => false,
         ]);
         $this->dichVuTuVan = DichVu::create([
             'co_so_id' => $this->coSo->id, 'ten' => 'Tư vấn', 'active' => true,
-            'thoi_gian_phut' => 30, 'thuoc_nhom' => 'tu_van',
+            'thoi_gian_phut' => 30, 'thuoc_nhom' => 'tu_van', 'la_dich_vu' => false,
         ]);
         $this->dichVuKhamLs = DichVu::create([
             'co_so_id' => $this->coSo->id, 'ten' => 'Khám LS', 'active' => true,
-            'thoi_gian_phut' => 5, 'thuoc_nhom' => 'kham_ls',
+            'thoi_gian_phut' => 5, 'thuoc_nhom' => 'kham_ls', 'la_dich_vu' => false,
         ]);
 
         // Vai trò

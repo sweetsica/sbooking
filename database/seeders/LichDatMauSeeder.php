@@ -37,11 +37,15 @@ class LichDatMauSeeder extends Seeder
         $sale = User::where('co_so_id', $coSo->id)->whereHas('vaiTro', fn ($q) => $q->where('ma', 'tu_van_vien'))->first()
             ?? User::where('co_so_id', $coSo->id)->first();
 
-        // Tra cứu dịch vụ
-        $dvTuVan   = DichVu::where('ten', 'Tư vấn - đọc kết quả')->orWhere('ten', 'Tư vấn')->orderByDesc('id')->first();
-        $dvKhamLs  = DichVu::where('ten', 'Thăm khám lâm sàng (trừ tim mạch)')->orWhere('ten', 'Thăm khám lâm sàng')->orderByDesc('id')->first();
+        // Tra cứu dịch vụ (tên đã chuẩn hoá trong LongevitySeeder)
+        $dvTuVan   = DichVu::where('ten', 'Tư vấn - đọc kết quả')->first();
+        $dvKhamLs  = DichVu::where('ten', 'Thăm khám lâm sàng')->first();
         $dvTimMach = DichVu::where('ten', 'Thăm khám tim mạch')->first();
         $dvSieuAm  = DichVu::where('ten', 'Siêu âm')->first();
+        $dvGene    = DichVu::where('ten', 'Đọc kết quả Gene')->first();
+        $dvXQuang  = DichVu::where('ten', 'Chụp XQuang')->first();
+        $dvLayMau  = DichVu::where('ten', 'Lấy máu')->first();
+        $dvThucHienLS = DichVu::where('ten', 'Thực hiện lâm sàng')->first();
 
         $stt = 0;
         $mkKhach = function () use (&$stt, $coSo) {
@@ -110,22 +114,25 @@ class LichDatMauSeeder extends Seeder
                 default   => (int) ($dv->thoi_gian_phut ?: 30),
             };
 
-            // Lấy khung 8h đầu tiên của phòng
-            $kg = KhungGio::where('phong_id', $phong->id)->orderBy('thu_tu')->first();
-            if (! $kg) continue;
-
-            // Tách [gio_bat_dau, gio_ket_thuc] của khung thành các slot $phut phút
+            // Loop các khung giờ cho đến khi tạo đủ $soCa booking (mỗi khung nhận tối đa N ca lọt vào khung)
+            $khungs = KhungGio::where('phong_id', $phong->id)->orderBy('thu_tu')->get();
             $toMin = fn (string $t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
-            $s = $toMin(substr($kg->gio_bat_dau, 0, 5));
-            $e = $toMin(substr($kg->gio_ket_thuc, 0, 5));
+            $count = 0;
 
-            for ($i = 0; $i < $soCa; $i++) {
-                $start = $s + $i * $phut;
-                if ($start + $phut > $e) break;
-                $bd = sprintf('%02d:%02d', intdiv($start, 60), $start % 60);
-                $kt = sprintf('%02d:%02d', intdiv($start + $phut, 60), ($start + $phut) % 60);
-                $tt = $trangThais[$stt % count($trangThais)];
-                $mkBooking($phong, $kg, $bd, $kt, $bs, $dv, null, $tt);
+            foreach ($khungs as $kg) {
+                if ($count >= $soCa) break;
+                $s = $toMin(substr($kg->gio_bat_dau, 0, 5));
+                $e = $toMin(substr($kg->gio_ket_thuc, 0, 5));
+
+                for ($i = 0; $count < $soCa; $i++) {
+                    $start = $s + $i * $phut;
+                    if ($start + $phut > $e) break; // vượt khung → qua khung sau
+                    $bd = sprintf('%02d:%02d', intdiv($start, 60), $start % 60);
+                    $kt = sprintf('%02d:%02d', intdiv($start + $phut, 60), ($start + $phut) % 60);
+                    $tt = $trangThais[$stt % count($trangThais)];
+                    $mkBooking($phong, $kg, $bd, $kt, $bs, $dv, null, $tt);
+                    $count++;
+                }
             }
         }
 

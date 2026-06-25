@@ -165,17 +165,13 @@
 </div>
 
 @if (! $isDichVu)
-<!-- Loại chính: Tư vấn / Thăm khám lâm sàng (mutex) -->
+<!-- Loại chính: Tư vấn / Thăm khám lâm sàng (mutex, mặc định Tư vấn) -->
 @php
-    $loaiChinh = old('loai_chinh', $bk?->co_tu_van ? 'tu_van' : ($bk?->co_kham_cls ? 'kham_ls' : ''));
+    $loaiChinh = old('loai_chinh', $bk?->co_kham_cls ? 'kham_ls' : 'tu_van');
 @endphp
 <div class="mb-10">
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-2">Loại chính (chọn để tự lọc bác sĩ + chia khung giờ theo phút)</label>
-<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/30">
-<input type="radio" name="loai_chinh" value="" @checked($loaiChinh === '') class="w-4 h-4 text-secondary"/>
-<span class="text-body-md">Không chọn (dùng dịch vụ thường)</span>
-</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-2">Loại chính <span class="text-error">*</span> <span class="text-on-surface-variant/60 text-[11px]">— tự lọc bác sĩ + chia khung giờ theo phút</span></label>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
 <label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
 <input type="radio" name="loai_chinh" value="tu_van" @checked($loaiChinh === 'tu_van') class="w-4 h-4 text-emerald-500"/>
 <span class="flex items-center gap-2 text-body-md"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Tư vấn / Đọc kết quả</span>
@@ -248,27 +244,15 @@
 </div>
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ thực hiện DV <span class="text-on-surface-variant/60 text-[11px]">(phút 00/30)</span></label>
-<select name="gio_thuc_hien" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ thực hiện DV <span class="text-on-surface-variant/60 text-[11px]">(theo khung giờ)</span></label>
+<select id="gio_thuc_hien" name="gio_thuc_hien" data-old="{{ old('gio_thuc_hien', $bk && $bk->gio_thuc_hien ? substr($bk->gio_thuc_hien,0,5) : '') }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot">
 <option value="">-- Chọn giờ --</option>
-@for ($h = 8; $h <= 20; $h++)
-@foreach (['00','30'] as $mnt)
-@php $val = sprintf('%02d:%s', $h, $mnt); @endphp
-<option value="{{ $val }}" @selected(old('gio_thuc_hien', $bk && $bk->gio_thuc_hien ? substr($bk->gio_thuc_hien,0,5) : '')===$val)>{{ $val }}</option>
-@endforeach
-@endfor
 </select>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ dự kiến kết thúc <span class="text-on-surface-variant/60 text-[11px]">(phút 00/30)</span></label>
-<select id="gio_ket_thuc" name="gio_ket_thuc" data-old="{{ old('gio_ket_thuc') }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ dự kiến kết thúc <span class="text-on-surface-variant/60 text-[11px]">(theo khung giờ)</span></label>
+<select id="gio_ket_thuc" name="gio_ket_thuc" data-old="{{ old('gio_ket_thuc', $bk && $bk->gio_ket_thuc ? substr($bk->gio_ket_thuc,0,5) : '') }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot">
 <option value="">-- Chọn giờ --</option>
-@for ($h = 8; $h <= 21; $h++)
-@foreach ($h === 21 ? ['00'] : ['00','30'] as $mnt)
-@php $valKt = sprintf('%02d:%s', $h, $mnt); @endphp
-<option value="{{ $valKt }}" @selected(old('gio_ket_thuc', $bk && $bk->gio_ket_thuc ? substr($bk->gio_ket_thuc,0,5) : '')===$valKt)>{{ $valKt }}</option>
-@endforeach
-@endfor
 </select>
 </div>
 </div>
@@ -379,7 +363,7 @@
 </div>
 <div class="space-y-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Liệu pháp (Therapy/Service) <span class="text-error">*</span></label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-error">*</span></label>
 <select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 @foreach ($dichVus as $dv)
 <option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
@@ -530,38 +514,51 @@
         updateEnd();
     }
 
-    // Khóa các mốc giờ bắt đầu / kết thúc thuộc khung giờ đã đầy
-    function applyTimeLocks() {
-        if (batDau) [...batDau.options].forEach(o => {
-            if (o.value) o.disabled = fullHours.has(parseInt(o.value.slice(0, 2)));
-        });
-        [...ketThuc.options].forEach(o => {
-            if (!o.value) return;
-            const h = parseInt(o.value.slice(0, 2)), m = o.value.slice(3, 5);
-            o.disabled = fullHours.has(m === '00' ? h - 1 : h);
-        });
-    }
-
-    // Gợi ý giờ thực hiện + giờ kết thúc theo khung giờ (hoặc sub-slot) đã chọn
-    function updateEnd() {
-        if (firstRun) { firstRun = false; if (!ketThuc.dataset.old) return; }
-
+    // Generate options cho gio_thuc_hien / gio_ket_thuc THEO khung giờ đã chọn (step 5 phút)
+    function rebuildGioOptions() {
         const opt = khung.options[khung.selectedIndex];
-        if (!opt) return;
+        if (!opt || !batDau || !ketThuc) return;
         const bd = opt.getAttribute('data-bd') || '';
         const kt = opt.getAttribute('data-kt') || '';
+        if (!bd || !kt) return;
 
-        // Đảm bảo giờ bd/kt tồn tại trong dropdown (insert nếu thiếu, vì có phút lẻ 25, 05...)
-        const ensureOption = (sel, val) => {
-            if (!val) return;
-            if (![...sel.options].some(o => o.value === val)) {
-                const opt = document.createElement('option');
-                opt.value = val; opt.textContent = val;
-                sel.appendChild(opt);
-            }
-        };
-        if (batDau && bd) { ensureOption(batDau, bd); batDau.value = bd; }
-        if (kt) { ensureOption(ketThuc, kt); ketThuc.value = kt; }
+        const toMin = t => parseInt(t.slice(0, 2)) * 60 + parseInt(t.slice(3, 5));
+        const fmt = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
+        const s = toMin(bd), e = toMin(kt);
+
+        // Giữ giá trị đang chọn (hoặc data-old) để khôi phục
+        const bdOld = batDau.value || batDau.dataset.old || '';
+        const ktOld = ketThuc.value || ketThuc.dataset.old || '';
+
+        // Bắt đầu: từ s đến e-5 (bao gồm s, không bao gồm e)
+        let opts = '<option value="">-- Chọn giờ --</option>';
+        for (let t = s; t < e; t += 5) {
+            const v = fmt(t);
+            opts += `<option value="${v}">${v}</option>`;
+        }
+        batDau.innerHTML = opts;
+        // Khôi phục nếu giá trị cũ vẫn fit khung
+        if (bdOld && batDau.querySelector(`option[value="${bdOld}"]`)) batDau.value = bdOld;
+        else batDau.value = bd;
+
+        // Kết thúc: từ s+5 đến e (bao gồm e)
+        opts = '<option value="">-- Chọn giờ --</option>';
+        for (let t = s + 5; t <= e; t += 5) {
+            const v = fmt(t);
+            opts += `<option value="${v}">${v}</option>`;
+        }
+        ketThuc.innerHTML = opts;
+        if (ktOld && ketThuc.querySelector(`option[value="${ktOld}"]`)) ketThuc.value = ktOld;
+        else ketThuc.value = kt;
+    }
+
+    // Backward-compat: applyTimeLocks now just rebuilds options
+    function applyTimeLocks() { rebuildGioOptions(); }
+
+    // updateEnd: khi đổi khung giờ → rebuild + auto-fill bd/kt theo khung
+    function updateEnd() {
+        if (firstRun) { firstRun = false; }
+        rebuildGioOptions();
     }
 
     // Auto-fill KTV mặc định + cập nhật meta khi chọn phòng dịch vụ
@@ -590,21 +587,23 @@
     const bsHint = document.getElementById('bs_hint');
     const hCoTuVan = document.getElementById('co_tu_van');
     const hCoKhamCls = document.getElementById('co_kham_cls');
+    const applyLoaiChinh = (v) => {
+        if (hCoTuVan) hCoTuVan.value = v === 'tu_van' ? '1' : '0';
+        if (hCoKhamCls) hCoKhamCls.value = v === 'kham_ls' ? '1' : '0';
+        // Auto-select dịch vụ matching nhóm
+        if (v && dichVu) {
+            const match = [...dichVu.options].find(o => o.dataset.nhom === v);
+            if (match) dichVu.value = match.value;
+        }
+        loadBacSi();
+        loadSlots();
+    };
     document.querySelectorAll('input[name="loai_chinh"]').forEach(r => {
-        r.addEventListener('change', () => {
-            const v = r.value;
-            if (hCoTuVan) hCoTuVan.value = v === 'tu_van' ? '1' : '0';
-            if (hCoKhamCls) hCoKhamCls.value = v === 'kham_ls' ? '1' : '0';
-
-            // Auto-select dịch vụ matching nhóm
-            if (v && dichVu) {
-                const match = [...dichVu.options].find(o => o.dataset.nhom === v);
-                if (match) dichVu.value = match.value;
-            }
-            loadBacSi();
-            loadSlots();
-        });
+        r.addEventListener('change', () => applyLoaiChinh(r.value));
     });
+    // Apply ngay khi load: filter theo radio mặc định (tu_van)
+    const initLoai = document.querySelector('input[name="loai_chinh"]:checked');
+    if (initLoai) applyLoaiChinh(initLoai.value);
 
     let bsAbortCtl;
 

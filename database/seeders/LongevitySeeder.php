@@ -374,25 +374,35 @@ class LongevitySeeder extends Seeder
         }
 
         // =============================================
-        // DỊCH VỤ chính (dùng chung) — danh mục thăm khám
+        // DỊCH VỤ (= Liệu pháp) — danh mục dùng chung
         // =============================================
+        // Xóa các tên cũ bị trùng nghĩa (idempotent: chạy lại nhiều lần OK)
+        DichVu::whereIn('ten', ['Tư vấn', 'Thăm khám lâm sàng (trừ tim mạch)', 'Massage'])
+            ->whereNull('co_so_id')->delete();
+
         $services = [
-            ['ten' => 'Thăm khám lâm sàng (trừ tim mạch)', 'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
-            ['ten' => 'Thăm khám tim mạch',                 'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30],
-            ['ten' => 'Thực hiện lâm sàng',                 'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
-            ['ten' => 'Siêu âm',                            'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25],
-            ['ten' => 'Chụp XQuang',                        'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15],
-            ['ten' => 'Lấy máu',                            'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10],
-            ['ten' => 'Đọc kết quả Gene',                   'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
-            ['ten' => 'Tư vấn - đọc kết quả',               'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
-            // Dịch vụ cho phòng dịch vụ (không liên quan tới tư vấn/thăm khám)
-            ['ten' => 'Xông hơi',                           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30],
-            ['ten' => 'Trị liệu YHCT',                      'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60],
+            // 8 LIỆU PHÁP THĂM KHÁM (la_dich_vu=false) → hiện ở form đặt lịch phòng khám
+            ['ten' => 'Thăm khám lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
+            ['ten' => 'Thăm khám tim mạch',    'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            ['ten' => 'Thực hiện lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
+            ['ten' => 'Siêu âm',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25, 'la_dich_vu' => false],
+            ['ten' => 'Chụp XQuang',           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15, 'la_dich_vu' => false],
+            ['ten' => 'Lấy máu',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10, 'la_dich_vu' => false],
+            ['ten' => 'Đọc kết quả Gene',      'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            ['ten' => 'Tư vấn - đọc kết quả',  'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            // 2 DỊCH VỤ (la_dich_vu=true) → hiện ở form đặt lịch dịch vụ
+            ['ten' => 'Xông hơi',              'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => true],
+            ['ten' => 'Trị liệu YHCT',         'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60, 'la_dich_vu' => true],
         ];
         foreach ($services as $s) {
             DichVu::updateOrCreate(
                 ['co_so_id' => null, 'ten' => $s['ten']],
-                ['thoi_gian_phut' => $s['thoi_gian_phut'], 'thuoc_nhom' => $s['thuoc_nhom'], 'active' => true]
+                [
+                    'thoi_gian_phut' => $s['thoi_gian_phut'],
+                    'thuoc_nhom' => $s['thuoc_nhom'],
+                    'la_dich_vu' => $s['la_dich_vu'],
+                    'active' => true,
+                ]
             );
         }
     }
