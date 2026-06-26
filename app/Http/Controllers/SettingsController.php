@@ -34,10 +34,12 @@ class SettingsController extends Controller
     ];
 
     // Cấu hình các mục có CRUD
-    private function editableConfig(): array
+    private function editableConfig(?CoSo $co_so = null): array
     {
         $catalog = fn ($model, $fields) => ['model' => $model, 'kind' => 'catalog', 'fields' => $fields];
-        $phongBanOptions = PhongBan::orderBy('ten')->pluck('ten', 'id')->all();
+        // Phòng ban giờ RIÊNG từng cơ sở → dropdown chỉ lấy phòng ban của cơ sở đang xem.
+        $phongBanOptions = PhongBan::when($co_so, fn ($q) => $q->where('co_so_id', $co_so->id))
+            ->orderBy('ten')->pluck('ten', 'id')->all();
         $vaiTroOptions = VaiTro::orderBy('ten')->pluck('ten', 'id')->all();
 
         return [
@@ -120,7 +122,7 @@ class SettingsController extends Controller
     public function section(CoSo $co_so, string $section, Request $request)
     {
         abort_unless(isset(self::SECTIONS[$section]), 404);
-        $config = $this->editableConfig()[$this->resolveSection($section)] ?? null;
+        $config = $this->editableConfig($co_so)[$this->resolveSection($section)] ?? null;
 
         $rows = match ($section) {
             'phong'      => $co_so->phongs()->with('khungGios')->get(),
@@ -134,7 +136,7 @@ class SettingsController extends Controller
                 ->when($request->filled('is_tu_van'), fn ($q) => $q->where('is_tu_van', $request->query('is_tu_van') === '1'))
                 ->orderByDesc('is_admin')->orderBy('name')->get(),
             'co-so'      => CoSo::orderBy('id')->get(),
-            'phong-ban'  => PhongBan::orderBy('id')->get(),
+            'phong-ban'  => PhongBan::where('co_so_id', $co_so->id)->orderBy('id')->get(),
             'vai-tro'    => VaiTro::orderBy('id')->get(),
             default      => collect(),
         };
@@ -273,24 +275,24 @@ class SettingsController extends Controller
             return $this->saveQuyen($request);
         }
 
-        [$model, $config] = $this->mustEditable($section);
+        [$model, $config] = $this->mustEditable($section, $co_so);
 
         return match ($config['kind']) {
             'user' => $this->saveUser($co_so, $request, null),
             'coso' => $this->saveCoSo($request, null),
-            'phongban' => $this->savePhongBan($request, null),
+            'phongban' => $this->savePhongBan($co_so, $request, null),
             default => $this->saveCatalog($co_so, $request, $config, $model, $section, null),
         };
     }
 
     public function update(CoSo $co_so, Request $request, string $section, int $id)
     {
-        [$model, $config] = $this->mustEditable($section);
+        [$model, $config] = $this->mustEditable($section, $co_so);
 
         return match ($config['kind']) {
             'user' => $this->saveUser($co_so, $request, $this->findManageableUser($co_so, $id)),
             'coso' => $this->saveCoSo($request, CoSo::findOrFail($id)),
-            'phongban' => $this->savePhongBan($request, PhongBan::findOrFail($id)),
+            'phongban' => $this->savePhongBan($co_so, $request, PhongBan::where('co_so_id', $co_so->id)->findOrFail($id)),
             default => $this->saveCatalog($co_so, $request, $config, $model, $section,
                 $this->findCatalogRecord($model, $co_so, $id)
             ),
@@ -318,7 +320,7 @@ class SettingsController extends Controller
 
     public function destroy(CoSo $co_so, string $section, int $id)
     {
-        [$model, $config] = $this->mustEditable($section);
+        [$model, $config] = $this->mustEditable($section, $co_so);
 
         if ($config['kind'] === 'coso') {
             $cs = CoSo::findOrFail($id);
@@ -327,7 +329,7 @@ class SettingsController extends Controller
             }
             $cs->delete();
         } elseif ($config['kind'] === 'phongban') {
-            $pb = PhongBan::withCount('nguoiDungs')->findOrFail($id);
+            $pb = PhongBan::withCount('nguoiDungs')->where('co_so_id', $co_so->id)->findOrFail($id);
             if ($pb->nguoi_dungs_count > 0) {
                 return back()->with('err', 'Không thể xóa: phòng ban đang có người dùng. Hãy chuyển họ sang phòng ban khác trước.');
             }
@@ -461,27 +463,33 @@ class SettingsController extends Controller
         return back()->with('ok', 'Đã lưu phân quyền theo vai trò.');
     }
 
-    private function savePhongBan(Request $request, ?PhongBan $pb)
+    private function savePhongBan(CoSo $co_so, Request $request, ?PhongBan $pb)
     {
         $data = $request->validate([
             'ten' => ['required', 'string', 'max:255'],
-            'ma'  => ['required', 'string', 'max:50', 'regex:/^[a-z0-9_-]+$/', Rule::unique('phong_ban', 'ma')->ignore($pb?->id)],
+            // Mã duy nhất TRONG cơ sở (mỗi cơ sở có bộ phòng ban riêng).
+            'ma'  => ['required', 'string', 'max:50', 'regex:/^[a-z0-9_-]+$/',
+                Rule::unique('phong_ban', 'ma')->where('co_so_id', $co_so->id)->ignore($pb?->id)],
         ], [
             'ma.regex' => 'Mã chỉ gồm chữ thường, số, gạch dưới hoặc gạch ngang.',
-            'ma.unique' => 'Mã phòng ban đã tồn tại.',
+            'ma.unique' => 'Mã phòng ban đã tồn tại trong cơ sở này.',
         ]);
 
-        $pb ? $pb->update($data) : PhongBan::create($data);
+        if ($pb) {
+            $pb->update($data);
+        } else {
+            PhongBan::create($data + ['co_so_id' => $co_so->id]);
+        }
 
         return back()->with('ok', $pb ? 'Đã cập nhật phòng ban.' : 'Đã thêm phòng ban.');
     }
 
     // ----- helpers -----
 
-    private function mustEditable(string $section): array
+    private function mustEditable(string $section, ?CoSo $co_so = null): array
     {
         abort_unless(isset(self::SECTIONS[$section]), 404);
-        $config = $this->editableConfig()[$this->resolveSection($section)] ?? null;
+        $config = $this->editableConfig($co_so)[$this->resolveSection($section)] ?? null;
         abort_unless($config, 403, 'Mục này chưa hỗ trợ chỉnh sửa.');
 
         return [$config['model'], $config];

@@ -30,15 +30,7 @@ class LongevitySeeder extends Seeder
         $vrVanHanh   = VaiTro::firstOrCreate(['ma' => 'quan_tri_van_hanh'], ['ten' => 'Quản trị vận hành']);
         $vrAdmin     = VaiTro::firstOrCreate(['ma' => 'admin'],         ['ten' => 'Quản trị hệ thống']);
 
-        // ---- Phòng ban ----
-        $pbSales     = PhongBan::firstOrCreate(['ma' => 'sales'],           ['ten' => 'Kinh doanh (Sales)']);
-        $pbTuVan     = PhongBan::firstOrCreate(['ma' => 'tu_van'],          ['ten' => 'Phòng tư vấn']);
-        $pbAdmin     = PhongBan::updateOrCreate(['ma' => 'admin'],          ['ten' => 'Admin Vận hành']);
-        $pbKhamNgoai = PhongBan::firstOrCreate(['ma' => 'phong_kham_ngoai'],['ten' => 'Phòng khám Ngoại']);
-        $pbChuyenGia = PhongBan::firstOrCreate(['ma' => 'phong_chuyen_gia'],['ten' => 'Phòng chuyên gia']);
-        $pbKhamNoi1  = PhongBan::firstOrCreate(['ma' => 'phong_kham_noi_1'],['ten' => 'Phòng khám Nội 1']);
-        $pbKhamNoi2  = PhongBan::firstOrCreate(['ma' => 'phong_kham_noi_2'],['ten' => 'Phòng khám Nội 2']);
-        $pbSieuAm    = PhongBan::firstOrCreate(['ma' => 'phong_sieu_am'],   ['ten' => 'Phòng siêu âm']);
+        // ---- Phòng ban: tạo RIÊNG từng cơ sở ở bên dưới (sau khi cơ sở đã tồn tại) ----
 
         // ---- Phân quyền mặc định theo vai trò ----
         $quyenMacDinh = [
@@ -80,6 +72,38 @@ class LongevitySeeder extends Seeder
             'ten'     => 'Cơ sở 4 - 137 NCT HCM',
             'dia_chi' => '137 NCT HCM',
         ]);
+
+        // ---- Phòng ban RIÊNG cho TỪNG cơ sở (8 bộ phận chuẩn / cơ sở) ----
+        $phongBanChuan = [
+            'sales'            => 'Kinh doanh (Sales)',
+            'tu_van'           => 'Phòng tư vấn',
+            'admin'            => 'Admin Vận hành',
+            'phong_kham_ngoai' => 'Phòng khám Ngoại',
+            'phong_chuyen_gia' => 'Phòng chuyên gia',
+            'phong_kham_noi_1' => 'Phòng khám Nội 1',
+            'phong_kham_noi_2' => 'Phòng khám Nội 2',
+            'phong_sieu_am'    => 'Phòng siêu âm',
+        ];
+        $pb = []; // $pb[co_so_id][ma] = PhongBan
+        foreach ([$cs59ntn, $cs207nvt, $cslo23tdn, $cs137nct] as $cs) {
+            foreach ($phongBanChuan as $ma => $ten) {
+                $pb[$cs->id][$ma] = PhongBan::updateOrCreate(
+                    ['co_so_id' => $cs->id, 'ma' => $ma],
+                    ['ten' => $ten]
+                );
+            }
+        }
+        // Alias cho cơ sở 1 (phần tạo user bên dưới dùng các biến này).
+        $pbSales     = $pb[$cs59ntn->id]['sales'];
+        $pbTuVan     = $pb[$cs59ntn->id]['tu_van'];
+        $pbAdmin     = $pb[$cs59ntn->id]['admin'];
+        $pbKhamNgoai = $pb[$cs59ntn->id]['phong_kham_ngoai'];
+        $pbChuyenGia = $pb[$cs59ntn->id]['phong_chuyen_gia'];
+        $pbKhamNoi1  = $pb[$cs59ntn->id]['phong_kham_noi_1'];
+        $pbKhamNoi2  = $pb[$cs59ntn->id]['phong_kham_noi_2'];
+        $pbSieuAm    = $pb[$cs59ntn->id]['phong_sieu_am'];
+        // Tư vấn HCM thuộc cơ sở 2.
+        $pbTuVan207  = $pb[$cs207nvt->id]['tu_van'];
 
         // ---- Admin Hệ thống (IT) — tài khoản đặc biệt, không thuộc phòng ban / cơ sở nào, full quyền ----
         User::updateOrCreate(['username' => 'admin'], [
@@ -360,7 +384,7 @@ class LongevitySeeder extends Seeder
                 'chuc_danh'    => $tv['chuc_danh'],
                 'password'     => $matKhau,
                 'co_so_id'     => $cs207nvt->id,
-                'phong_ban_id' => $pbTuVan->id,
+                'phong_ban_id' => $pbTuVan207->id,
                 'vai_tro_id'   => $vrTuVanVien->id,
                 'is_admin'     => false,
             ]);
@@ -377,21 +401,23 @@ class LongevitySeeder extends Seeder
         $this->seedPhong($cs137nct, ['Phòng khám' => 1]);
 
         // =============================================
-        // MENU dùng chung (co_so_id = null) - hiển thị mọi cơ sở
+        // MENU + DỊCH VỤ (= Liệu pháp) — RIÊNG cho TỪNG cơ sở
+        // Sửa ở cơ sở này KHÔNG ảnh hưởng cơ sở khác.
         // =============================================
-        foreach (['Trà', 'Hoa quả', 'Bánh kẹo'] as $tenMenu) {
-            Menu::updateOrCreate(
-                ['co_so_id' => null, 'ten' => $tenMenu],
-                ['active' => true]
-            );
+        $dsCoSo = CoSo::orderBy('id')->get();
+        $primary = $dsCoSo->first();
+
+        // Tự chữa: nếu còn bản dùng chung (co_so_id = NULL) từ phiên bản cũ → gán về
+        // cơ sở đầu tiên (giữ nguyên id nên các booking đang trỏ vào không bị hỏng).
+        if ($primary) {
+            Menu::whereNull('co_so_id')->update(['co_so_id' => $primary->id]);
+            DichVu::whereNull('co_so_id')->update(['co_so_id' => $primary->id]);
         }
 
-        // =============================================
-        // DỊCH VỤ (= Liệu pháp) — danh mục dùng chung
-        // =============================================
-        // Xóa các tên cũ bị trùng nghĩa (idempotent: chạy lại nhiều lần OK)
-        DichVu::whereIn('ten', ['Tư vấn', 'Thăm khám lâm sàng (trừ tim mạch)', 'Massage'])
-            ->whereNull('co_so_id')->delete();
+        // Xóa các tên dịch vụ cũ bị trùng nghĩa (idempotent: chạy lại nhiều lần OK)
+        DichVu::whereIn('ten', ['Tư vấn', 'Thăm khám lâm sàng (trừ tim mạch)', 'Massage'])->delete();
+
+        $menus = ['Trà', 'Hoa quả', 'Bánh kẹo'];
 
         $services = [
             // 8 LIỆU PHÁP THĂM KHÁM (la_dich_vu=false) → hiện ở form đặt lịch phòng khám
@@ -407,16 +433,26 @@ class LongevitySeeder extends Seeder
             ['ten' => 'Xông hơi',              'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => true],
             ['ten' => 'Trị liệu YHCT',         'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60, 'la_dich_vu' => true],
         ];
-        foreach ($services as $s) {
-            DichVu::updateOrCreate(
-                ['co_so_id' => null, 'ten' => $s['ten']],
-                [
-                    'thoi_gian_phut' => $s['thoi_gian_phut'],
-                    'thuoc_nhom' => $s['thuoc_nhom'],
-                    'la_dich_vu' => $s['la_dich_vu'],
-                    'active' => true,
-                ]
-            );
+
+        foreach ($dsCoSo as $cs) {
+            foreach ($menus as $tenMenu) {
+                Menu::updateOrCreate(
+                    ['co_so_id' => $cs->id, 'ten' => $tenMenu],
+                    ['active' => true]
+                );
+            }
+
+            foreach ($services as $s) {
+                DichVu::updateOrCreate(
+                    ['co_so_id' => $cs->id, 'ten' => $s['ten']],
+                    [
+                        'thoi_gian_phut' => $s['thoi_gian_phut'],
+                        'thuoc_nhom' => $s['thuoc_nhom'],
+                        'la_dich_vu' => $s['la_dich_vu'],
+                        'active' => true,
+                    ]
+                );
+            }
         }
     }
 

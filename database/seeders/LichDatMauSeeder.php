@@ -43,15 +43,16 @@ class LichDatMauSeeder extends Seeder
         $sale = User::where('co_so_id', $coSo->id)->whereHas('vaiTro', fn ($q) => $q->where('ma', 'tu_van_vien'))->first()
             ?? User::where('co_so_id', $coSo->id)->first();
 
-        // Tra cứu dịch vụ (tên đã chuẩn hoá trong LongevitySeeder)
-        $dvTuVan   = DichVu::where('ten', 'Tư vấn - đọc kết quả')->first();
-        $dvKhamLs  = DichVu::where('ten', 'Thăm khám lâm sàng')->first();
-        $dvTimMach = DichVu::where('ten', 'Thăm khám tim mạch')->first();
-        $dvSieuAm  = DichVu::where('ten', 'Siêu âm')->first();
-        $dvGene    = DichVu::where('ten', 'Đọc kết quả Gene')->first();
-        $dvXQuang  = DichVu::where('ten', 'Chụp XQuang')->first();
-        $dvLayMau  = DichVu::where('ten', 'Lấy máu')->first();
-        $dvThucHienLS = DichVu::where('ten', 'Thực hiện lâm sàng')->first();
+        // Tra cứu dịch vụ CỦA CƠ SỞ (tên đã chuẩn hoá trong LongevitySeeder; DV riêng từng cơ sở)
+        $dv = fn (string $ten) => DichVu::where('co_so_id', $coSo->id)->where('ten', $ten)->first();
+        $dvTuVan   = $dv('Tư vấn - đọc kết quả');
+        $dvKhamLs  = $dv('Thăm khám lâm sàng');
+        $dvTimMach = $dv('Thăm khám tim mạch');
+        $dvSieuAm  = $dv('Siêu âm');
+        $dvGene    = $dv('Đọc kết quả Gene');
+        $dvXQuang  = $dv('Chụp XQuang');
+        $dvLayMau  = $dv('Lấy máu');
+        $dvThucHienLS = $dv('Thực hiện lâm sàng');
 
         $stt = 0;
         $mkKhach = function () use (&$stt, $coSo) {
