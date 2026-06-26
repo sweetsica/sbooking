@@ -75,7 +75,7 @@ class BookingController extends Controller
         // Dịch vụ (= Liệu pháp): gồm cả của cơ sở + dùng chung.
         // Lọc theo loại: phong_kham → la_dich_vu=false; phong_dich_vu → la_dich_vu=true
         $dichVus = DichVu::where('active', true)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
+            ->where('co_so_id', $co_so->id)
             ->when($kieuPhong === 'phong_kham', fn ($q) => $q->where('la_dich_vu', false))
             ->when($kieuPhong === 'phong_dich_vu', fn ($q) => $q->where('la_dich_vu', true))
             ->orderBy('ten')->get();
@@ -83,7 +83,7 @@ class BookingController extends Controller
 
         // Menu: tương tự, gồm cả của cơ sở + dùng chung
         $menus = \App\Models\Menu::where('active', true)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
+            ->where('co_so_id', $co_so->id)
             ->orderBy('ten')->get();
         $co_so->setRelation('menus', $menus);
 

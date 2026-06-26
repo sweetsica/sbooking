@@ -134,7 +134,7 @@
 <a href="/{{ $coSo->slug }}/danh-sach" class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface inline-block">Danh sách</a>
 </div>
 </div>
-@php $view = $view ?? 'ngay'; $tlPhong = $room ? '&phong_id='.$room->id : ''; @endphp
+@php $view = $view ?? 'ngay'; $tlPhong = $room ? '&phong_id='.$room->id : ''; $bacSiId = $bacSiId ?? 0; $tlBacSi = $bacSiId ? '&bac_si_id='.$bacSiId : ''; @endphp
 <!-- Filters Bar -->
 <form method="GET" class="flex flex-wrap items-end gap-4 mb-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
 <input type="hidden" name="view" value="{{ $view }}"/>
@@ -151,6 +151,15 @@
 @endforeach
 </select>
 </div>
+<div class="space-y-1.5 w-[220px]">
+<label class="text-label-caps text-on-surface-variant block">BÁC SĨ</label>
+<select name="bac_si_id" onchange="this.form.submit()" class="form-select w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
+<option value="0">— Tất cả bác sĩ —</option>
+@foreach ($bacSis ?? [] as $bs)
+<option value="{{ $bs->id }}" @selected(($bacSiId ?? 0) === $bs->id)>{{ $bs->ten_day_du }}</option>
+@endforeach
+</select>
+</div>
 <button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
 <span class="material-symbols-outlined text-[20px]">filter_list</span>
 <span>Xem</span>
@@ -159,8 +168,8 @@
 <!-- Chuyển Ngày ↔ Tháng -->
 <div class="flex bg-surface-container-low rounded-lg p-1 h-[42px]">
 @php $kieuQS = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '&kieu=dich_vu' : ''; $createUrl = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/tao-moi'; $createLabel = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? 'Đặt lịch dịch vụ' : 'Đặt lịch phòng khám'; @endphp
-<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=ngay{{ $tlPhong }}{{ $kieuQS }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
-<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=thang{{ $tlPhong }}{{ $kieuQS }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
+<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=ngay{{ $tlPhong }}{{ $tlBacSi }}{{ $kieuQS }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
+<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=thang{{ $tlPhong }}{{ $tlBacSi }}{{ $kieuQS }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
 </div>
 <a href="{{ $createUrl }}" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
@@ -170,7 +179,7 @@
 </form>
 
 @if ($view === 'thang')
-@include('partials.month-calendar', ['cells' => $monthCells, 'monthStart' => $monthStart, 'linkBase' => '/'.$coSo->slug.'/lich-hen', 'extra' => ($room ? '&phong_id='.$room->id : '').$kieuQS, 'unit' => 'lịch'])
+@include('partials.month-calendar', ['cells' => $monthCells, 'monthStart' => $monthStart, 'linkBase' => '/'.$coSo->slug.'/lich-hen', 'extra' => ($room ? '&phong_id='.$room->id : '').$tlBacSi.$kieuQS, 'unit' => 'lịch'])
 @endif
 @if ($view !== 'thang')
 <!-- View Container: Timeline -->

@@ -209,13 +209,27 @@ class PageController extends Controller
             ?? $rooms->firstWhere('trang_thai', 'hoat_dong')
             ?? $rooms->first();
 
+        // ----- Lọc theo BÁC SĨ: dropdown + bác sĩ đang chọn -----
+        // Danh sách bác sĩ của cơ sở (gồm bác sĩ tư vấn global). Mặc định lọc = chính mình
+        // nếu người đăng nhập là bác sĩ (để bác sĩ vào là thấy lịch của mình); 0 = tất cả.
+        $vrBacSiIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+        $bacSis = User::whereIn('vai_tro_id', $vrBacSiIds)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->orderBy('name')->get();
+        $authUser = auth()->user();
+        $selfIsDoctor = $authUser && $vrBacSiIds->contains($authUser->vai_tro_id);
+        $bacSiId = $request->has('bac_si_id')
+            ? (int) $request->query('bac_si_id')
+            : ($selfIsDoctor ? (int) $authUser->id : 0);
+
         // ----- VIEW THÁNG: lưới lịch, mỗi ô đếm số booking của phòng trong ngày -----
         if ($view === 'thang') {
-            $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room) {
+            $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room, $bacSiId) {
                 $q = Booking::where('co_so_id', $co_so->id)
                     ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
                     ->whereBetween('ngay_dat', [$from, $to]);
                 if ($room) $q->where('phong_id', $room->id);
+                if ($bacSiId) $q->where('bac_si_user_id', $bacSiId);
 
                 return $q->selectRaw('DATE(ngay_dat) d, COUNT(*) c')->groupBy('d')->pluck('c', 'd')->all();
             });
@@ -227,6 +241,8 @@ class PageController extends Controller
                 'date' => $date,
                 'view' => $view,
                 'kieu' => $kieu,
+                'bacSis' => $bacSis,
+                'bacSiId' => $bacSiId,
                 'monthCells' => $month['cells'],
                 'monthStart' => $month['monthStart'],
             ]);
@@ -241,6 +257,7 @@ class PageController extends Controller
                 ->where('phong_id', $room->id)
                 ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ trong lịch biểu
                 ->whereDate('ngay_dat', $date)
+                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
                 ->with(['khachHang', 'dichVu', 'bacSi', 'ktv', 'khungGio'])
                 ->orderBy('id')->get();
         }
@@ -364,6 +381,8 @@ class PageController extends Controller
             'date' => $date,
             'view' => $view,
             'kieu' => $kieu,
+            'bacSis' => $bacSis,
+            'bacSiId' => $bacSiId,
             'beds' => $nbeds,
             'bedColumns' => $bedColumns,
             'hours' => $hours,

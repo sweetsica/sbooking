@@ -124,8 +124,8 @@ class SettingsController extends Controller
 
         $rows = match ($section) {
             'phong'      => $co_so->phongs()->with('khungGios')->get(),
-            'dich-vu'    => \App\Models\DichVu::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))->orderBy('ten')->get(),
-            'menu'       => \App\Models\Menu::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))->orderBy('ten')->get(),
+            'dich-vu'    => \App\Models\DichVu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
+            'menu'       => \App\Models\Menu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
             'nguoi-dung' => User::with(['phongBan', 'vaiTro'])
                 ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
                 ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->query('q').'%'))
@@ -305,13 +305,12 @@ class SettingsController extends Controller
             ->firstOrFail();
     }
 
-    // Bản ghi catalog (Liệu pháp, Menu, Phòng...) thuộc cơ sở đang xem HOẶC dùng chung (co_so_id NULL).
-    // Phải khớp đúng phạm vi với section() để không 404 khi sửa/xóa bản ghi global.
+    // Bản ghi catalog (Liệu pháp, Menu, Phòng...) chỉ thuộc cơ sở đang xem.
+    // Khớp đúng phạm vi với section() — không cho sửa/xóa bản ghi của cơ sở khác.
     private function findCatalogRecord(string $model, CoSo $co_so, int $id)
     {
         if (in_array('co_so_id', (new $model)->getFillable())) {
-            return $model::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
-                ->findOrFail($id);
+            return $model::where('co_so_id', $co_so->id)->findOrFail($id);
         }
 
         return $model::findOrFail($id);
