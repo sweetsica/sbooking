@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Phong extends Model
@@ -29,5 +30,10 @@ class Phong extends Model
     public function ktvMacDinh(): BelongsTo
     {
         return $this->belongsTo(User::class, 'ktv_mac_dinh_id');
+    }
+
+    public function bacSis(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'phong_bac_si', 'phong_id', 'bac_si_user_id');
     }
 }

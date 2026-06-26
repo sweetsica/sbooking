@@ -135,88 +135,85 @@ class BookingController extends Controller
         ];
     }
 
-    // Trả về khung giờ (1 tiếng) của 1 phòng + tình trạng đã đầy theo ngày
-    // Nếu có ?bac_si_id và ?dich_vu_id → mỗi khung kèm thêm sub_slots tách theo phút BS
+    // Trả về danh sách SLOT bookable của 1 phòng theo ngày + liệu pháp.
+    // Thời lượng slot = phut_moi_khach (phòng dịch vụ) hoặc dich_vu.thoi_gian_phut (phòng khám).
+    // Khi slot dài hơn khung giờ nền (vd tư vấn 30' trên khung 5') → GỘP khung: bước theo thời lượng
+    // trên toàn dải giờ mở của phòng, mỗi slot map tới khung_gio_id chứa điểm bắt đầu.
     public function khungGio(CoSo $co_so, Request $request)
     {
         $phong = Phong::where('co_so_id', $co_so->id)
             ->where('id', $request->query('phong_id'))
             ->with('khungGios')->first();
 
-        if (! $phong) {
-            return response()->json(['capacity' => 0, 'slots' => []]);
+        if (! $phong || $phong->khungGios->isEmpty()) {
+            return response()->json(['phut_moi' => null, 'slots' => []]);
         }
 
         $ngay = $request->date('ngay') ?? now();
+        $ngayStr = $ngay instanceof \DateTimeInterface ? $ngay->format('Y-m-d') : (string) $ngay;
         $capacity = max(1, (int) $phong->so_slot_toi_da);
+        $except = $request->query('except') ? (int) $request->query('except') : null;
 
-        $except = $request->query('except');
-        $counts = Booking::where('co_so_id', $co_so->id)
-            ->where('phong_id', $phong->id)
-            ->whereDate('ngay_dat', $ngay)
-            ->where('trang_thai', '!=', 'tu_choi')
-            ->when($except, fn ($q) => $q->where('id', '!=', $except))
-            ->selectRaw('khung_gio_id, COUNT(*) as c')
-            ->groupBy('khung_gio_id')
-            ->pluck('c', 'khung_gio_id');
-
-        // Tính phút cho sub-slot:
-        // - Phòng dịch vụ: phut_moi_khach của phòng
-        // - Phòng khám có BS + DV: theo phút BS
-        $bsId = $request->query('bac_si_id');
-        $dvId = $request->query('dich_vu_id');
+        // Thời lượng slot: phòng dịch vụ → phut_moi_khach; phòng khám → thoi_gian_phut của liệu pháp.
+        $dv = $request->query('dich_vu_id') ? DichVu::find($request->query('dich_vu_id')) : null;
         $phutMoi = null;
-        $bs = $bsId ? User::find($bsId) : null;
-        $dv = $dvId ? DichVu::find($dvId) : null;
         if ($phong->kieu_phong === 'phong_dich_vu' && $phong->phut_moi_khach) {
             $phutMoi = (int) $phong->phut_moi_khach;
-        } elseif ($bs && $dv) {
-            $phutMoi = $this->phutCanCuaBookingBS($bs, $dv);
+        } elseif ($dv && $dv->thoi_gian_phut) {
+            $phutMoi = (int) $dv->thoi_gian_phut;
         }
 
-        $ngayStr = $ngay instanceof \DateTimeInterface ? $ngay->format('Y-m-d') : (string) $ngay;
+        $toMin = fn (string $t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
+        $khungs = $phong->khungGios->sortBy('thu_tu')->values();
 
-        return response()->json([
-            'capacity' => $capacity,
-            'phut_moi' => $phutMoi,
-            'slots' => $phong->khungGios->map(function ($k) use ($counts, $capacity, $phutMoi, $bs, $bsId, $phong, $ngayStr, $except) {
-                $booked = (int) ($counts[$k->id] ?? 0);
-                $sub = [];
+        // Chưa chọn liệu pháp → trả khung giờ gốc (mỗi khung 1 slot).
+        if (! $phutMoi) {
+            $slots = $khungs->map(fn ($k) => [
+                'id'   => $k->id,
+                'bd'   => substr($k->gio_bat_dau, 0, 5),
+                'kt'   => substr($k->gio_ket_thuc, 0, 5),
+                'full' => false,
+            ])->values();
 
-                if ($phutMoi) {
-                    $toMin = fn (string $t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
-                    $s = $toMin(substr($k->gio_bat_dau, 0, 5));
-                    $e = $toMin(substr($k->gio_ket_thuc, 0, 5));
-                    for ($t = $s; $t + $phutMoi <= $e; $t += $phutMoi) {
-                        $subBd = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
-                        $subKt = sprintf('%02d:%02d', intdiv($t + $phutMoi, 60), ($t + $phutMoi) % 60);
-                        if ($bs && $bsId) {
-                            $busy = $this->bacSiPhutDaDung((int) $bsId, $ngayStr, $t, $t + $phutMoi, $except ? (int) $except : null) > 0;
-                        } else {
-                            // Phòng dịch vụ: check overlap với booking khác trong cùng phòng + khung
-                            $busy = $this->phongDichVuBan($phong->id, (int) $k->id, $ngayStr, $t, $t + $phutMoi, $capacity, $except ? (int) $except : null);
-                        }
-                        $sub[] = [
-                            'bd' => $subBd,
-                            'kt' => $subKt,
-                            'full' => $busy,
-                        ];
-                    }
+            return response()->json(['phut_moi' => null, 'slots' => $slots]);
+        }
+
+        // Khung chứa mốc bắt đầu slot (slot có thể trải nhiều khung khi gộp).
+        $khungChua = function (int $t) use ($khungs, $toMin) {
+            $found = null;
+            foreach ($khungs as $k) {
+                if ($toMin(substr($k->gio_bat_dau, 0, 5)) <= $t) {
+                    $found = $k;
+                } else {
+                    break;
                 }
+            }
 
-                return [
-                    'id' => $k->id,
-                    'nhan' => $k->nhan,
-                    'bd' => substr($k->gio_bat_dau, 0, 5),
-                    'kt' => substr($k->gio_ket_thuc, 0, 5),
-                    'gio' => (int) substr($k->gio_bat_dau, 0, 2),
-                    'booked' => $booked,
-                    'capacity' => $capacity,
-                    'full' => $booked >= $capacity,
-                    'sub_slots' => $sub,
-                ];
-            })->values(),
-        ]);
+            return $found ?? $khungs->first();
+        };
+
+        $open  = $toMin(substr($khungs->first()->gio_bat_dau, 0, 5));
+        $close = $toMin(substr($khungs->last()->gio_ket_thuc, 0, 5));
+
+        $slots = [];
+        for ($t = $open; $t + $phutMoi <= $close; $t += $phutMoi) {
+            $kg = $khungChua($t);
+            $s = $t;
+            $e = $t + $phutMoi;
+            // Phòng dịch vụ: đầy khi đủ số slot song song. Phòng khám: để bước chọn bác sĩ lọc.
+            $full = $phong->kieu_phong === 'phong_dich_vu'
+                ? $this->phongDichVuBan($phong->id, (int) $kg->id, $ngayStr, $s, $e, $capacity, $except)
+                : false;
+
+            $slots[] = [
+                'id'   => $kg->id,
+                'bd'   => sprintf('%02d:%02d', intdiv($s, 60), $s % 60),
+                'kt'   => sprintf('%02d:%02d', intdiv($e, 60), $e % 60),
+                'full' => $full,
+            ];
+        }
+
+        return response()->json(['phut_moi' => $phutMoi, 'slots' => $slots]);
     }
 
     // Khung giờ đã kín chỗ (đủ số slot của phòng) cho phòng + ngày?
@@ -346,27 +343,32 @@ class BookingController extends Controller
      * Kiểm gio_thuc_hien / gio_ket_thuc có nằm trong khung_gio cha không.
      * Trả về array errors (theo field) hoặc [] nếu hợp lệ.
      */
+    // Giờ thực hiện/kết thúc phải nằm trong DẢI GIỜ MỞ của phòng (slot tư vấn có thể trải nhiều khung,
+    // nên không bó trong 1 khung). khung_gio_id chỉ là khung chứa mốc bắt đầu.
     private function validateGioTrongKhung(array $data): array
     {
         $errors = [];
-        $khoang = $this->khoangGioCuaKhung((int) ($data['khung_gio_id'] ?? 0));
-        if (! $khoang) return $errors;
+        $kg = KhungGio::with('phong.khungGios')->find((int) ($data['khung_gio_id'] ?? 0));
+        $khungs = $kg?->phong?->khungGios;
+        if (! $kg || ! $khungs || $khungs->isEmpty()) return $errors;
 
-        [$kgStart, $kgEnd] = $khoang;
         $toMin = fn (?string $t) => $t ? ((int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2)) : null;
+        $khungs = $khungs->sortBy('thu_tu')->values();
+        $open  = $toMin(substr($khungs->first()->gio_bat_dau, 0, 5));
+        $close = $toMin(substr($khungs->last()->gio_ket_thuc, 0, 5));
 
         $bd = $toMin($data['gio_thuc_hien'] ?? null);
         $kt = $toMin($data['gio_ket_thuc'] ?? null);
         $fmt = fn (int $m) => sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
 
-        if ($bd !== null && $bd < $kgStart) {
-            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải >= ' . $fmt($kgStart) . ' (đầu khung).';
+        if ($bd !== null && $bd < $open) {
+            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải >= ' . $fmt($open) . ' (giờ mở cửa).';
         }
-        if ($bd !== null && $bd >= $kgEnd) {
-            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải nhỏ hơn ' . $fmt($kgEnd) . ' (cuối khung).';
+        if ($bd !== null && $bd >= $close) {
+            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải nhỏ hơn ' . $fmt($close) . ' (giờ đóng cửa).';
         }
-        if ($kt !== null && $kt > $kgEnd) {
-            $errors['gio_ket_thuc'] = 'Giờ kết thúc phải <= ' . $fmt($kgEnd) . ' (cuối khung).';
+        if ($kt !== null && $kt > $close) {
+            $errors['gio_ket_thuc'] = 'Giờ kết thúc phải <= ' . $fmt($close) . ' (giờ đóng cửa).';
         }
         if ($bd !== null && $kt !== null && $kt <= $bd) {
             $errors['gio_ket_thuc'] = 'Giờ kết thúc phải sau giờ thực hiện.';
@@ -386,8 +388,11 @@ class BookingController extends Controller
         ];
     }
 
-    /** Lỗi nếu BS không đủ capacity / không nhận loại dịch vụ. Tính cross-cơ sở. */
-    private function checkBacSiCapacity(int $bacSiId, int $khungGioId, int $dichVuId, string $ngay, ?int $exceptId = null): ?string
+    /**
+     * Lỗi nếu BS không nhận loại dịch vụ HOẶC đã có lịch trùng khoảng giờ booking. Tính cross-cơ sở.
+     * Khoảng giờ ưu tiên [gioBatDau, gioKetThuc] (slot thực, có thể trải nhiều khung); fallback khung giờ.
+     */
+    private function checkBacSiCapacity(int $bacSiId, int $khungGioId, int $dichVuId, string $ngay, ?int $exceptId = null, ?string $gioBatDau = null, ?string $gioKetThuc = null): ?string
     {
         $dv = DichVu::find($dichVuId);
         if (! $dv) return null;
@@ -402,17 +407,22 @@ class BookingController extends Controller
 
         $khoang = $this->khoangGioCuaKhung($khungGioId);
         if (! $khoang) return null;
-        [$s, $e] = $khoang;
-        $capacity = $e - $s;
-        if ($capacity <= 0) $capacity = 60;
+        $toMin = fn ($t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
+        $s = $gioBatDau ? $toMin($gioBatDau) : $khoang[0];
+        $e = $gioKetThuc ? $toMin($gioKetThuc) : $khoang[1];
+        if ($e <= $s) { [$s, $e] = $khoang; }
 
-        $used = $this->bacSiPhutDaDung($bacSiId, $ngay, $s, $e, $exceptId);
-        $need = $this->phutCanCuaBookingBS($bs, $dv);
-        $remain = max(0, $capacity - $used);
-
-        if ($remain < $need) {
-            return "Bác sĩ này đã hết giờ rảnh trong khoảng {$this->formatKhoang($s, $e)} ngày này (còn {$remain} phút, cần {$need} phút). BS có thể đang bận ở cơ sở khác hoặc đã kín lịch.";
+        // Khung đã chọn phải đủ thời lượng bác sĩ cần cho loại dịch vụ.
+        $can = $this->phutCanCuaBookingBS($bs, $dv);
+        if (($e - $s) < $can) {
+            return "Bác sĩ này cần {$can} phút cho loại dịch vụ này, nhưng khung đã chọn chỉ " . ($e - $s) . " phút. Vui lòng chọn khung dài hơn hoặc bác sĩ khác.";
         }
+
+        // Bác sĩ chỉ phục vụ 1 khách/lúc → bận nếu có lịch nào đè khoảng [s, e].
+        if ($this->bacSiPhutDaDung($bacSiId, $ngay, $s, $e, $exceptId) > 0) {
+            return "Bác sĩ này đã có lịch trùng giờ trong khoảng {$this->formatKhoang($s, $e)} ngày này. Vui lòng chọn giờ khác hoặc bác sĩ khác.";
+        }
+
         return null;
     }
 
@@ -531,29 +541,60 @@ class BookingController extends Controller
      * Trả về danh sách BS với trạng thái khả dụng cho 1 khung giờ + dịch vụ + ngày.
      * Dùng để render dropdown ở form (disable BS không đủ giờ).
      */
+    // Danh sách bác sĩ cho 1 slot: bác sĩ CỦA PHÒNG (+ bác sĩ tư vấn global nếu là tư vấn),
+    // lọc theo loại (nhan_tu_van / nhan_kham_ls) + đánh dấu bận theo khoảng giờ slot đã chọn.
     public function checkBacSi(CoSo $co_so, Request $request)
     {
-        $khungGioId = (int) $request->query('khung_gio_id');
-        $dichVuId   = (int) $request->query('dich_vu_id');
-        $ngay       = $request->query('ngay');
-        $exceptId   = $request->query('except');
+        $phongId  = (int) $request->query('phong_id');
+        $dichVuId = (int) $request->query('dich_vu_id');
+        $ngay     = $request->query('ngay');
+        $bd       = $request->query('gio_bat_dau');
+        $kt       = $request->query('gio_ket_thuc');
+        $exceptId = $request->query('except') ? (int) $request->query('except') : null;
 
-        if (! $khungGioId || ! $dichVuId || ! $ngay) {
+        if (! $phongId || ! $dichVuId || ! $ngay || ! $bd || ! $kt) {
             return response()->json(['list' => []]);
         }
 
-        $vrIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
-        $bacSis = User::whereIn('vai_tro_id', $vrIds)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
-            ->orderBy('name')->get();
+        $dv = DichVu::find($dichVuId);
+        $phong = Phong::where('co_so_id', $co_so->id)->where('id', $phongId)->with('bacSis')->first();
+        if (! $dv || ! $phong) {
+            return response()->json(['list' => []]);
+        }
 
-        $list = $bacSis->map(function ($bs) use ($co_so, $khungGioId, $dichVuId, $ngay, $exceptId) {
-            $err = $this->checkBacSiCapacity($bs->id, $khungGioId, $dichVuId, $ngay, $exceptId ? (int) $exceptId : null);
+        // Ứng viên = bác sĩ của phòng; nếu tư vấn → thêm bác sĩ tư vấn global (is_tu_van).
+        $candidates = $phong->bacSis;
+        if ($dv->thuoc_nhom === 'tu_van') {
+            $vrTuVan = VaiTro::where('ma', 'bac_si_tu_van')->pluck('id');
+            $global = User::whereIn('vai_tro_id', $vrTuVan)->where('is_tu_van', true)->get();
+            $candidates = $candidates->concat($global)->unique('id');
+        }
+
+        // Lọc theo loại liệu pháp.
+        $candidates = $candidates->filter(fn ($bs) => match ($dv->thuoc_nhom) {
+            'tu_van'  => (bool) $bs->nhan_tu_van,
+            'kham_ls' => (bool) $bs->nhan_kham_ls,
+            default   => true,
+        })->sortBy('name')->values();
+
+        $toMin = fn ($t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
+        $s = $toMin($bd);
+        $e = $toMin($kt);
+        $slotLen = $e - $s;
+
+        $list = $candidates->map(function ($bs) use ($ngay, $s, $e, $slotLen, $dv, $exceptId) {
+            // Bác sĩ cần đủ thời lượng cho loại dịch vụ; nếu cần nhiều hơn khung đã chọn → loại.
+            $can = $this->phutCanCuaBookingBS($bs, $dv);
+            $fit = $slotLen >= $can;
+            $busy = $fit && $this->bacSiPhutDaDung($bs->id, $ngay, $s, $e, $exceptId) > 0;
+
             return [
-                'id'      => $bs->id,
-                'name'    => $bs->ten_day_du,
-                'available' => $err === null,
-                'reason'  => $err,
+                'id'        => $bs->id,
+                'name'      => $bs->ten_day_du,
+                'available' => $fit && ! $busy,
+                'reason'    => ! $fit
+                    ? "Cần {$can} phút, khung chỉ {$slotLen} phút"
+                    : ($busy ? 'Bác sĩ kín lịch' : null),
             ];
         });
 
@@ -629,7 +670,7 @@ class BookingController extends Controller
 
         // Capacity bác sĩ theo phút (nhận cờ + thời lượng dịch vụ) - chỉ check khi có cả BS và dịch vụ
         if (! empty($data['bac_si_user_id']) && ! empty($data['dich_vu_id'])) {
-            $err = $this->checkBacSiCapacity((int) $data['bac_si_user_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat']);
+            $err = $this->checkBacSiCapacity((int) $data['bac_si_user_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], null, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
             if ($err) {
                 return back()->withInput()->withErrors(['bac_si_user_id' => $err]);
             }
@@ -761,7 +802,7 @@ class BookingController extends Controller
 
         // Capacity bác sĩ (loại trừ booking hiện tại) - chỉ check khi có cả BS và dịch vụ
         if (! empty($data['bac_si_user_id']) && ! empty($data['dich_vu_id'])) {
-            $err = $this->checkBacSiCapacity((int) $data['bac_si_user_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], $booking->id);
+            $err = $this->checkBacSiCapacity((int) $data['bac_si_user_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], $booking->id, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
             if ($err) {
                 return back()->withInput()->withErrors(['bac_si_user_id' => $err]);
             }

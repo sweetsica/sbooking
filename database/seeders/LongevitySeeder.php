@@ -286,6 +286,19 @@ class LongevitySeeder extends Seeder
             }
         }
 
+        // Gán bác sĩ vào phòng (phong_bac_si) theo bảng cấu hình phòng khám 59 NTN.
+        $ganBacSiPhong = [
+            'Phòng khám Ngoại' => [$bsTuVan1->id],            // Nguyễn Tiến Dũng
+            'Phòng chuyên gia' => [$bsTuVan2->id],            // Lê Tuyên Hồng Dương
+            'Phòng khám Nội 1' => [$bsTTB->id],               // Trương Thị Biên
+            'Phòng khám Nội 2' => [$bsNTN->id, $bsBBTM->id],  // Ngô Thị Ngà + Bác Biên (Tim mạch)
+            'Phòng siêu âm'    => [$bsBH->id],                // Bác Hồng
+        ];
+        foreach ($ganBacSiPhong as $tenPhong => $bsIds) {
+            $phong = Phong::where('co_so_id', $cs59ntn->id)->where('ten', $tenPhong)->first();
+            $phong?->bacSis()->sync($bsIds);
+        }
+
         // --- Tư vấn viên Hà Nội (cơ sở 59 NTN) ---
         $tvHN = [
             ['username' => 'tttg', 'name' => 'Trần Thị Thu Giang',  'chuc_danh' => 'CM'],

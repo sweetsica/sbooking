@@ -167,11 +167,13 @@
 @if (! $isDichVu)
 <!-- Loại chính: Tư vấn / Thăm khám lâm sàng (mutex, mặc định Tư vấn) -->
 @php
-    $loaiChinh = old('loai_chinh', $bk?->co_kham_cls ? 'kham_ls' : 'tu_van');
+    $loaiChinh = old('loai_chinh', $bk
+        ? ($bk->dichVu?->thuoc_nhom ?: ($bk->co_kham_cls ? 'kham_ls' : 'tu_van'))
+        : 'tu_van');
 @endphp
 <div class="mb-10">
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-2">Loại chính <span class="text-error">*</span> <span class="text-on-surface-variant/60 text-[11px]">— tự lọc bác sĩ + chia khung giờ theo phút</span></label>
-<div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+<div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 <label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-emerald-500 has-[:checked]:bg-emerald-50">
 <input type="radio" name="loai_chinh" value="tu_van" @checked($loaiChinh === 'tu_van') class="w-4 h-4 text-emerald-500"/>
 <span class="flex items-center gap-2 text-body-md"><span class="w-3 h-3 rounded-full bg-emerald-500"></span> Tư vấn / Đọc kết quả</span>
@@ -179,6 +181,10 @@
 <label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-sky-500 has-[:checked]:bg-sky-50">
 <input type="radio" name="loai_chinh" value="kham_ls" @checked($loaiChinh === 'kham_ls') class="w-4 h-4 text-sky-500"/>
 <span class="flex items-center gap-2 text-body-md"><span class="w-3 h-3 rounded-full bg-sky-500"></span> Thăm khám lâm sàng</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-amber-500 has-[:checked]:bg-amber-50">
+<input type="radio" name="loai_chinh" value="khac" @checked($loaiChinh === 'khac') class="w-4 h-4 text-amber-500"/>
+<span class="flex items-center gap-2 text-body-md"><span class="w-3 h-3 rounded-full bg-amber-500"></span> Khác (XQuang, Siêu âm…)</span>
 </label>
 </div>
 {{-- Cờ co_tu_van/co_kham_cls vẫn lưu (backend không đổi schema) - đồng bộ từ radio bằng hidden input --}}
@@ -189,7 +195,7 @@
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
 <!-- Section 1: Customer -->
-<div class="space-y-6 order-2">
+<div class="space-y-6 order-4">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">person</span>
 <h3 class="text-headline-md font-headline-md">Thông tin Khách hàng</h3>
@@ -214,7 +220,7 @@
 </div>
 
 <!-- Section 2: Schedule & Room -->
-<div class="space-y-6 order-3">
+<div class="space-y-6 order-2">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">calendar_today</span>
 <h3 class="text-headline-md font-headline-md">Lịch trình &amp; Phòng <span class="text-error">*</span></h3>
@@ -337,6 +343,22 @@
 @endif
 </div>
 
+@if (! $isDichVu)
+<!-- Section: Bác sĩ (chọn sau khung giờ, lọc theo phòng + còn trống) -->
+<div class="space-y-6 order-3">
+<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
+<span class="material-symbols-outlined text-secondary">stethoscope</span>
+<h3 class="text-headline-md font-headline-md">Bác sĩ <span class="text-on-surface-variant/60 text-[11px]" id="bs_hint"></span></h3>
+</div>
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Chọn bác sĩ <span class="text-on-surface-variant/60 text-[11px]">— bác sĩ của phòng, còn trống khung giờ</span></label>
+<select id="bac_si" name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn khung giờ trước --</option>
+</select>
+</div>
+</div>
+@endif
+
 @if ($isDichVu)
 <!-- Section 3 (Đặt dịch vụ): chỉ KTV -->
 <div class="space-y-6 order-1">
@@ -370,20 +392,9 @@
 @endforeach
 </select>
 </div>
-<div class="grid grid-cols-2 gap-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
 <input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ <span class="text-on-surface-variant/60 text-[11px]" id="bs_hint"></span></label>
-<select id="bac_si" name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach ($bacSis as $bs)
-<option value="{{ $bs->id }}" @selected(old('bac_si_user_id', $bk?->bac_si_user_id)==$bs->id)>{{ $bs->ten_day_du }}</option>
-@endforeach
-</select>
-</div>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV)</label>
@@ -408,7 +419,7 @@
 @endif
 
 <!-- Section 4: Admin & Notes -->
-<div class="space-y-6 order-4">
+<div class="space-y-6 order-5">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">assignment_ind</span>
 <h3 class="text-headline-md font-headline-md">Hành chính &amp; Ghi chú</h3>
@@ -480,10 +491,8 @@
         let data = { slots: [] };
         if (phong && phong.value) {
             const dvEl = document.getElementById('dich_vu');
-            const bsEl = document.getElementById('bac_si');
             const params = new URLSearchParams({ phong_id: phong.value, ngay: ngay ? ngay.value : '' });
             if (editId) params.append('except', editId);
-            if (bsEl && bsEl.value) params.append('bac_si_id', bsEl.value);
             if (dvEl && dvEl.value) params.append('dich_vu_id', dvEl.value);
             try {
                 const r = await fetch(`/${slug}/tao-moi/khung-gio?${params}`);
@@ -491,18 +500,10 @@
             } catch (e) {}
         }
         const slots = data.slots || [];
-        fullHours = new Set(slots.filter(s => s.full).map(s => s.gio));
         khung.innerHTML = slots.length
-            ? slots.flatMap(s => {
-                // Nếu có sub-slot (đã chọn BS + dịch vụ) → render từng sub-slot
-                if (s.sub_slots && s.sub_slots.length) {
-                    return s.sub_slots.map(ss => {
-                        const lbl = `${ss.bd} - ${ss.kt}` + (ss.full ? ' — đã đặt 🔒' : '');
-                        return `<option value="${s.id}" data-kt="${ss.kt}" data-bd="${ss.bd}" data-gio="${s.gio}" ${ss.full ? 'disabled' : ''}>${lbl}</option>`;
-                    });
-                }
-                const trong = s.capacity > 1 ? ` (còn ${s.capacity - s.booked}/${s.capacity})` : '';
-                return [`<option value="${s.id}" data-kt="${s.kt}" data-bd="${s.bd}" data-gio="${s.gio}" ${s.full ? 'disabled' : ''}>${s.nhan}${s.full ? ' — đã đầy 🔒' : trong}</option>`];
+            ? slots.map(s => {
+                const lbl = `${s.bd} - ${s.kt}` + (s.full ? ' — đã đầy 🔒' : '');
+                return `<option value="${s.id}" data-bd="${s.bd}" data-kt="${s.kt}" ${s.full ? 'disabled' : ''}>${lbl}</option>`;
             }).join('')
             : '<option value="">(Phòng chưa cấu hình khung giờ)</option>';
         if (oldKhung) { const o = khung.querySelector(`option[value="${oldKhung}"]`); if (o && !o.disabled) khung.value = oldKhung; }
@@ -512,6 +513,7 @@
         }
         applyTimeLocks();
         updateEnd();
+        loadBacSi();
     }
 
     // Generate options cho gio_thuc_hien / gio_ket_thuc THEO khung giờ đã chọn (step 5 phút)
@@ -590,12 +592,20 @@
     const applyLoaiChinh = (v) => {
         if (hCoTuVan) hCoTuVan.value = v === 'tu_van' ? '1' : '0';
         if (hCoKhamCls) hCoKhamCls.value = v === 'kham_ls' ? '1' : '0';
-        // Auto-select dịch vụ matching nhóm
+        // Lọc dịch vụ theo nhóm đã chọn (Tư vấn / Khám LS): ẩn dịch vụ khác nhóm.
         if (v && dichVu) {
-            const match = [...dichVu.options].find(o => o.dataset.nhom === v);
-            if (match) dichVu.value = match.value;
+            let firstMatch = null;
+            [...dichVu.options].forEach(o => {
+                if (!o.value) return;
+                const match = o.dataset.nhom === v;
+                o.hidden = !match;
+                o.disabled = !match;
+                if (match && !firstMatch) firstMatch = o;
+            });
+            // Nếu dịch vụ đang chọn không thuộc nhóm → chuyển sang dịch vụ hợp lệ đầu tiên.
+            const cur = dichVu.selectedOptions[0];
+            if ((!cur || cur.dataset.nhom !== v) && firstMatch) dichVu.value = firstMatch.value;
         }
-        loadBacSi();
         loadSlots();
     };
     document.querySelectorAll('input[name="loai_chinh"]').forEach(r => {
@@ -608,14 +618,19 @@
     let bsAbortCtl;
 
     async function loadBacSi() {
-        if (!bacSi || !khung || !dichVu || !ngay) return;
+        if (!bacSi || !khung || !dichVu || !ngay || !phong) return;
+        const opt = khung.options[khung.selectedIndex];
+        const bd = (batDau && batDau.value) || (opt && opt.getAttribute('data-bd')) || '';
+        const kt = (ketThuc && ketThuc.value) || (opt && opt.getAttribute('data-kt')) || '';
+        if (!phong.value || !dichVu.value || !ngay.value || !bd || !kt) {
+            bacSi.innerHTML = '<option value="">-- Chọn khung giờ trước --</option>';
+            return;
+        }
         const params = new URLSearchParams({
-            khung_gio_id: khung.value || '',
-            dich_vu_id: dichVu.value || '',
-            ngay: ngay.value || '',
+            phong_id: phong.value, dich_vu_id: dichVu.value, ngay: ngay.value,
+            gio_bat_dau: bd, gio_ket_thuc: kt,
         });
         if (editId) params.append('except', editId);
-        if (!khung.value || !dichVu.value || !ngay.value) return;
 
         if (bsAbortCtl) bsAbortCtl.abort();
         bsAbortCtl = new AbortController();
@@ -624,38 +639,20 @@
         try {
             const r = await fetch(`/${slug}/tao-moi/check-bac-si?${params}`, { signal: bsAbortCtl.signal });
             const j = await r.json();
-            const map = {};
-            (j.list || []).forEach(b => { map[b.id] = b; });
-
-            [...bacSi.options].forEach(o => {
-                if (!o.value) return;
-                const info = map[o.value];
-                if (!info) { o.disabled = false; o.textContent = o.dataset.origin || o.textContent; return; }
-                if (!o.dataset.origin) o.dataset.origin = o.textContent;
-                if (info.available) {
-                    o.disabled = false;
-                    o.textContent = o.dataset.origin;
-                } else {
-                    o.disabled = true;
-                    o.textContent = o.dataset.origin + ' — đã kín lịch 🔒';
-                }
-            });
-            // Nếu BS đang chọn bị disable thì auto bỏ chọn
-            if (bacSi.selectedOptions[0] && bacSi.selectedOptions[0].disabled) {
-                bacSi.value = '';
-            }
-            if (bsHint) bsHint.textContent = '';
+            const list = j.list || [];
+            const cur = bacSi.value;
+            bacSi.innerHTML = '<option value="">-- Chọn --</option>' + list.map(b =>
+                `<option value="${b.id}" ${b.available ? '' : 'disabled'}>${b.name}${b.available ? '' : ' — (' + (b.reason || 'không khả dụng') + ')'}</option>`
+            ).join('');
+            if (cur && bacSi.querySelector(`option[value="${cur}"]:not([disabled])`)) bacSi.value = cur;
+            if (bsHint) bsHint.textContent = list.length ? '' : '(không có bác sĩ phù hợp)';
         } catch (e) {
             if (e.name !== 'AbortError' && bsHint) bsHint.textContent = '';
         }
     }
     if (bacSi) {
-        if (dichVu) {
-            dichVu.addEventListener('change', () => { loadBacSi(); loadSlots(); });
-        }
+        if (dichVu) dichVu.addEventListener('change', loadSlots);
         if (khung) khung.addEventListener('change', loadBacSi);
-        if (ngay) ngay.addEventListener('change', loadBacSi);
-        bacSi.addEventListener('change', loadSlots);
         loadBacSi();
     }
 

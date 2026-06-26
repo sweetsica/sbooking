@@ -292,9 +292,7 @@ class SettingsController extends Controller
             'coso' => $this->saveCoSo($request, CoSo::findOrFail($id)),
             'phongban' => $this->savePhongBan($request, PhongBan::findOrFail($id)),
             default => $this->saveCatalog($co_so, $request, $config, $model, $section,
-                in_array('co_so_id', (new $model)->getFillable())
-                    ? $model::where('co_so_id', $co_so->id)->findOrFail($id)
-                    : $model::findOrFail($id)
+                $this->findCatalogRecord($model, $co_so, $id)
             ),
         };
     }
@@ -305,6 +303,18 @@ class SettingsController extends Controller
         return User::where('id', $id)
             ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
             ->firstOrFail();
+    }
+
+    // Bản ghi catalog (Liệu pháp, Menu, Phòng...) thuộc cơ sở đang xem HOẶC dùng chung (co_so_id NULL).
+    // Phải khớp đúng phạm vi với section() để không 404 khi sửa/xóa bản ghi global.
+    private function findCatalogRecord(string $model, CoSo $co_so, int $id)
+    {
+        if (in_array('co_so_id', (new $model)->getFillable())) {
+            return $model::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
+                ->findOrFail($id);
+        }
+
+        return $model::findOrFail($id);
     }
 
     public function destroy(CoSo $co_so, string $section, int $id)
@@ -326,9 +336,7 @@ class SettingsController extends Controller
         } elseif ($config['kind'] === 'user') {
             $this->findManageableUser($co_so, $id)->delete();
         } else {
-            $record = in_array('co_so_id', (new $model)->getFillable())
-                ? $model::where('co_so_id', $co_so->id)->findOrFail($id)
-                : $model::findOrFail($id);
+            $record = $this->findCatalogRecord($model, $co_so, $id);
             $record->delete();
         }
 

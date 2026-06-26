@@ -18,5 +18,6 @@ class DatabaseSeeder extends Seeder
         $this->call(LongevitySeeder::class);
         $this->call(LichDatMauSeeder::class);
         $this->call(LichThang6Seeder::class);
+        $this->call(LichTuVanThang6Seeder::class);
     }
 }
