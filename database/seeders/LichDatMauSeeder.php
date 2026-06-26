@@ -34,6 +34,12 @@ class LichDatMauSeeder extends Seeder
             ->where('nguon', 'seed')
             ->delete();
 
+        // Dọn khách mẫu cũ không còn booking nào (tránh tích lũy rác qua mỗi lần seed)
+        KhachHang::where('co_so_id', $coSo->id)
+            ->where('ho_ten', 'like', 'KH Mẫu %')
+            ->whereDoesntHave('bookings')
+            ->delete();
+
         $sale = User::where('co_so_id', $coSo->id)->whereHas('vaiTro', fn ($q) => $q->where('ma', 'tu_van_vien'))->first()
             ?? User::where('co_so_id', $coSo->id)->first();
 
@@ -88,61 +94,77 @@ class LichDatMauSeeder extends Seeder
         };
 
         // ----------------------------------------------------------------
-        // PHÒNG KHÁM — mỗi phòng có 1 BS chính. Booking chia theo phút BS.
+        // PHÒNG KHÁM — xếp theo "KHỐI CA" cho từng bác sĩ trong một cửa sổ giờ.
+        // Mỗi khối: N ca cùng dịch vụ; xếp KÍN 1 giường (tuần tự) rồi TRÀN sang giường kế.
+        //   - Ca ngắn (khám LS 5') → 1 giường chứa được rất nhiều ca ⇒ trông thưa giường.
+        //   - Ca dài + số lượng lớn (tư vấn 30') → 1 giường chỉ 4 ca/2h ⇒ tràn nhiều giường.
+        // Số giường tràn = ceil(N / số_ca_mỗi_giường), không vượt so_slot_toi_da.
         // ----------------------------------------------------------------
-        $config = [
-            // [phòng, username BS, dịch vụ, số booking trong khung 8h-9h]
-            ['Phòng khám Ngoại', 'ntd',   $dvTuVan,  2, 'tu_van'],   // 2 tư vấn × 30p
-            ['Phòng chuyên gia', 'lthd',  $dvTuVan,  2, 'tu_van'],   // 2 tư vấn × 30p
-            ['Phòng khám Nội 1', 'ttb',   $dvKhamLs, 6, 'kham_ls'],  // 6 khám LS × 5p (chỉ chiếm 30p, để minh họa)
-            ['Phòng khám Nội 2', 'ntn_bs', $dvKhamLs, 4, 'kham_ls'], // 4 khám LS × 5p
-            ['Phòng siêu âm',    'bh_sa', $dvSieuAm, 2, 'khac'],    // 2 siêu âm × 25p (image)
-        ];
+        $toMin = fn (string $t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
 
         $trangThais = ['cho_duyet', 'da_duyet', 'cho_duyet', 'da_duyet', 'tu_choi', 'da_duyet'];
 
-        foreach ($config as [$tenPhong, $bsUsername, $dv, $soCa, $nhom]) {
+        $lichKhoi = [
+            // [phòng, username BS, dịch vụ, từ, đến, số ca, phút/ca]
+            // Ví dụ Bác sĩ A (ntd) ngày hôm nay:
+            ['Phòng khám Ngoại', 'ntd',    $dvKhamLs, '08:00', '10:00', 4,  5],  // 4 ca thăm khám LS 5' → 1 giường (rất thưa)
+            ['Phòng khám Ngoại', 'ntd',    $dvTuVan,  '13:00', '15:00', 24, 30], // 24 ca tư vấn 30' → ~6 giường ("la liệt")
+            ['Phòng chuyên gia', 'lthd',   $dvTuVan,  '08:30', '11:30', 14, 30], // 14 ca tư vấn → ~4 giường
+            ['Phòng khám Nội 1', 'ttb',    $dvKhamLs, '08:00', '11:00', 28, 5],  // khám LS dày → 1 giường
+            ['Phòng khám Nội 2', 'ntn_bs', $dvKhamLs, '09:00', '11:30', 20, 5],  // khám LS → 1 giường
+            ['Phòng siêu âm',    'bh_sa',  $dvSieuAm, '08:00', '12:00', 9,  25], // siêu âm 25' → 1 giường
+        ];
+
+        foreach ($lichKhoi as [$tenPhong, $bsUsername, $dv, $tu, $den, $soCa, $phut]) {
             $phong = Phong::where('co_so_id', $coSo->id)->where('ten', $tenPhong)->first();
             if (! $phong || ! $dv) continue;
             $bs = User::where('username', $bsUsername)->first();
             if (! $bs) continue;
 
-            // Lấy phút theo nhóm
-            $phut = match ($nhom) {
-                'tu_van'  => (int) ($bs->phut_tu_van ?: 30),
-                'kham_ls' => (int) ($bs->phut_kham_ls ?: 5),
-                default   => (int) ($dv->thoi_gian_phut ?: 30),
-            };
-
-            // Loop các khung giờ cho đến khi tạo đủ $soCa booking (mỗi khung nhận tối đa N ca lọt vào khung)
             $khungs = KhungGio::where('phong_id', $phong->id)->orderBy('thu_tu')->get();
-            $toMin = fn (string $t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
-            $count = 0;
-
+            if ($khungs->isEmpty()) continue;
+            $khungByStart = [];
             foreach ($khungs as $kg) {
-                if ($count >= $soCa) break;
-                $s = $toMin(substr($kg->gio_bat_dau, 0, 5));
-                $e = $toMin(substr($kg->gio_ket_thuc, 0, 5));
+                $khungByStart[$toMin(substr($kg->gio_bat_dau, 0, 5))] = $kg;
+            }
 
-                for ($i = 0; $count < $soCa; $i++) {
-                    $start = $s + $i * $phut;
-                    if ($start + $phut > $e) break; // vượt khung → qua khung sau
-                    $bd = sprintf('%02d:%02d', intdiv($start, 60), $start % 60);
-                    $kt = sprintf('%02d:%02d', intdiv($start + $phut, 60), ($start + $phut) % 60);
-                    $tt = $trangThais[$stt % count($trangThais)];
-                    $mkBooking($phong, $kg, $bd, $kt, $bs, $dv, null, $tt);
-                    $count++;
-                }
+            $tuMin    = $toMin($tu);
+            $denMin   = $toMin($den);
+            $capacity = max(1, (int) $phong->so_slot_toi_da);
+            $perBed   = max(1, intdiv($denMin - $tuMin, $phut)); // số ca 1 giường chứa trong cửa sổ
+
+            for ($k = 0; $k < $soCa; $k++) {
+                $bed = intdiv($k, $perBed);
+                if ($bed >= $capacity) break; // không vượt số giường của phòng
+
+                $start = $tuMin + ($k % $perBed) * $phut;
+                if ($start + $phut > $denMin) continue;
+
+                $kg = $khungByStart[$start]
+                    ?? $khungs->last(fn ($x) => $toMin(substr($x->gio_bat_dau, 0, 5)) <= $start);
+                if (! $kg) continue;
+
+                $bd = sprintf('%02d:%02d', intdiv($start, 60), $start % 60);
+                $kt = sprintf('%02d:%02d', intdiv($start + $phut, 60), ($start + $phut) % 60);
+                $tt = $trangThais[$stt % count($trangThais)];
+                $mkBooking($phong, $kg, $bd, $kt, $bs, $dv, null, $tt);
             }
         }
 
-        // BS Tim mạch (Bác Biên) → 1 booking tư vấn tim mạch ở Phòng Nội 2 khung 9h
+        // BS Tim mạch (Bác Biên) → 1 booking tư vấn tim mạch ở Phòng Nội 2, khung bắt đầu 9h
         $bsTM = User::where('username', 'bb_tm')->first();
         $phongNoi2 = Phong::where('co_so_id', $coSo->id)->where('ten', 'Phòng khám Nội 2')->first();
         if ($bsTM && $phongNoi2 && $dvTimMach) {
-            $kg9 = KhungGio::where('phong_id', $phongNoi2->id)->orderBy('thu_tu')->skip(1)->first();
+            $kg9 = KhungGio::where('phong_id', $phongNoi2->id)
+                ->where('gio_bat_dau', '>=', '09:00:00')
+                ->orderBy('thu_tu')->first();
             if ($kg9) {
-                $mkBooking($phongNoi2, $kg9, substr($kg9->gio_bat_dau, 0, 5), '09:30', $bsTM, $dvTimMach, null, 'da_duyet');
+                $bd      = substr($kg9->gio_bat_dau, 0, 5);
+                $phutTM  = (int) ($bsTM->phut_tu_van ?: 30);
+                $startMin = (int) substr($bd, 0, 2) * 60 + (int) substr($bd, 3, 2);
+                $endMin   = $startMin + $phutTM;
+                $kt = sprintf('%02d:%02d', intdiv($endMin, 60), $endMin % 60);
+                $mkBooking($phongNoi2, $kg9, $bd, $kt, $bsTM, $dvTimMach, null, 'da_duyet');
             }
         }
 
@@ -157,10 +179,12 @@ class LichDatMauSeeder extends Seeder
         $dvXong = DichVu::where('ten', 'Xông hơi')->first();
         $dvYHCT = DichVu::where('ten', 'Trị liệu YHCT')->first();
 
-        // Mỗi phòng dịch vụ: book 4 khung giờ đầu, mỗi khung điền ~60% số slot song song
+        // Mỗi phòng dịch vụ: rải ca khắp ngày (8h–18h). Mỗi mốc giờ random có/không
+        // có khách; nếu có thì điền số giường ngẫu nhiên (1..capacity) ⇒ vừa lấp nhiều
+        // giường, vừa chừa khoảng trống tự nhiên giữa các ca.
         foreach ($phongDvs as $pdv) {
             $phut = (int) ($pdv->phut_moi_khach ?: 30);
-            $khungs = KhungGio::where('phong_id', $pdv->id)->orderBy('thu_tu')->take(4)->get();
+            $khungs = KhungGio::where('phong_id', $pdv->id)->orderBy('thu_tu')->get();
             if ($khungs->isEmpty()) continue;
 
             $dv = match (true) {
@@ -170,25 +194,29 @@ class LichDatMauSeeder extends Seeder
             };
 
             $capacity = max(1, (int) $pdv->so_slot_toi_da);
-            $fillSlots = max(1, (int) ceil($capacity * 0.6)); // điền ~60% slot
 
             $toMin = fn (string $t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
-
+            $khungByStart = [];
             foreach ($khungs as $kg) {
-                $s = $toMin(substr($kg->gio_bat_dau, 0, 5));
-                $e = $toMin(substr($kg->gio_ket_thuc, 0, 5));
-                $soCa = (int) floor(($e - $s) / $phut);
-                if ($soCa <= 0) continue;
+                $khungByStart[$toMin(substr($kg->gio_bat_dau, 0, 5))] = $kg;
+            }
+            $gioMo   = $toMin(substr($khungs->first()->gio_bat_dau, 0, 5));
+            $gioDong = $toMin(substr($khungs->last()->gio_ket_thuc, 0, 5));
 
-                // Mỗi ca trong khung × số slot song song
-                for ($i = 0; $i < $soCa; $i++) {
-                    $start = $s + $i * $phut;
-                    $bd = sprintf('%02d:%02d', intdiv($start, 60), $start % 60);
-                    $kt = sprintf('%02d:%02d', intdiv($start + $phut, 60), ($start + $phut) % 60);
-                    for ($slot = 0; $slot < $fillSlots; $slot++) {
-                        $tt = $trangThais[$stt % count($trangThais)];
-                        $mkBooking($pdv, $kg, $bd, $kt, null, $dv, $pdv->ktv_mac_dinh_id, $tt);
-                    }
+            for ($t = $gioMo; $t + $phut <= $gioDong; $t += $phut) {
+                if (rand(1, 100) <= 40) continue; // ~40% mốc bỏ trống → tạo khoảng trống
+
+                $kg = $khungByStart[$t]
+                    ?? $khungs->last(fn ($k) => $toMin(substr($k->gio_bat_dau, 0, 5)) <= $t);
+                if (! $kg) continue;
+
+                $bd = sprintf('%02d:%02d', intdiv($t, 60), $t % 60);
+                $kt = sprintf('%02d:%02d', intdiv($t + $phut, 60), ($t + $phut) % 60);
+
+                $soGiuong = rand(1, $capacity); // số giường dùng tại mốc này khác nhau
+                for ($g = 0; $g < $soGiuong; $g++) {
+                    $tt = $trangThais[$stt % count($trangThais)];
+                    $mkBooking($pdv, $kg, $bd, $kt, null, $dv, $pdv->ktv_mac_dinh_id, $tt);
                 }
             }
         }

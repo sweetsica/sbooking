@@ -321,7 +321,7 @@ class LongevitySeeder extends Seeder
         // =============================================
         $this->seedPhong($cs207nvt, [
             'Phòng khám Nội' => 1,
-            'Phòng siêu âm'  => 1,
+            'Phòng siêu âm'  => ['so_slot' => 24, 'phut' => 25], // 25 phút/ca, 8h–18h = 24 ca
             'Phòng YHCT'     => 1,
         ]);
 
@@ -428,20 +428,27 @@ class LongevitySeeder extends Seeder
                 $attrs
             );
 
-            if ($phong->khungGios()->count() === 0) {
-                // Phòng dịch vụ: 10 khung 60p (8h-18h); phòng khám: 12 khung 50p (cũ)
-                $khungLen = $phong->kieu_phong === 'phong_dich_vu' ? 60 : 50;
-                $soKhung = $phong->kieu_phong === 'phong_dich_vu' ? 10 : 12;
-                for ($i = 0; $i < $soKhung; $i++) {
-                    $startMin = 8 * 60 + $i * $khungLen;
-                    $endMin = $startMin + $khungLen;
-                    KhungGio::create([
-                        'phong_id'     => $phong->id,
-                        'gio_bat_dau'  => sprintf('%02d:%02d:00', intdiv($startMin, 60), $startMin % 60),
-                        'gio_ket_thuc' => sprintf('%02d:%02d:00', intdiv($endMin, 60), $endMin % 60),
-                        'thu_tu'       => $i,
-                    ]);
-                }
+            // Thời lượng mỗi khung: ưu tiên cfg['phut'], mặc định theo loại phòng
+            // phong_kham: 5 phút (12 khách/giờ); phong_dich_vu: 30 phút/khách
+            $khungLen = $cfg['phut'] ?? ($phong->kieu_phong === 'phong_dich_vu' ? 30 : 5);
+
+            // Số khung: nếu cfg chỉ định so_slot + phut → dùng so_slot;
+            // còn lại tính theo giờ làm việc 8h–18h (600 phút)
+            $soKhung = (isset($cfg['phut']) && isset($cfg['so_slot']))
+                ? (int) $cfg['so_slot']
+                : intdiv(600, $khungLen);
+
+            // Xóa khung giờ cũ để seed lại đúng (tránh giữ data sai từ lần chạy trước)
+            $phong->khungGios()->delete();
+            for ($i = 0; $i < $soKhung; $i++) {
+                $startMin = 8 * 60 + $i * $khungLen;
+                $endMin   = $startMin + $khungLen;
+                KhungGio::create([
+                    'phong_id'     => $phong->id,
+                    'gio_bat_dau'  => sprintf('%02d:%02d:00', intdiv($startMin, 60), $startMin % 60),
+                    'gio_ket_thuc' => sprintf('%02d:%02d:00', intdiv($endMin, 60), $endMin % 60),
+                    'thu_tu'       => $i,
+                ]);
             }
         }
     }
