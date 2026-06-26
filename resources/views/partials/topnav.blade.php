@@ -55,10 +55,17 @@
 </nav>
 <!-- Search and Actions -->
 <div class="ml-auto flex items-center gap-2 xl:gap-3 min-w-0">
-<form method="GET" action="/{{ $coSo->slug }}/tim-kiem" class="relative w-56 2xl:w-72 hidden xl:block">
+<details class="relative shrink-0 hidden sm:block">
+<summary title="Tìm kiếm" class="list-none cursor-pointer select-none p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full flex [&::-webkit-details-marker]:hidden">
+<span class="material-symbols-outlined">search</span>
+</summary>
+<div class="absolute right-0 mt-2 w-72 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg p-3 z-50">
+<form method="GET" action="/{{ $coSo->slug }}/tim-kiem" class="relative">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">search</span>
-<input name="q" value="{{ request('q') }}" class="w-full bg-surface-container-low border-none rounded-xl pl-10 pr-4 py-1.5 text-body-sm focus:ring-2 focus:ring-secondary/20 transition-all" placeholder="Tìm tên / SĐT khách hàng..." type="search"/>
+<input name="q" value="{{ request('q') }}" autofocus class="w-full bg-surface-container-low border-none rounded-xl pl-10 pr-4 py-2 text-body-sm focus:ring-2 focus:ring-secondary/20 transition-all" placeholder="Tìm tên / SĐT khách hàng..." type="search"/>
 </form>
+</div>
+</details>
 @php
     $dsCoSo = \App\Models\CoSo::where('active', true)->orderBy('id')->get();
     // Giữ nguyên trang hiện tại khi đổi cơ sở (bỏ slug ở đầu URL)
@@ -67,7 +74,7 @@
 @if ($dsCoSo->count() > 1)
 <div class="relative hidden sm:block shrink min-w-0" title="Chuyển cơ sở">
 <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary text-[18px] pointer-events-none">apartment</span>
-<select onchange="if(this.value)window.location.href=this.value" class="appearance-none w-full max-w-[180px] pl-9 pr-8 py-1.5 bg-surface-container-low border-none rounded-xl text-body-sm font-semibold text-on-surface focus:ring-2 focus:ring-secondary/20 cursor-pointer transition-all truncate">
+<select onchange="if(this.value)window.location.href=this.value" class="appearance-none w-full max-w-[200px] lg:max-w-[260px] xl:max-w-[320px] pl-9 pr-8 py-1.5 bg-surface-container-low border-none rounded-xl text-body-sm font-semibold text-on-surface focus:ring-2 focus:ring-secondary/20 cursor-pointer transition-all truncate">
 @foreach ($dsCoSo as $cs)
 <option value="/{{ $cs->slug }}{{ $restPath ? '/'.$restPath : '' }}" @selected($cs->id === $coSo->id)>{{ $cs->ten }}</option>
 @endforeach
