@@ -270,7 +270,7 @@ class BookingController extends Controller
      * Tổng phút BS đã chiếm trong khoảng [s, e] (phút trong ngày), ngày $ngay,
      * tính XUYÊN MỌI CƠ SỞ (vì BS chỉ có 1 cơ thể).
      */
-    private function bacSiPhutDaDung(int $bacSiId, string $ngay, int $s, int $e, ?int $exceptId = null): int
+    private function bacSiPhutDaDung(int $bacSiId, string $ngay, int $s, int $e, ?int $exceptId = null, ?User $bs = null): int
     {
         $bookings = Booking::with(['dichVu', 'khungGio'])
             ->where('bac_si_user_id', $bacSiId)
@@ -279,7 +279,7 @@ class BookingController extends Controller
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->get();
 
-        $bs = User::find($bacSiId);
+        $bs ??= User::find($bacSiId); // dùng lại nếu caller đã có (tránh N+1 trong vòng lặp)
         $total = 0;
         foreach ($bookings as $b) {
             $r = $this->khoangGioBooking($b);
@@ -586,7 +586,7 @@ class BookingController extends Controller
             // Bác sĩ cần đủ thời lượng cho loại dịch vụ; nếu cần nhiều hơn khung đã chọn → loại.
             $can = $this->phutCanCuaBookingBS($bs, $dv);
             $fit = $slotLen >= $can;
-            $busy = $fit && $this->bacSiPhutDaDung($bs->id, $ngay, $s, $e, $exceptId) > 0;
+            $busy = $fit && $this->bacSiPhutDaDung($bs->id, $ngay, $s, $e, $exceptId, null, $bs) > 0;
 
             return [
                 'id'        => $bs->id,
@@ -959,6 +959,28 @@ class BookingController extends Controller
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
 
         return back()->with('ok', 'Đã từ chối lịch hẹn của ' . $ten . '.');
+    }
+
+    /** Ghi nhận phản hồi từ khách (chỉ khi lịch hẹn đã xong). */
+    public function phanHoi(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('duyet_booking');
+
+        if ($booking->trang_thai !== 'da_xong') {
+            return back()->with('error', 'Chỉ ghi phản hồi cho lịch hẹn đã hoàn thành.');
+        }
+
+        $data = $request->validate([
+            'phan_hoi_khach' => ['nullable', 'string', 'max:2000'],
+        ]);
+
+        $booking->phan_hoi_khach = $data['phan_hoi_khach'] ?: null;
+        $booking->save();
+
+        $ten = $booking->khachHang?->ho_ten ?? 'khách';
+
+        return back()->with('ok', 'Đã lưu phản hồi từ khách cho lịch hẹn của ' . $ten . '.');
     }
 
     /** Đánh dấu đã xong / hoàn tác về đã duyệt. */

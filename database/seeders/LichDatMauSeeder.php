@@ -74,6 +74,10 @@ class LichDatMauSeeder extends Seeder
 
         $mkBooking = function (Phong $phong, KhungGio $kg, string $bd, string $kt, ?User $bs, ?DichVu $dv, ?int $ktvId, string $trangThai) use ($coSo, $ngay, $sale, $mkKhach, $lyDoTuChoi, &$stt) {
             $kh = $mkKhach();
+            // Cờ màu cho timeline đặt lịch: tư vấn → xanh lá, khám LS → xanh dương.
+            // (chờ duyệt vẫn hiển thị vàng theo trạng thái, không phụ thuộc cờ này)
+            $coTuVan  = $dv?->thuoc_nhom === 'tu_van';
+            $coKhamLs = $dv?->thuoc_nhom === 'kham_ls';
             Booking::create([
                 'co_so_id'       => $coSo->id,
                 'loai_dat_lich'  => $phong->kieu_phong === 'phong_dich_vu' ? 'dich_vu' : 'phong_kham',
@@ -88,6 +92,8 @@ class LichDatMauSeeder extends Seeder
                 'gio_thuc_hien'  => $bd . ':00',
                 'gio_ket_thuc'   => $kt . ':00',
                 'nguon'          => 'seed',
+                'co_tu_van'      => $coTuVan,
+                'co_kham_cls'    => $coKhamLs,
                 'trang_thai'     => $trangThai,
                 'da_duyet'       => $trangThai === 'da_duyet' || $trangThai === 'da_xong',
                 'ly_do_tu_choi'  => $trangThai === 'tu_choi' ? $lyDoTuChoi[$stt % count($lyDoTuChoi)] : null,

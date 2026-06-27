@@ -59,9 +59,9 @@ $isVip = $phong->loai === 'vip';
 $beds = $rd['beds'];
 $occupied = $rd['occupied'];
 $fill = $rd['fill'];
-$slotStatus = $rd['slotStatus'];
-$bedStatus = $rd['bedStatus'];
-$slots = $phong->khungGios;
+$hours = $rd['hours'];
+$hourData = $rd['hourData'];
+$defaultHour = $rd['defaultHour'];
 @endphp
 <div class="bg-surface border border-outline-variant rounded-xl overflow-hidden {{ $isMaintenance ? 'grayscale opacity-75' : 'hover:shadow-lg transition-shadow' }}">
 <div class="p-5 border-b border-outline-variant flex justify-between items-start">
@@ -96,56 +96,39 @@ $slots = $phong->khungGios;
 </div>
 @else
 @php
-$currentSlotBookings = 0;
-if ($slots->count() > 0) {
-    $now = now()->format('H:i:s');
-    $currentSlot = $slots->first(fn($s) => $s->gio_bat_dau <= $now && $s->gio_ket_thuc > $now) ?? $slots->first();
-}
+$defOcc = $hourData[$defaultHour]['occupied'] ?? 0;
+$closeHour = end($hours) + 1;
 @endphp
-<p class="font-label-caps text-label-caps text-outline mb-4 uppercase">Sơ đồ vị trí ({{ count(array_filter($bedStatus, fn($s) => $s === 'occupied')) }}/{{ $beds }})</p>
-@if ($beds <= 4)
-<div class="flex gap-4 h-24 items-center justify-center bg-surface-container-low rounded-lg border border-dashed border-outline-variant">
-@foreach ($bedStatus as $status)
-<div class="flex flex-col items-center gap-2">
-<div class="w-12 h-16 {{ $status === 'occupied' ? 'bg-secondary-container border-2 border-secondary' : 'bg-surface-container-highest border-2 border-on-tertiary-fixed-variant' }} rounded-md flex items-center justify-center slot-pill cursor-pointer">
-<span class="material-symbols-outlined text-on-secondary-container" style='font-variation-settings: "FILL" 1;'>person</span>
+<div class="room-card" data-beds="{{ $beds }}" data-hours='@json($hourData)'>
+<p class="font-label-caps text-label-caps text-outline mb-4 uppercase">Sơ đồ vị trí (<span data-occ-label>{{ $defOcc }}</span>/{{ $beds }}) · <span class="text-secondary" data-hour-label>{{ sprintf('%02d:00', $defaultHour) }}</span></p>
+<div class="grid grid-cols-6 gap-2 p-3 bg-surface-container-low rounded-lg border border-outline-variant" data-bed-grid>
+@for ($i = 0; $i < $beds; $i++)
+@php $on = $i < $defOcc; @endphp
+<div data-bed class="bed-cell aspect-square rounded-sm flex items-center justify-center slot-pill {{ $on ? 'bg-secondary-container' : 'bg-tertiary-fixed-dim/30 border border-on-tertiary-fixed-variant/20' }}">
+<span class="material-symbols-outlined text-[14px] {{ $on ? 'text-on-secondary-container' : 'text-on-tertiary-fixed-variant' }}" style="font-variation-settings: 'FILL' {{ $on ? '1' : '0' }};">person</span>
 </div>
-<span class="font-label-caps text-[9px] {{ $status === 'occupied' ? 'text-secondary' : 'text-on-tertiary-fixed-variant' }} uppercase font-bold">{{ $status === 'occupied' ? 'Đang dùng' : 'Trống' }}</span>
+@endfor
 </div>
-@endforeach
-</div>
-@else
-<div class="grid grid-cols-6 gap-2 p-3 bg-surface-container-low rounded-lg border border-outline-variant">
-@foreach ($bedStatus as $status)
-<div class="aspect-square {{ $status === 'occupied' ? 'bg-secondary-container' : 'bg-tertiary-fixed-dim/30 border border-on-tertiary-fixed-variant/20' }} rounded-sm flex items-center justify-center slot-pill">
-<span class="material-symbols-outlined text-[14px] {{ $status === 'occupied' ? 'text-on-secondary-container' : 'text-on-tertiary-fixed-variant' }}" style="font-variation-settings: 'FILL' {{ $status === 'occupied' ? '1' : '0' }};">{{ $status === 'occupied' ? 'person' : 'circle' }}</span>
-</div>
-@endforeach
-</div>
-@endif
 <div class="mt-4 pt-4 border-t border-outline-variant/30">
-<p class="font-label-caps text-label-caps text-outline mb-2 uppercase">Lịch trình ngày {{ $date->format('d/m') }} ({{ substr($slots->first()?->gio_bat_dau, 0, 5) }} - {{ substr($slots->last()?->gio_ket_thuc, 0, 5) }})</p>
+<p class="font-label-caps text-label-caps text-outline mb-2 uppercase">Lịch trình ngày {{ $date->format('d/m') }} ({{ sprintf('%02d:00', $hours[0]) }} - {{ sprintf('%02d:00', $closeHour) }}) — bấm vào giờ để xem</p>
 <div class="flex flex-wrap gap-1">
-@foreach ($slotStatus as $i => $st)
+@foreach ($hours as $h)
 @php
-$hour = substr($slots[$i]->gio_bat_dau, 0, 2);
-$bgClass = match($st) {
-    'full' => 'bg-secondary-container',
-    'partial' => 'bg-secondary-container/40',
-    default => 'bg-surface-container-highest',
+$hd = $hourData[$h];
+$bgClass = match($hd['status']) {
+    'full' => 'bg-secondary-container text-on-secondary-container',
+    'partial' => 'bg-secondary-container/40 text-on-secondary-container',
+    default => 'bg-surface-container-highest text-outline',
 };
-$textClass = match($st) {
-    'full' => 'text-on-secondary-container',
-    'partial' => 'text-on-secondary-container',
-    default => 'text-outline',
-};
+$sel = $h === $defaultHour ? 'ring-2 ring-secondary ring-offset-1' : '';
 @endphp
-<div class="flex-1 h-4 {{ $bgClass }} rounded-sm flex items-center justify-center text-[8px] {{ $textClass }} font-bold" title="{{ substr($slots[$i]->gio_bat_dau, 0, 5) }}">{{ $hour }}</div>
+<button type="button" data-hour="{{ $h }}" onclick="selectHour(this)" title="{{ sprintf('%02d:00', $h) }} · {{ $hd['occupied'] }}/{{ $beds }} giường" class="hour-cell slot-pill flex-1 min-w-[26px] h-5 {{ $bgClass }} {{ $sel }} rounded-sm flex items-center justify-center text-[9px] font-bold">{{ sprintf('%02d', $h) }}</button>
 @endforeach
 </div>
 <div class="flex justify-between mt-1">
-<span class="text-[9px] font-label-caps text-outline">{{ substr($slots->first()?->gio_bat_dau, 0, 5) }}</span>
-<span class="text-[9px] font-label-caps text-outline">{{ substr($slots->last()?->gio_ket_thuc, 0, 5) }}</span>
+<span class="text-[9px] font-label-caps text-outline">{{ sprintf('%02d:00', $hours[0]) }}</span>
+<span class="text-[9px] font-label-caps text-outline">{{ sprintf('%02d:00', $closeHour) }}</span>
+</div>
 </div>
 </div>
 @endif
@@ -184,5 +167,32 @@ $textClass = match($st) {
 </div>
 </section>
 </main>
+<script>
+// Bấm 1 ô giờ → tô lại "Sơ đồ vị trí" theo số giường bị chiếm trong giờ đó.
+function paintBeds(card, occupied) {
+    card.querySelectorAll('[data-bed]').forEach((c, i) => {
+        const on = i < occupied;
+        c.className = 'bed-cell aspect-square rounded-sm flex items-center justify-center slot-pill '
+            + (on ? 'bg-secondary-container' : 'bg-tertiary-fixed-dim/30 border border-on-tertiary-fixed-variant/20');
+        const ic = c.querySelector('span');
+        ic.className = 'material-symbols-outlined text-[14px] ' + (on ? 'text-on-secondary-container' : 'text-on-tertiary-fixed-variant');
+        ic.style.fontVariationSettings = on ? "'FILL' 1" : "'FILL' 0";
+    });
+}
+function selectHour(btn) {
+    const card = btn.closest('.room-card');
+    if (!card) return;
+    const data = JSON.parse(card.dataset.hours || '{}');
+    const h = btn.dataset.hour;
+    const occ = (data[h] && data[h].occupied) || 0;
+    paintBeds(card, occ);
+    const occLabel = card.querySelector('[data-occ-label]');
+    if (occLabel) occLabel.textContent = occ;
+    const hourLabel = card.querySelector('[data-hour-label]');
+    if (hourLabel) hourLabel.textContent = String(h).padStart(2, '0') + ':00';
+    card.querySelectorAll('.hour-cell').forEach(c => c.classList.remove('ring-2', 'ring-secondary', 'ring-offset-1'));
+    btn.classList.add('ring-2', 'ring-secondary', 'ring-offset-1');
+}
+</script>
 @include('partials.datepicker')
 </body></html>

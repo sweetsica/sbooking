@@ -143,46 +143,89 @@ class PageController extends Controller
     {
         $danhSachCoSo = CoSo::where('active', true)->orderBy('id')->get();
         $date = $request->date('ngay') ?? now();
-        $phongs = $co_so->phongs()->with('khungGios')->orderBy('id')->get();
+        // Không nạp toàn bộ khung giờ (mỗi phòng khám có ~120 khung 5') — chỉ cần giờ
+        // mở/đóng. Trang phòng hiển thị lịch trình TỔNG HỢP THEO GIỜ, không theo khung.
+        $phongs = $co_so->phongs()->orderBy('id')->get();
+
+        // Giờ mở/đóng mỗi phòng — 1 query gộp thay vì nạp 600 dòng khung giờ.
+        $bounds = \App\Models\KhungGio::whereIn('phong_id', $phongs->pluck('id'))
+            ->selectRaw('phong_id, MIN(gio_bat_dau) as o, MAX(gio_ket_thuc) as c')
+            ->groupBy('phong_id')
+            ->get()->keyBy('phong_id');
 
         $bookingsByPhong = Booking::where('co_so_id', $co_so->id)
             ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
             ->whereDate('ngay_dat', $date)
-            ->get()
+            ->get(['id', 'phong_id', 'khung_gio_id', 'gio_thuc_hien', 'gio_ket_thuc'])
             ->groupBy('phong_id');
 
-        $roomData = $phongs->map(function ($phong) use ($bookingsByPhong, $date) {
-            $bookings = $bookingsByPhong->get($phong->id, collect());
-            $slots = $phong->khungGios;
+        // Giờ bắt đầu/kết thúc của các khung được booking tham chiếu (fallback khi
+        // booking thiếu gio_thuc_hien) — 1 query, chỉ các khung cần thiết.
+        $kgIds = $bookingsByPhong->flatten()->pluck('khung_gio_id')->filter()->unique();
+        $kgTimes = \App\Models\KhungGio::whereIn('id', $kgIds)
+            ->get(['id', 'gio_bat_dau', 'gio_ket_thuc'])->keyBy('id');
+
+        $toMin = fn (?string $t) => $t ? ((int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2)) : null;
+
+        $roomData = $phongs->map(function ($phong) use ($bookingsByPhong, $bounds, $kgTimes, $toMin, $date) {
             $beds = max(1, (int) $phong->so_slot_toi_da);
-            $capacity = $slots->count() * $beds;
-            $occupied = $bookings->count();
-            $fill = $capacity > 0 ? (int) round($occupied / $capacity * 100) : 0;
-
-            $bySlot = $bookings->groupBy('khung_gio_id');
-            $slotStatus = $slots->map(function ($kg) use ($bySlot, $beds) {
-                $count = ($bySlot[$kg->id] ?? collect())->count();
-                if ($count >= $beds) return 'full';
-                if ($count > 0) return 'partial';
-                return 'empty';
-            });
-
-            $bedStatus = [];
-            $currentSlot = $slots->first();
-            if ($currentSlot) {
-                $currentBookings = ($bySlot[$currentSlot->id] ?? collect())->count();
-                for ($i = 0; $i < $beds; $i++) {
-                    $bedStatus[] = $i < $currentBookings ? 'occupied' : 'available';
-                }
+            $b = $bounds->get($phong->id);
+            $startHour = $b ? (int) substr($b->o, 0, 2) : 8;
+            $endHour = 18;
+            if ($b) {
+                $eh = (int) substr($b->c, 0, 2);
+                $em = (int) substr($b->c, 3, 2);
+                $endHour = $em > 0 ? $eh + 1 : $eh; // làm tròn lên nếu lẻ phút
             }
+            if ($endHour <= $startHour) $endHour = $startHour + 1;
+
+            $bookings = $bookingsByPhong->get($phong->id, collect());
+
+            // Khoảng giờ thực [s, e] (phút) của mỗi booking.
+            $intervals = $bookings->map(function ($bk) use ($kgTimes, $toMin) {
+                $kg = $bk->khung_gio_id ? $kgTimes->get($bk->khung_gio_id) : null;
+                $bd = $bk->gio_thuc_hien ?: $kg?->gio_bat_dau;
+                $kt = $bk->gio_ket_thuc ?: $kg?->gio_ket_thuc;
+                $s = $toMin($bd ? substr($bd, 0, 5) : null);
+                if ($s === null) return null;
+                $e = $toMin($kt ? substr($kt, 0, 5) : null) ?? ($s + 60);
+                if ($e <= $s) $e = $s + 60;
+                return [$s, $e];
+            })->filter()->values();
+
+            $hours = range($startHour, $endHour - 1);
+
+            // Mỗi giờ: số giường bị chiếm = số booking overlap [h:00, h+1:00], cap ở số giường.
+            $hourData = [];
+            foreach ($hours as $h) {
+                $hs = $h * 60;
+                $he = $hs + 60;
+                $occ = min($beds, $intervals->filter(fn ($iv) => $iv[0] < $he && $hs < $iv[1])->count());
+                $hourData[$h] = [
+                    'occupied' => $occ,
+                    'status' => $occ >= $beds ? 'full' : ($occ > 0 ? 'partial' : 'empty'),
+                ];
+            }
+
+            // Giờ chọn mặc định: giờ hiện tại nếu là hôm nay & trong khoảng, else giờ mở.
+            $defaultHour = $startHour;
+            if ($date->isToday()) {
+                $nowH = (int) now()->format('H');
+                if ($nowH >= $startHour && $nowH < $endHour) $defaultHour = $nowH;
+            }
+
+            $occupied = $bookings->count(); // tổng lượt đặt trong ngày
+            $capacity = count($hours) * $beds; // sức chứa = số giờ × số giường
+            $fill = $capacity > 0 ? (int) round($occupied / $capacity * 100) : 0;
 
             return [
                 'phong' => $phong,
                 'beds' => $beds,
                 'occupied' => $occupied,
                 'fill' => $fill,
-                'slotStatus' => $slotStatus,
-                'bedStatus' => $bedStatus,
+                'hours' => $hours,
+                'hourData' => $hourData,
+                'defaultHour' => $defaultHour,
             ];
         });
 
@@ -209,27 +252,39 @@ class PageController extends Controller
             ?? $rooms->firstWhere('trang_thai', 'hoat_dong')
             ?? $rooms->first();
 
-        // ----- Lọc theo BÁC SĨ: dropdown + bác sĩ đang chọn -----
-        // Danh sách bác sĩ của cơ sở (gồm bác sĩ tư vấn global). Mặc định lọc = chính mình
-        // nếu người đăng nhập là bác sĩ (để bác sĩ vào là thấy lịch của mình); 0 = tất cả.
-        $vrBacSiIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
-        $bacSis = User::whereIn('vai_tro_id', $vrBacSiIds)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
-            ->orderBy('name')->get();
-        $authUser = auth()->user();
-        $selfIsDoctor = $authUser && $vrBacSiIds->contains($authUser->vai_tro_id);
-        $bacSiId = $request->has('bac_si_id')
-            ? (int) $request->query('bac_si_id')
-            : ($selfIsDoctor ? (int) $authUser->id : 0);
+        // ----- Lọc theo nhân sự: KTV (phòng dịch vụ) hoặc Bác sĩ (phòng khám) -----
+        // Mặc định lọc = chính mình nếu người đăng nhập đúng vai trò đó; 0 = tất cả.
+        $isDichVu   = $kieu === 'phong_dich_vu';
+        $staffParam = $isDichVu ? 'ktv_id' : 'bac_si_id';
+        $staffCol   = $isDichVu ? 'ktv_user_id' : 'bac_si_user_id';
+        $staffLabel = $isDichVu ? 'KTV' : 'Bác sĩ';
+        $authUser   = auth()->user();
+
+        if ($isDichVu) {
+            $vrIds = VaiTro::where('ma', 'ktv')->pluck('id');
+            $staffList = User::whereIn('vai_tro_id', $vrIds)
+                ->where('co_so_id', $co_so->id)
+                ->orderBy('name')->get();
+        } else {
+            // Bác sĩ của cơ sở + bác sĩ tư vấn global.
+            $vrIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+            $staffList = User::whereIn('vai_tro_id', $vrIds)
+                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+                ->orderBy('name')->get();
+        }
+        $selfIsStaff = $authUser && $vrIds->contains($authUser->vai_tro_id);
+        $staffId = $request->has($staffParam)
+            ? (int) $request->query($staffParam)
+            : ($selfIsStaff ? (int) $authUser->id : 0);
 
         // ----- VIEW THÁNG: lưới lịch, mỗi ô đếm số booking của phòng trong ngày -----
         if ($view === 'thang') {
-            $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room, $bacSiId) {
+            $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room, $staffId, $staffCol) {
                 $q = Booking::where('co_so_id', $co_so->id)
                     ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
                     ->whereBetween('ngay_dat', [$from, $to]);
                 if ($room) $q->where('phong_id', $room->id);
-                if ($bacSiId) $q->where('bac_si_user_id', $bacSiId);
+                if ($staffId) $q->where($staffCol, $staffId);
 
                 return $q->selectRaw('DATE(ngay_dat) d, COUNT(*) c')->groupBy('d')->pluck('c', 'd')->all();
             });
@@ -241,8 +296,10 @@ class PageController extends Controller
                 'date' => $date,
                 'view' => $view,
                 'kieu' => $kieu,
-                'bacSis' => $bacSis,
-                'bacSiId' => $bacSiId,
+                'staffList' => $staffList,
+                'staffId' => $staffId,
+                'staffParam' => $staffParam,
+                'staffLabel' => $staffLabel,
                 'monthCells' => $month['cells'],
                 'monthStart' => $month['monthStart'],
             ]);
@@ -257,7 +314,7 @@ class PageController extends Controller
                 ->where('phong_id', $room->id)
                 ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ trong lịch biểu
                 ->whereDate('ngay_dat', $date)
-                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
+                ->when($staffId, fn ($q) => $q->where($staffCol, $staffId))
                 ->with(['khachHang', 'dichVu', 'bacSi', 'ktv', 'khungGio'])
                 ->orderBy('id')->get();
         }
@@ -381,8 +438,10 @@ class PageController extends Controller
             'date' => $date,
             'view' => $view,
             'kieu' => $kieu,
-            'bacSis' => $bacSis,
-            'bacSiId' => $bacSiId,
+            'staffList' => $staffList,
+            'staffId' => $staffId,
+            'staffParam' => $staffParam,
+            'staffLabel' => $staffLabel,
             'beds' => $nbeds,
             'bedColumns' => $bedColumns,
             'hours' => $hours,
