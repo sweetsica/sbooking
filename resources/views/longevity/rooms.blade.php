@@ -158,7 +158,7 @@ $sel = $h === $defaultHour ? 'ring-2 ring-secondary ring-offset-1' : '';
 </div>
 <div class="flex items-center gap-3">
 <div class="w-4 h-4 bg-secondary-container border border-secondary rounded"></div>
-<span class="font-body-sm text-body-sm text-on-surface font-medium">Đang sử dụng (Occupied)</span>
+<span class="font-body-sm text-body-sm text-on-surface font-medium">Đang sử dụng</span>
 </div>
 <div class="flex items-center gap-3">
 <div class="w-4 h-4 bg-surface-dim border border-outline rounded"></div>

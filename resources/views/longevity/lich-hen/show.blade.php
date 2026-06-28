@@ -42,7 +42,7 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="ro font-time-slot">{{ $lichHen->created_at?->format('d/m/Y - H:i:s') ?? '—' }}</div>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn (Source)</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn</label>
 <div class="ro">{{ $lichHen->nguon ?? '—' }}</div>
 </div>
 </div>

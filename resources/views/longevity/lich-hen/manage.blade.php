@@ -20,39 +20,37 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <body class="bg-surface font-body-md text-on-surface">
 @include('partials.topnav', ['active' => 'tu-van'])
 
-<main class="min-h-screen pt-24 pb-12 px-container-margin">
+<main class="min-h-screen pt-24 pb-32 sm:pb-12 px-container-margin">
 <div class="max-w-[1600px] mx-auto">
 {{-- Header with View Switcher --}}
 <div class="flex flex-wrap justify-between items-center mb-8 gap-4">
 <h2 class="text-headline-lg font-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Quản lý Đặt lịch Bác sĩ</h2>
-<div class="flex items-center gap-3">
-<div class="flex bg-surface-container-low rounded-xl p-1">
-<a href="?{{ http_build_query(array_merge(request()->query(), ['loai' => 'tu_van'])) }}" class="px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all inline-block {{ ($loai ?? 'tu_van') === 'tu_van' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">BS Tư vấn</a>
-<a href="?{{ http_build_query(array_merge(request()->query(), ['loai' => 'tham_kham'])) }}" class="px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all inline-block {{ ($loai ?? '') === 'tham_kham' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">BS Thăm khám</a>
+<div class="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto">
+<div class="flex bg-surface-container-low rounded-xl p-1 flex-1 sm:flex-none">
+<a href="?{{ http_build_query(array_merge(request()->query(), ['loai' => 'tu_van'])) }}" class="flex-1 sm:flex-none text-center whitespace-nowrap px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all inline-block {{ ($loai ?? 'tu_van') === 'tu_van' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">BS Tư vấn</a>
+<a href="?{{ http_build_query(array_merge(request()->query(), ['loai' => 'tham_kham'])) }}" class="flex-1 sm:flex-none text-center whitespace-nowrap px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all inline-block {{ ($loai ?? '') === 'tham_kham' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">BS Thăm khám</a>
 </div>
-<div class="flex bg-surface-container-low rounded-xl p-1">
-<button class="px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all bg-surface-container-lowest shadow-sm text-secondary">Timeline</button>
-<a href="/{{ $coSo->slug }}/ds-tu-van" class="px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface inline-block">Danh sách</a>
+<div class="flex bg-surface-container-low rounded-xl p-1 flex-1 sm:flex-none">
+<button class="flex-1 sm:flex-none text-center whitespace-nowrap px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all bg-surface-container-lowest shadow-sm text-secondary">Timeline</button>
+<a href="/{{ $coSo->slug }}/ds-tu-van" class="flex-1 sm:flex-none text-center whitespace-nowrap px-5 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface inline-block">Danh sách</a>
 </div>
 </div>
 </div>
 
 {{-- Filters Bar --}}
-<form method="GET" class="flex flex-wrap items-end gap-4 mb-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<form method="GET" class="grid grid-cols-2 gap-4 mb-8 sm:flex sm:flex-wrap sm:items-end bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
 <div class="space-y-1.5">
 <label class="text-label-caps text-on-surface-variant block">NGÀY</label>
-<input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
+<input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input h-[42px] w-full sm:w-auto border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
 </div>
-<div class="flex items-center gap-2 ml-auto">
-<button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<button type="submit" class="h-[42px] w-full sm:w-auto px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors self-end">
 <span class="material-symbols-outlined text-[20px]">filter_list</span>
 <span>Xem</span>
 </button>
-<a href="/{{ $coSo->slug }}/dat-kham" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<a href="/{{ $coSo->slug }}/dat-kham" class="col-span-2 sm:col-auto sm:ml-auto h-[42px] w-full sm:w-auto px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
 <span>Tạo Booking</span>
 </a>
-</div>
 </form>
 
 {{-- Timeline Grid --}}

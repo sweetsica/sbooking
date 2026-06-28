@@ -49,11 +49,11 @@ body { background-color: #f7f9fb; }
 @if ($editing) @method('PUT') @endif
 <div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-8">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dấu thời gian (Timestamp)</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dấu thời gian</label>
 <input class="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface-variant cursor-not-allowed" readonly type="text" value="{{ now()->format('d/m/Y - h:i:s') }} ({{ now()->hour < 12 ? 'sáng' : 'tối' }})"/>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn (Source)</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn</label>
 <select name="nguon" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 @foreach (['Fanpage Facebook','Website','Hotline','Khách giới thiệu','Trực tiếp (Walk-in)'] as $ng)
 <option @selected(old('nguon')===$ng)>{{ $ng }}</option>

@@ -151,11 +151,11 @@
 <!-- System Info -->
 <div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-8">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dấu thời gian (Timestamp)</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dấu thời gian</label>
 <input class="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface-variant cursor-not-allowed" readonly type="text" value="{{ ($editing ? $bk->created_at : now())->format('d/m/Y - h:i:s') }} ({{ ($editing ? $bk->created_at : now())->hour < 12 ? 'sáng' : 'tối' }})"/>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn (Source)</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn</label>
 <select name="nguon" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 @foreach (['Fanpage Facebook','Website','Hotline','Khách giới thiệu','Trực tiếp (Walk-in)'] as $ng)
 <option @selected(old('nguon', $bk?->nguon)===$ng)>{{ $ng }}</option>
@@ -202,7 +202,7 @@
 </div>
 <div class="space-y-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Họ tên KH (Customer Full Name) <span class="text-error">*</span></label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Họ tên KH <span class="text-error">*</span></label>
 <input name="ho_ten" value="{{ old('ho_ten', $bk?->khachHang?->ho_ten) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập họ và tên..." type="text"/>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -227,12 +227,12 @@
 </div>
 <div class="space-y-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Ngày đặt lịch (Booking Date) <span class="text-error">*</span></label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Ngày đặt lịch <span class="text-error">*</span></label>
 <input name="ngay_dat" value="{{ old('ngay_dat', $bk ? $bk->ngay_dat->toDateString() : now()->toDateString()) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" type="date"/>
 </div>
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Phòng (Room) <span class="text-error">*</span></label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Phòng <span class="text-error">*</span></label>
 <select id="phong" name="phong_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 @foreach ($phongs as $p)
 <option value="{{ $p->id }}"
@@ -244,7 +244,7 @@
 </select>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Khung giờ (Time Slot) <span class="text-error">*</span></label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Khung giờ <span class="text-error">*</span></label>
 <select id="khung_gio" name="khung_gio_id" required data-old="{{ old('khung_gio_id', $bk?->khung_gio_id) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot"></select>
 </div>
 </div>
@@ -459,14 +459,12 @@
 </div>
 
 <!-- Footer Actions -->
-<div class="mt-12 flex justify-between items-center pt-8 border-t border-outline-variant">
-<a href="{{ $editing ? '/'.$coSo->slug.'/danh-sach' : '/'.$coSo->slug.'/lich-hen' }}" class="px-6 py-2.5 text-on-surface-variant font-semibold hover:bg-surface-container-high rounded-lg transition-colors">Hủy bỏ (Cancel)</a>
-<div class="flex gap-4">
-<button class="px-8 py-2.5 bg-secondary-container text-on-secondary-container font-bold rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center gap-2 shadow-md" type="submit">
+<div class="mt-12 grid grid-cols-2 items-stretch gap-4 pt-8 border-t border-outline-variant sm:flex sm:justify-between sm:items-center">
+<a href="{{ $editing ? '/'.$coSo->slug.'/danh-sach' : '/'.$coSo->slug.'/lich-hen' }}" class="px-6 py-2.5 text-on-surface-variant font-semibold hover:bg-surface-container-high rounded-lg transition-colors flex items-center justify-center text-center">Hủy bỏ</a>
+<button class="px-4 sm:px-8 py-2.5 bg-secondary-container text-on-secondary-container font-bold rounded-lg hover:opacity-90 active:scale-95 transition-all flex items-center justify-center gap-2 shadow-md whitespace-nowrap" type="submit">
 <span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">{{ $editing ? 'save' : 'add_task' }}</span>
-{{ $editing ? 'Lưu thay đổi' : 'Tạo Lịch Hẹn (Create)' }}
+{{ $editing ? 'Lưu thay đổi' : 'Tạo Lịch Hẹn' }}
 </button>
-</div>
 </div>
 </form>
 </div>

@@ -124,7 +124,7 @@
 <!-- Top Navigation Bar -->
 @include('partials.topnav', ['active' => 'lich-hen'])
 <!-- Main Content Area -->
-<main class="min-h-screen pt-24 pb-12 px-container-margin">
+<main class="min-h-screen pt-24 pb-32 sm:pb-12 px-container-margin">
 <div class="max-w-[1650px] mx-auto">
 <!-- Header with View Switcher -->
 <div class="flex flex-wrap justify-between items-center mb-8 gap-4">
@@ -136,44 +136,44 @@
 </div>
 @php $view = $view ?? 'ngay'; $tlPhong = $room ? '&phong_id='.$room->id : ''; $staffId = $staffId ?? 0; $staffParam = $staffParam ?? 'bac_si_id'; $staffLabel = $staffLabel ?? 'Bác sĩ'; $staffList = $staffList ?? []; $tlStaff = $staffId ? '&'.$staffParam.'='.$staffId : ''; @endphp
 <!-- Filters Bar -->
-<form method="GET" class="flex flex-wrap items-end gap-4 mb-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<form method="GET" class="grid grid-cols-2 gap-4 mb-8 sm:flex sm:flex-wrap sm:items-end bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
 <input type="hidden" name="view" value="{{ $view }}"/>
 @if (($kieu ?? 'phong_kham') === 'phong_dich_vu')<input type="hidden" name="kieu" value="dich_vu"/>@endif
 <div class="space-y-1.5">
 <label class="text-label-caps text-on-surface-variant block">NGÀY</label>
-<input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
+<input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input h-[42px] w-full sm:w-auto border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
 </div>
-<div class="space-y-1.5 w-[240px]">
+<button type="submit" class="h-[42px] w-full sm:w-auto px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors self-end sm:order-last">
+<span class="material-symbols-outlined text-[20px]">filter_list</span>
+<span>Xem</span>
+</button>
+<div class="space-y-1.5 col-span-2 sm:col-auto sm:w-[240px]">
 <label class="text-label-caps text-on-surface-variant block">PHÒNG / KHU VỰC</label>
-<select name="phong_id" onchange="this.form.submit()" class="form-select w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
+<select name="phong_id" onchange="this.form.submit()" class="form-select h-[42px] w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
 @foreach ($rooms as $rm)
 <option value="{{ $rm->id }}" @selected($room && $room->id === $rm->id)>{{ $rm->ten }}@if($rm->trang_thai==='bao_tri') (bảo trì)@endif</option>
 @endforeach
 </select>
 </div>
-<div class="space-y-1.5 w-[220px]">
+<div class="space-y-1.5 col-span-2 sm:col-auto sm:w-[220px]">
 <label class="text-label-caps text-on-surface-variant block">{{ strtoupper($staffLabel) }}</label>
-<select name="{{ $staffParam }}" onchange="this.form.submit()" class="form-select w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
+<select name="{{ $staffParam }}" onchange="this.form.submit()" class="form-select h-[42px] w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
 <option value="0">— Tất cả {{ $staffLabel }} —</option>
 @foreach ($staffList as $st)
 <option value="{{ $st->id }}" @selected($staffId === $st->id)>{{ $st->ten_day_du }}</option>
 @endforeach
 </select>
 </div>
-<button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
-<span class="material-symbols-outlined text-[20px]">filter_list</span>
-<span>Xem</span>
-</button>
-<div class="flex items-center gap-2 ml-auto">
+<div class="col-span-2 sm:col-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:ml-auto">
 <!-- Chuyển Ngày ↔ Tháng -->
 <div class="flex bg-surface-container-low rounded-lg p-1 h-[42px]">
 @php $kieuQS = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '&kieu=dich_vu' : ''; $createUrl = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/tao-moi'; $createLabel = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? 'Đặt lịch dịch vụ' : 'Đặt lịch phòng khám'; @endphp
-<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=ngay{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
-<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=thang{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
+<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=ngay{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
+<a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=thang{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
 </div>
-<a href="{{ $createUrl }}" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<a href="{{ $createUrl }}" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
-<span class="">{{ $createLabel }}</span>
+<span>{{ $createLabel }}</span>
 </a>
 </div>
 </form>
@@ -184,16 +184,15 @@
 @if ($view !== 'thang')
 <!-- View Container: Timeline -->
 <div class="bg-surface-container-lowest rounded-xl border border-outline-variant overflow-hidden shadow-sm transition-all duration-300 opacity-100" id="view-timeline">
-<div class="p-4 border-b border-outline-variant bg-surface-container-low flex flex-wrap justify-between items-center gap-3">
+<div class="p-4 border-b border-outline-variant bg-surface-container-low flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-between sm:items-center">
 <h3 class="font-headline-md text-on-surface">Lịch biểu {{ $room?->ten ?? '—' }} — <span class="text-secondary font-bold">{{ $date->translatedFormat('l, d/m/Y') }}</span></h3>
-<div class="flex items-center gap-5">
-<div class="flex items-center gap-2 text-body-sm">
-<span class="font-bold text-on-surface">{{ $stats['fill'] }}%</span>
-<span class="text-on-surface-variant">lấp đầy</span>
-<span class="text-on-surface-variant">·</span>
+<div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-5">
+<div class="flex flex-col gap-1 text-body-sm sm:flex-row sm:items-center sm:gap-2">
+<span><span class="font-bold text-on-surface">{{ $stats['fill'] }}%</span> <span class="text-on-surface-variant">lấp đầy</span></span>
+<span class="hidden sm:inline text-on-surface-variant">·</span>
 <span class="text-on-surface-variant">{{ $stats['total'] }} lịch ({{ $stats['approved'] }} duyệt / {{ $stats['pending'] }} chờ)</span>
 </div>
-<div class="flex flex-wrap gap-3">
+<div class="flex flex-wrap items-center gap-x-3 gap-y-1">
 <div class="flex items-center gap-1.5">
 <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
 <span class="text-body-sm text-on-surface-variant">Tư vấn</span>

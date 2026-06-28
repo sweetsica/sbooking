@@ -13,7 +13,11 @@ use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\User;
 use App\Models\VaiTro;
+use App\Notifications\LichNotification;
+use App\Services\NotificationRecipientResolver;
+use App\Support\LichEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
 class BookingController extends Controller
@@ -743,9 +747,30 @@ class BookingController extends Controller
             $booking->menus()->sync($data['menu_ids']);
         }
 
+        $this->notifyLich($booking, LichEvent::TAO_MOI);
+
         return redirect("/{$co_so->slug}/danh-sach")
             ->with('ok', 'Đã tạo lịch hẹn cho ' . $kh->ho_ten . '.')
             ->with('warning', $canhBaoBacSi);
+    }
+
+    /** Gửi thông báo cho người nhận liên quan đến booking event này. */
+    protected function notifyLich(Booking $booking, string $event): void
+    {
+        try {
+            $resolver = app(NotificationRecipientResolver::class);
+            $recipients = $resolver->forBooking($booking->fresh(['khachHang', 'coSo']), $event);
+            if ($recipients->isEmpty()) return;
+
+            Notification::send(
+                $recipients,
+                new LichNotification($booking, $event, auth()->user()?->name)
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Notify booking failed: '.$e->getMessage(), [
+                'event' => $event, 'booking_id' => $booking->id,
+            ]);
+        }
     }
 
     public function update(CoSo $co_so, Booking $booking, Request $request)
@@ -877,6 +902,8 @@ class BookingController extends Controller
             ? $this->bacSiTrungLich($co_so, (int) $booking->bac_si_user_id, (string) $booking->ngay_dat, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id)
             : null;
 
+        $this->notifyLich($booking, LichEvent::CAP_NHAT);
+
         return redirect("/{$co_so->slug}/danh-sach")
             ->with('ok', 'Đã cập nhật lịch hẹn của ' . $kh->ho_ten . '.')
             ->with('warning', $canhBaoBacSi);
@@ -888,6 +915,10 @@ class BookingController extends Controller
         $this->authorizePerm('xoa_booking');
 
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
+
+        // Gửi thông báo TRƯỚC khi xoá để còn ref các quan hệ
+        $this->notifyLich($booking, LichEvent::HUY);
+
         $booking->menus()->detach();
         $booking->delete();
 
@@ -934,6 +965,10 @@ class BookingController extends Controller
 
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
 
+        if ($approve) {
+            $this->notifyLich($booking, LichEvent::DUYET);
+        }
+
         return back()
             ->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch hẹn của ' . $ten . '.')
             ->with('warning', implode(' ', $canhBao) ?: null);
@@ -957,6 +992,8 @@ class BookingController extends Controller
         $booking->save();
 
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
+
+        $this->notifyLich($booking, LichEvent::TU_CHOI);
 
         return back()->with('ok', 'Đã từ chối lịch hẹn của ' . $ten . '.');
     }

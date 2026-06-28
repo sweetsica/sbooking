@@ -27,32 +27,32 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 @php $view = $view ?? 'ngay'; $isDoctorView = $isDoctorView ?? false; @endphp
 
 <!-- Date Filter (đồng bộ với trang Lịch biểu) -->
-<form method="GET" class="flex flex-wrap items-end gap-4 mb-8 bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
+<form method="GET" class="grid grid-cols-2 gap-4 mb-8 sm:flex sm:flex-wrap sm:items-end bg-surface-container-lowest p-6 rounded-xl border border-outline-variant shadow-sm">
 <input type="hidden" name="view" value="{{ $view }}"/>
 <div class="space-y-1.5">
 <label class="text-label-caps text-on-surface-variant block">NGÀY</label>
-<input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
+<input name="ngay" value="{{ $date->format('Y-m-d') }}" class="form-input h-[42px] w-full sm:w-auto border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md" type="date"/>
 </div>
 <!-- Nút Xem đẩy sát form ngày tháng -->
-<button type="submit" class="h-[42px] px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center gap-2 hover:bg-surface-container-low transition-colors">
+<button type="submit" class="h-[42px] w-full sm:w-auto px-5 text-on-surface-variant border border-outline-variant rounded-lg flex items-center justify-center gap-2 hover:bg-surface-container-low transition-colors self-end">
 <span class="material-symbols-outlined text-[20px]">filter_list</span>
 <span>Xem</span>
 </button>
-<div class="space-y-1.5 flex-1 min-w-[200px]">
+<div class="space-y-1.5 col-span-2 sm:col-auto sm:flex-1 sm:min-w-[200px]">
 <label class="text-label-caps text-on-surface-variant block">CƠ SỞ</label>
-<select onchange="if(this.value)window.location.href=this.value" class="form-select w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
+<select onchange="if(this.value)window.location.href=this.value" class="form-select h-[42px] w-full border-outline-variant rounded-lg bg-surface focus:ring-secondary focus:border-secondary text-body-md">
 @foreach ($danhSachCoSo as $cs)
 <option value="/{{ $cs->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view={{ $view }}" @selected($cs->id === $coSo->id)>{{ $cs->ten }}</option>
 @endforeach
 </select>
 </div>
-<div class="flex items-center gap-2 ml-auto">
+<div class="col-span-2 sm:col-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:ml-auto">
 <!-- Chuyển Ngày ↔ Tháng -->
 <div class="flex bg-surface-container-low rounded-lg p-1 h-[42px]">
-<a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=ngay" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
-<a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=thang" class="px-4 flex items-center rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
+<a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=ngay" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
+<a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=thang" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
 </div>
-<a href="/{{ $coSo->slug }}/tao-moi" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<a href="/{{ $coSo->slug }}/tao-moi" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
 <span>Tạo Booking</span>
 </a>

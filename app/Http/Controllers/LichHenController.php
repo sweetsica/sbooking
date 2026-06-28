@@ -10,11 +10,34 @@ use App\Models\LichHen;
 use App\Models\PhanQuyen;
 use App\Models\User;
 use App\Models\VaiTro;
+use App\Notifications\LichNotification;
+use App\Services\NotificationRecipientResolver;
+use App\Support\LichEvent;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Validation\Rule;
 
 class LichHenController extends Controller
 {
+    /** Gửi thông báo cho người nhận liên quan đến lịch hẹn event này. */
+    protected function notifyLich(LichHen $lh, string $event): void
+    {
+        try {
+            $resolver = app(NotificationRecipientResolver::class);
+            $recipients = $resolver->forLichHen($lh->fresh(['khachHang', 'coSo', 'caKham']), $event);
+            if ($recipients->isEmpty()) return;
+
+            Notification::send(
+                $recipients,
+                new LichNotification($lh, $event, auth()->user()?->name)
+            );
+        } catch (\Throwable $e) {
+            \Log::warning('Notify lich_hen failed: '.$e->getMessage(), [
+                'event' => $event, 'lich_hen_id' => $lh->id,
+            ]);
+        }
+    }
+
     public function create(CoSo $co_so)
     {
         return view('longevity.lich-hen.create', $this->formData($co_so) + ['lh' => null]);
@@ -162,7 +185,7 @@ class LichHenController extends Controller
 
         $canhBaoBooking = $this->bacSiTrungBooking($co_so, (int) $data['bac_si_user_id'], $data['ngay_hen'], (int) $data['ca_kham_id']);
 
-        LichHen::create([
+        $lichHen = LichHen::create([
             'co_so_id'         => $co_so->id,
             'khach_hang_id'    => $kh->id,
             'bac_si_user_id'   => $data['bac_si_user_id'],
@@ -173,6 +196,8 @@ class LichHenController extends Controller
             'ghi_chu'          => $data['ghi_chu'] ?? null,
             'trang_thai'       => 'cho_duyet',
         ]);
+
+        $this->notifyLich($lichHen, LichEvent::TAO_MOI);
 
         return redirect("/{$co_so->slug}/ds-tu-van")
             ->with('ok', 'Đã tạo lịch tư vấn cho ' . $kh->ho_ten . '.')
@@ -271,6 +296,8 @@ class LichHenController extends Controller
 
         $canhBaoBooking = $this->bacSiTrungBooking($co_so, (int) $data['bac_si_user_id'], $data['ngay_hen'], (int) $data['ca_kham_id'], $lich_hen->id);
 
+        $this->notifyLich($lich_hen, LichEvent::CAP_NHAT);
+
         return redirect("/{$co_so->slug}/ds-tu-van")
             ->with('ok', 'Đã cập nhật lịch tư vấn của ' . $kh->ho_ten . '.')
             ->with('warning', $canhBaoBooking);
@@ -291,6 +318,7 @@ class LichHenController extends Controller
         abort_unless($ok, 403, 'Bạn không có quyền xóa.');
 
         $ten = $lich_hen->khachHang?->ho_ten ?? 'khách';
+        $this->notifyLich($lich_hen, LichEvent::HUY);
         $lich_hen->delete();
 
         return redirect("/{$co_so->slug}/ds-tu-van")
@@ -333,6 +361,10 @@ class LichHenController extends Controller
         $lich_hen->save();
 
         $ten = $lich_hen->khachHang?->ho_ten ?? 'khách';
+
+        if ($approve) {
+            $this->notifyLich($lich_hen, LichEvent::DUYET);
+        }
 
         return back()->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch tư vấn của ' . $ten . '.');
     }

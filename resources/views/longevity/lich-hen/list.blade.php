@@ -27,30 +27,30 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <script>setTimeout(()=>document.getElementById('flash-ok')?.remove(), 4000);</script>
 @endif
 @include('partials.topnav', ['active' => 'tu-van'])
-<main class="pt-24 pb-12 px-container-margin">
+<main class="pt-24 pb-32 sm:pb-12 px-container-margin">
 <div class="max-w-[1600px] mx-auto">
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3 sm:gap-4">
 <h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">Quản lý Đặt lịch Bác sĩ</h2>
-<div class="flex bg-surface-container-low rounded-xl p-1">
-<a href="/{{ $coSo->slug }}/lich-tu-van" class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface inline-block">Timeline</a>
-<button class="px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all bg-surface-container-lowest shadow-sm text-secondary">Danh sách</button>
+<div class="flex bg-surface-container-low rounded-xl p-1 w-full sm:w-auto">
+<a href="/{{ $coSo->slug }}/lich-tu-van" class="flex-1 sm:flex-none px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all text-on-surface-variant hover:text-on-surface inline-flex items-center justify-center whitespace-nowrap">Timeline</a>
+<button class="flex-1 sm:flex-none px-6 py-1.5 rounded-lg text-body-md font-semibold transition-all bg-surface-container-lowest shadow-sm text-secondary whitespace-nowrap">Danh sách</button>
 </div>
 </div>
 
 <!-- Filters -->
 <form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4 mb-8">
-<div class="flex flex-wrap items-end gap-4">
-<div class="flex flex-col gap-1.5">
+<div class="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:items-end">
+<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto sm:w-auto">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">KHOẢNG THỜI GIAN</label>
-<div class="flex items-center gap-2">
-<input name="ngay_tu" value="{{ $filters['ngay_tu'] ?? '' }}" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface" type="date"/>
-<span class="text-on-surface-variant">đến</span>
-<input name="ngay_den" value="{{ $filters['ngay_den'] ?? '' }}" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface" type="date"/>
+<div class="flex items-center gap-2 w-full">
+<input name="ngay_tu" value="{{ $filters['ngay_tu'] ?? '' }}" class="flex-1 min-w-0 border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface" type="date"/>
+<span class="text-on-surface-variant shrink-0">đến</span>
+<input name="ngay_den" value="{{ $filters['ngay_den'] ?? '' }}" class="flex-1 min-w-0 border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface" type="date"/>
 </div>
 </div>
-<div class="flex flex-col gap-1.5">
+<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">BÁC SĨ TƯ VẤN</label>
-<select name="bac_si_id" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface min-w-[200px]">
+<select name="bac_si_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface sm:min-w-[200px]">
 <option value="">Tất cả bác sĩ</option>
 @foreach ($bacSis as $b)
 <option value="{{ $b->id }}" @selected(($filters['bac_si_id'] ?? '')==$b->id)>{{ $b->ten_day_du }}</option>
@@ -59,7 +59,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </div>
 <div class="flex flex-col gap-1.5">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">NGUỒN</label>
-<select name="nguon" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface min-w-[160px]">
+<select name="nguon" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface sm:min-w-[160px]">
 <option value="">Tất cả nguồn</option>
 @foreach ($nguons as $ng)
 <option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ $ng }}</option>
@@ -68,7 +68,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </div>
 <div class="flex flex-col gap-1.5">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">TRẠNG THÁI</label>
-<select name="trang_thai" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface min-w-[160px]">
+<select name="trang_thai" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface sm:min-w-[160px]">
 <option value="">Tất cả</option>
 <option value="cho_duyet" @selected(($filters['trang_thai'] ?? '')==='cho_duyet')>Chờ duyệt</option>
 <option value="da_duyet" @selected(($filters['trang_thai'] ?? '')==='da_duyet')>Đã duyệt</option>
@@ -83,18 +83,18 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
     $canEditTuVan = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_lich_tu_van')->exists();
     $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_tu_van')->exists();
 @endphp
-<div class="ml-auto flex items-center gap-2">
-<a href="/{{ $coSo->slug }}/ds-tu-van" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
+<div class="col-span-2 sm:col-auto flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+<a href="/{{ $coSo->slug }}/ds-tu-van" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">restart_alt</span> Đặt lại
 </a>
-<button type="submit" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+<button type="submit" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">filter_list</span> Lọc dữ liệu
 </button>
 @if ($canExportTuVan)
-<a href="/{{ $coSo->slug }}/xuat-tu-van" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-on-tertiary-container text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+<a href="/{{ $coSo->slug }}/xuat-tu-van" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-on-tertiary-container text-on-primary rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">download</span> Xuất Excel
 </a>
-<label class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-variant transition-colors">
+<label class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-variant transition-colors whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">upload</span> Chọn file
 <input type="file" name="file" form="import-tu-van" accept=".xlsx,.xls,.csv" class="hidden" onchange="this.form.submit()"/>
 </label>

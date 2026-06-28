@@ -47,14 +47,14 @@
 <nav class="flex items-center gap-1 shrink-0">
 @foreach ($items as $it)
 @php $on = $active === $it['key']; @endphp
-<a href="{{ $it['href'] }}" title="{{ $it['label'] }}" class="px-2.5 lg:px-3 py-2 text-body-md rounded-lg flex items-center gap-2 whitespace-nowrap transition-colors {{ $on ? 'font-bold bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface' }}">
+<a href="{{ $it['href'] }}" title="{{ $it['label'] }}" class="px-1.5 sm:px-2.5 lg:px-3 py-2 text-body-md rounded-lg flex items-center gap-2 whitespace-nowrap transition-colors {{ $on ? 'font-bold bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface' }}">
 <span class="material-symbols-outlined text-[20px]" @if($on) style="font-variation-settings: 'FILL' 1;" @endif>{{ $it['icon'] }}</span>
 <span class="hidden lg:inline">{{ $it['label'] }}</span>
 </a>
 @endforeach
 </nav>
 <!-- Search and Actions -->
-<div class="ml-auto flex items-center gap-2 xl:gap-3 min-w-0">
+<div class="ml-auto flex items-center gap-1 sm:gap-2 xl:gap-3 min-w-0">
 <details class="relative shrink-0 hidden sm:block">
 <summary title="Tìm kiếm" class="list-none cursor-pointer select-none p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full flex [&::-webkit-details-marker]:hidden">
 <span class="material-symbols-outlined">search</span>
@@ -82,29 +82,46 @@
 <span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
 </div>
 @endif
-<div class="flex items-center gap-2 border-l border-outline-variant pl-2 xl:pl-4 shrink-0">
-<button class="p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full relative hidden xl:flex">
-<span class="material-symbols-outlined">notifications</span>
-<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
-</button>
+@php $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
+<div class="flex items-center gap-0.5 sm:gap-2 border-l border-outline-variant pl-1 sm:pl-2 xl:pl-4 shrink-0">
+<details class="relative shrink-0" id="thongbao-details">
+<summary title="Thông báo" class="list-none cursor-pointer select-none p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full flex relative [&::-webkit-details-marker]:hidden">
+<span class="material-symbols-outlined text-[22px] sm:text-[24px]">notifications</span>
+<span data-thongbao-badge class="{{ $unreadCount > 0 ? '' : 'hidden' }} absolute top-0.5 right-0.5 sm:top-1 sm:right-1 min-w-[18px] h-[18px] px-1 bg-error text-on-error text-[10px] font-bold rounded-full flex items-center justify-center">{{ $unreadCount > 99 ? '99+' : $unreadCount }}</span>
+</summary>
+<div class="absolute right-0 mt-2 w-[320px] sm:w-[360px] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 max-h-[70vh] overflow-hidden flex flex-col">
+<div class="p-3 border-b border-outline-variant flex items-center justify-between gap-2">
+<h3 class="font-headline-md text-on-surface">Thông báo</h3>
+<button type="button" data-thongbao-mark-all class="text-body-sm text-secondary hover:underline">Đánh dấu tất cả đã đọc</button>
+</div>
+<div data-thongbao-list class="overflow-y-auto divide-y divide-outline-variant/60 max-h-[50vh]">
+<div class="p-6 text-center text-on-surface-variant text-body-sm">Đang tải…</div>
+</div>
+<a href="/thong-bao" class="p-3 text-center text-body-sm font-semibold text-secondary hover:bg-surface-container-low transition-colors border-t border-outline-variant">Xem tất cả</a>
+</div>
+</details>
 @if ($isAdmin)
-<a href="/{{ $coSo->slug }}/thiet-lap" class="p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full">
-<span class="material-symbols-outlined">settings</span>
+<a href="/{{ $coSo->slug }}/thiet-lap" class="p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full">
+<span class="material-symbols-outlined text-[22px] sm:text-[24px]">settings</span>
 </a>
 @endif
 @auth
-<details class="relative ml-2 pl-2 border-l border-outline-variant group">
-<summary class="flex items-center gap-2 cursor-pointer list-none select-none rounded-full hover:bg-surface-container-low transition-all py-1 pl-1 pr-2 [&::-webkit-details-marker]:hidden">
-<div class="w-8 h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary">
-<span class="material-symbols-outlined text-[18px]">person</span>
+<details class="relative group">
+<summary class="flex items-center gap-1 sm:gap-2 cursor-pointer list-none select-none rounded-full hover:bg-surface-container-low transition-all py-1 pl-0.5 pr-1 sm:pl-1 sm:pr-2 [&::-webkit-details-marker]:hidden">
+<div class="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-primary-container flex items-center justify-center text-on-primary shrink-0">
+<span class="material-symbols-outlined text-[16px] sm:text-[18px]">person</span>
 </div>
-<div class="hidden 2xl:block text-left leading-tight">
-<div class="text-body-sm font-semibold text-on-surface">{{ auth()->user()->name }}</div>
-<div class="text-[10px] uppercase tracking-wide text-on-surface-variant">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
+<div class="hidden md:block text-left leading-tight min-w-0">
+<div class="text-body-sm font-semibold text-on-surface truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->name }}</div>
+<div class="text-[10px] uppercase tracking-wide text-on-surface-variant truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
 </div>
-<span class="material-symbols-outlined text-[18px] text-on-surface-variant group-open:rotate-180 transition-transform">expand_more</span>
+<span class="material-symbols-outlined text-[16px] sm:text-[18px] text-on-surface-variant group-open:rotate-180 transition-transform">expand_more</span>
 </summary>
-<div class="absolute right-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
+<div class="absolute right-0 mt-2 w-64 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
+<div class="md:hidden px-4 py-3 border-b border-outline-variant">
+<div class="text-body-md font-semibold text-on-surface leading-tight">{{ auth()->user()->name }}</div>
+<div class="text-[11px] uppercase tracking-wide text-on-surface-variant mt-0.5">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
+</div>
 <a href="/doi-mat-khau" class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface hover:bg-surface-container-low transition-colors">
 <span class="material-symbols-outlined text-[20px] text-on-surface-variant">lock_reset</span> Đổi mật khẩu
 </a>
@@ -117,7 +134,7 @@
 </div>
 </details>
 @else
-<a href="/login" class="ml-2 pl-3 border-l border-outline-variant flex items-center gap-2 text-body-md font-semibold text-secondary hover:underline">
+<a href="/login" class="flex items-center gap-2 text-body-md font-semibold text-secondary hover:underline">
 <span class="material-symbols-outlined text-[20px]">login</span> Đăng nhập
 </a>
 @endauth
@@ -125,3 +142,92 @@
 </div>
 </div>
 </header>
+@auth
+<script>
+(function () {
+    const csrf = '{{ csrf_token() }}';
+    const coSoSlug = '{{ $coSo->slug }}';
+    const details = document.getElementById('thongbao-details');
+    if (! details) return;
+
+    const list = details.querySelector('[data-thongbao-list]');
+    const badge = details.querySelector('[data-thongbao-badge]');
+    const markAllBtn = details.querySelector('[data-thongbao-mark-all]');
+
+    function escapeHtml(s) { return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+    function iconFor(event) {
+        return ({
+            tao_moi: ['add_circle', 'text-blue-600', 'bg-blue-100'],
+            duyet: ['check_circle', 'text-emerald-600', 'bg-emerald-100'],
+            tu_choi: ['cancel', 'text-red-600', 'bg-red-100'],
+            cap_nhat: ['edit', 'text-amber-600', 'bg-amber-100'],
+            huy: ['delete', 'text-red-500', 'bg-red-50'],
+            nhac_hen: ['alarm', 'text-secondary', 'bg-secondary-container/20'],
+        })[event] || ['notifications', 'text-on-surface-variant', 'bg-surface-container-low'];
+    }
+
+    function render(items, unreadCount) {
+        // badge
+        if (unreadCount > 0) {
+            badge.textContent = unreadCount > 99 ? '99+' : String(unreadCount);
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+
+        if (! items || items.length === 0) {
+            list.innerHTML = '<div class="p-6 text-center text-on-surface-variant text-body-sm">Chưa có thông báo nào.</div>';
+            return;
+        }
+        list.innerHTML = items.map(n => {
+            const [icon, color, bg] = iconFor(n.event);
+            const unread = ! n.read_at;
+            return `
+            <a href="${escapeHtml(n.link || '#')}" data-id="${escapeHtml(n.id)}" class="block p-3 hover:bg-surface-container-low transition-colors ${unread ? 'bg-secondary-container/10' : ''}">
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-full ${bg} flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[20px] ${color}">${icon}</span>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="text-body-sm font-semibold text-on-surface truncate">${escapeHtml(n.tieu_de)}</div>
+                        <div class="text-body-sm text-on-surface-variant line-clamp-2">${escapeHtml(n.noi_dung)}</div>
+                        <div class="text-[11px] text-on-surface-variant/70 mt-0.5">${escapeHtml(n.created_human)}</div>
+                    </div>
+                    ${unread ? '<span class="shrink-0 w-2 h-2 rounded-full bg-secondary mt-2"></span>' : ''}
+                </div>
+            </a>`;
+        }).join('');
+
+        // Click → mark read
+        list.querySelectorAll('a[data-id]').forEach(el => {
+            el.addEventListener('click', () => {
+                fetch(`/thong-bao/${el.dataset.id}/read`, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                }).catch(() => {});
+            });
+        });
+    }
+
+    function load() {
+        fetch(`/thong-bao/summary`, { headers: { Accept: 'application/json' } })
+            .then(r => r.ok ? r.json() : null)
+            .then(data => { if (data) render(data.items, data.unread_count); })
+            .catch(() => { list.innerHTML = '<div class="p-6 text-center text-on-surface-variant text-body-sm">Không tải được thông báo.</div>'; });
+    }
+
+    details.addEventListener('toggle', () => { if (details.open) load(); });
+
+    markAllBtn?.addEventListener('click', () => {
+        fetch(`/thong-bao/mark-all-read`, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf },
+        }).then(() => load()).catch(() => {});
+    });
+
+    // Poll count mỗi 30s để cập nhật badge
+    setInterval(load, 30000);
+})();
+</script>
+@endauth

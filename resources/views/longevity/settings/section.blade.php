@@ -242,20 +242,20 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
 <div class="overflow-x-auto">
-<table class="w-full text-body-md">
+<table class="w-full min-w-[640px] text-body-md">
 <thead>
 <tr class="text-left text-label-caps font-label-caps uppercase text-on-surface-variant bg-surface-container-low border-b border-outline-variant">
 @if ($editable)
-@foreach ($cols as $fn => $ff)<th class="px-4 py-3">{{ $ff['label'] }}</th>@endforeach
-@if ($key === 'phong')<th class="px-4 py-3">Khung giờ</th>@endif
+@foreach ($cols as $fn => $ff)<th class="px-4 py-3 whitespace-nowrap">{{ $ff['label'] }}</th>@endforeach
+@if ($key === 'phong')<th class="px-4 py-3 whitespace-nowrap">Khung giờ</th>@endif
 @else
 @switch($key)
-@case('nguoi-dung')<th class="px-4 py-3">Tên</th><th class="px-4 py-3">Email</th><th class="px-4 py-3">Phòng ban</th><th class="px-4 py-3">Vai trò</th>@break
-@case('co-so')<th class="px-4 py-3">Tên cơ sở</th><th class="px-4 py-3">Slug</th><th class="px-4 py-3">Địa chỉ</th>@break
-@default<th class="px-4 py-3">Nội dung</th>
+@case('nguoi-dung')<th class="px-4 py-3 whitespace-nowrap">Tên</th><th class="px-4 py-3 whitespace-nowrap">Email</th><th class="px-4 py-3 whitespace-nowrap">Phòng ban</th><th class="px-4 py-3 whitespace-nowrap">Vai trò</th>@break
+@case('co-so')<th class="px-4 py-3 whitespace-nowrap">Tên cơ sở</th><th class="px-4 py-3 whitespace-nowrap">Slug</th><th class="px-4 py-3 whitespace-nowrap">Địa chỉ</th>@break
+@default<th class="px-4 py-3 whitespace-nowrap">Nội dung</th>
 @endswitch
 @endif
-<th class="px-4 py-3 text-right">Thao tác</th>
+<th class="px-4 py-3 text-right whitespace-nowrap">Thao tác</th>
 </tr>
 </thead>
 

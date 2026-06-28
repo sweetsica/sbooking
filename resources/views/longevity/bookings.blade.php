@@ -151,15 +151,15 @@
 @php $approvalMode = $approvalMode ?? false; @endphp
 @include('partials.topnav', ['active' => $approvalMode ? 'duyet-lich' : 'lich-hen'])
 <!-- Main Content -->
-<main class="pt-24 pb-12 px-container-margin">
+<main class="pt-24 pb-32 sm:pb-12 px-container-margin">
 <div class="max-w-[1650px] mx-auto">
 <!-- Header & View Switcher -->
-<div class="flex items-center justify-between mb-6">
+<div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3 sm:gap-4">
 <h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">{{ $approvalMode ? 'Duyệt lịch — đơn chờ duyệt' : 'Quản lý Đặt lịch' }}</h2>
 @unless ($approvalMode)
-<div class="flex items-center gap-1 bg-surface-container-low p-1 rounded-xl w-fit">
-<a href="/{{ $coSo->slug }}/lich-hen" class="px-6 py-2 text-body-md font-semibold text-on-surface-variant hover:text-on-surface transition-all inline-block">Lịch trình</a>
-<button class="px-6 py-2 bg-surface-container-lowest text-on-surface font-bold rounded-lg shadow-sm border border-outline-variant/30 flex items-center gap-2">
+<div class="flex items-stretch gap-1 bg-surface-container-low p-1 rounded-xl w-full sm:w-fit">
+<a href="/{{ $coSo->slug }}/lich-hen" class="flex-1 sm:flex-none px-6 py-2 text-body-md font-semibold text-on-surface-variant hover:text-on-surface transition-all inline-flex items-center justify-center whitespace-nowrap">Lịch trình</a>
+<button class="flex-1 sm:flex-none px-6 py-2 bg-surface-container-lowest text-on-surface font-bold rounded-lg shadow-sm border border-outline-variant/30 flex items-center justify-center gap-2 whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">format_list_bulleted</span>
                     Danh sách chi tiết
                 </button>
@@ -168,36 +168,36 @@
 </div>
 <!-- Advanced Filters -->
 <form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4 mb-8">
-<div class="flex flex-wrap items-end gap-4">
-<div class="flex flex-col gap-1.5">
+<div class="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:items-end">
+<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto sm:w-auto">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">KHOẢNG THỜI GIAN</label>
-<div class="flex items-center gap-2">
-<input name="ngay_tu" value="{{ $filters['ngay_tu'] ?? '' }}" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface" type="date"/>
-<span class="text-on-surface-variant">đến</span>
-<input name="ngay_den" value="{{ $filters['ngay_den'] ?? '' }}" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface" type="date"/>
+<div class="flex items-center gap-2 w-full">
+<input name="ngay_tu" value="{{ $filters['ngay_tu'] ?? '' }}" class="flex-1 min-w-0 border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface" type="date"/>
+<span class="text-on-surface-variant shrink-0">đến</span>
+<input name="ngay_den" value="{{ $filters['ngay_den'] ?? '' }}" class="flex-1 min-w-0 border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface" type="date"/>
 </div>
 </div>
-<div class="flex flex-col gap-1.5">
+<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">PHÒNG</label>
-<select name="phong_id" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<select name="phong_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
 <option value="">Tất cả phòng</option>
 @foreach ($phongs as $p)
 <option value="{{ $p->id }}" @selected(($filters['phong_id'] ?? '')==$p->id)>{{ $p->ten }}</option>
 @endforeach
 </select>
 </div>
-<div class="flex flex-col gap-1.5">
+<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">BÁC SĨ</label>
-<select name="bac_si_id" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<select name="bac_si_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
 <option value="">Tất cả bác sĩ</option>
 @foreach ($bacSis as $bs)
 <option value="{{ $bs->id }}" @selected(($filters['bac_si_id'] ?? '')==$bs->id)>{{ trim(($bs->chuc_danh ? $bs->chuc_danh.' ' : '').$bs->name) }}</option>
 @endforeach
 </select>
 </div>
-<div class="flex flex-col gap-1.5">
+<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">NV PHỤ TRÁCH</label>
-<select name="sale_id" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<select name="sale_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
 <option value="">Tất cả NV</option>
 @foreach ($sales as $s)
 <option value="{{ $s->id }}" @selected(($filters['sale_id'] ?? '')==$s->id)>{{ $s->name }}{{ $s->chuc_danh ? ' ('.$s->chuc_danh.')' : '' }}</option>
@@ -206,7 +206,7 @@
 </div>
 <div class="flex flex-col gap-1.5">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">NGUỒN</label>
-<select name="nguon" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<select name="nguon" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
 <option value="">Tất cả nguồn</option>
 @foreach ($nguons as $ng)
 <option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ $ng }}</option>
@@ -216,7 +216,7 @@
 @unless ($approvalMode)
 <div class="flex flex-col gap-1.5">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">TRẠNG THÁI</label>
-<select name="trang_thai" class="border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface min-w-[160px]">
+<select name="trang_thai" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
 <option value="">Tất cả</option>
 <option value="cho_duyet" @selected(($filters['trang_thai'] ?? '')==='cho_duyet')>Chờ duyệt</option>
 <option value="da_duyet" @selected(($filters['trang_thai'] ?? '')==='da_duyet')>Đã duyệt</option>
@@ -234,18 +234,18 @@
     $canEditBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_booking')->exists();
     $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
 @endphp
-<div class="ml-auto flex items-center gap-2">
-<a href="/{{ $coSo->slug }}/{{ $approvalMode ? 'duyet-lich' : 'danh-sach' }}" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors">
+<div class="col-span-2 sm:col-auto flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
+<a href="/{{ $coSo->slug }}/{{ $approvalMode ? 'duyet-lich' : 'danh-sach' }}" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">restart_alt</span> Đặt lại
 </a>
-<button type="submit" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+<button type="submit" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">filter_list</span> Lọc dữ liệu
 </button>
 @if ($canExportBooking)
-<a href="/{{ $coSo->slug }}/xuat-booking" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-on-tertiary-container text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+<a href="/{{ $coSo->slug }}/xuat-booking" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-on-tertiary-container text-on-primary rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">download</span> Xuất Excel
 </a>
-<label class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-variant transition-colors">
+<label class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-variant transition-colors whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">upload</span> Chọn file
 <input type="file" name="file" form="import-booking" accept=".xlsx,.xls,.csv" class="hidden" onchange="this.form.submit()"/>
 </label>

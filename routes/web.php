@@ -7,6 +7,7 @@ use App\Http\Controllers\LichHenController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
+use App\Http\Controllers\ThongBaoController;
 use App\Models\CoSo;
 use Illuminate\Support\Facades\Route;
 
@@ -26,6 +27,12 @@ Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
 Route::middleware('auth')->group(function () {
     Route::get('/doi-mat-khau',  [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::post('/doi-mat-khau', [AuthController::class, 'changePassword'])->name('password.update');
+
+    // Thông báo (in-app)
+    Route::get('/thong-bao',                        [ThongBaoController::class, 'index'])->name('thongbao.index');
+    Route::get('/thong-bao/summary',                [ThongBaoController::class, 'summary'])->name('thongbao.summary');
+    Route::post('/thong-bao/mark-all-read',         [ThongBaoController::class, 'markAllRead'])->name('thongbao.markAllRead');
+    Route::post('/thong-bao/{id}/read',             [ThongBaoController::class, 'markRead'])->name('thongbao.markRead');
 });
 
 Route::prefix('{co_so:slug}')->group(function () {

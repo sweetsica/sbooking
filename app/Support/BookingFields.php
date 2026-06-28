@@ -49,6 +49,12 @@ class BookingFields
             // ----- Duyệt -----
             'duyet_booking'   => 'Duyệt lịch đặt phòng',
             'duyet_tu_van'    => 'Duyệt lịch tư vấn',
+
+            // ----- Thông báo (in-app + email) -----
+            'nhan_tb_tag_lich'      => 'Nhận TB khi được tag vào lịch',
+            'nhan_tb_cap_nhat_lich' => 'Nhận TB khi lịch được cập nhật/duyệt',
+            'nhan_tb_huy_lich'      => 'Nhận TB khi lịch bị hủy/từ chối',
+            'nhan_tb_nhac_hen'      => 'Nhắc hẹn trước giờ thực hiện',
         ];
     }
 
@@ -102,6 +108,16 @@ class BookingFields
             'Quyền duyệt' => [
                 'icon'   => 'verified',
                 'fields' => $pick(['duyet_booking', 'duyet_tu_van']),
+                'sub'    => [],
+            ],
+            'Thông báo' => [
+                'icon'   => 'notifications_active',
+                'fields' => $pick([
+                    'nhan_tb_tag_lich',
+                    'nhan_tb_cap_nhat_lich',
+                    'nhan_tb_huy_lich',
+                    'nhan_tb_nhac_hen',
+                ]),
                 'sub'    => [],
             ],
         ];
