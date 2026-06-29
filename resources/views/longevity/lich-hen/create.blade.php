@@ -207,4 +207,5 @@ body { background-color: #f7f9fb; }
     });
 })();
 </script>
+@include('partials.datepicker')
 </body></html>

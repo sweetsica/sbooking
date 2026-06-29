@@ -13,6 +13,12 @@
         if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
     })->where('truong', 'duyet_booking')->exists();
 
+    // Quyền vào Lịch làm việc (tạo/upload HOẶC duyệt).
+    $canLichLamViec = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
+        if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
+        if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
+    })->whereIn('truong', ['quyen_lich_lam_viec', 'duyet_lich_lam_viec'])->exists();
+
     $items = [
         ['key' => 'lich-hen',  'label' => 'Đặt lịch phòng khám', 'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
         ['key' => 'dich-vu',   'label' => 'Đặt lịch dịch vụ',    'icon' => 'spa',            'href' => '/'.$coSo->slug.'/lich-hen?kieu=dich_vu'],
@@ -25,6 +31,11 @@
         array_splice($items, 1, 0, [
             ['key' => 'duyet-lich', 'label' => 'Duyệt lịch', 'icon' => 'fact_check', 'href' => '/'.$coSo->slug.'/duyet-lich'],
         ]);
+    }
+
+    // "Lịch làm việc": chỉ hiện cho người có quyền tạo/duyệt lịch làm việc.
+    if ($canLichLamViec) {
+        $items[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
     }
 
     // Nhân viên: chỉ thấy 2 loại đặt lịch.

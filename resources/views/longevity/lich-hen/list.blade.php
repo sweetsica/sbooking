@@ -204,4 +204,5 @@ Không có kết quả
 <span class="material-symbols-outlined text-[28px]">add</span>
 <span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Thêm lịch tư vấn</span>
 </a>
+@include('partials.datepicker')
 </body></html>

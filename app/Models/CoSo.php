@@ -9,9 +9,9 @@ class CoSo extends Model
 {
     protected $table = 'co_so';
 
-    protected $fillable = ['ten', 'slug', 'dia_chi', 'active'];
+    protected $fillable = ['ten', 'slug', 'dia_chi', 'active', 'gio_mo_cua', 'gio_dong_cua', 'thoi_gian_ca_phut'];
 
-    protected $casts = ['active' => 'boolean'];
+    protected $casts = ['active' => 'boolean', 'thoi_gian_ca_phut' => 'integer'];
 
     // Route model binding theo slug: /{co_so:slug}/...
     public function getRouteKeyName(): string
@@ -65,5 +65,10 @@ class CoSo extends Model
     public function lichHens(): HasMany
     {
         return $this->hasMany(LichHen::class, 'co_so_id');
+    }
+
+    public function lichLamViecs(): HasMany
+    {
+        return $this->hasMany(LichLamViec::class, 'co_so_id');
     }
 }

@@ -197,4 +197,5 @@ function placeNowLine() {
 placeNowLine();
 setInterval(placeNowLine, 60000);
 </script>
+@include('partials.datepicker')
 </body></html>

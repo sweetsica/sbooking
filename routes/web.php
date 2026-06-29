@@ -4,6 +4,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExcelController;
 use App\Http\Controllers\LichHenController;
+use App\Http\Controllers\LichLamViecController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
@@ -81,6 +82,17 @@ Route::prefix('{co_so:slug}')->group(function () {
 
         Route::get('/xuat-booking',  [ExcelController::class, 'exportBooking'])->name('excel.exportBooking');
         Route::post('/nhap-booking', [ExcelController::class, 'importBooking'])->name('excel.importBooking');
+
+        // ----- Lịch làm việc (theo tháng) + duyệt -----
+        Route::get('/lich-lam-viec',                [LichLamViecController::class, 'index'])->name('llv.index');
+        Route::get('/lich-lam-viec/mau',            [LichLamViecController::class, 'mau'])->name('llv.mau');
+        Route::post('/lich-lam-viec/preview',       [LichLamViecController::class, 'preview'])->name('llv.preview');
+        Route::post('/lich-lam-viec',               [LichLamViecController::class, 'store'])->name('llv.store');
+        Route::get('/lich-lam-viec/{lich_lam_viec}', [LichLamViecController::class, 'show'])->name('llv.show');
+        Route::post('/lich-lam-viec/{lich_lam_viec}/gui-duyet', [LichLamViecController::class, 'guiDuyet'])->name('llv.guiduyet');
+        Route::patch('/lich-lam-viec/{lich_lam_viec}/duyet',    [LichLamViecController::class, 'duyet'])->name('llv.duyet');
+        Route::patch('/lich-lam-viec/{lich_lam_viec}/tu-choi',  [LichLamViecController::class, 'tuChoi'])->name('llv.tuchoi');
+        Route::delete('/lich-lam-viec/{lich_lam_viec}',         [LichLamViecController::class, 'destroy'])->name('llv.destroy');
 
         // ----- Lịch tư vấn bác sĩ -----
         Route::get('/lich-tu-van',                    [LichHenController::class, 'manage'])->name('lichhen.manage');
