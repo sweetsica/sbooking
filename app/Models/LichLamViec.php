@@ -35,6 +35,26 @@ class LichLamViec extends Model
     ];
 
     /**
+     * Map giờ bắt đầu (HH:MM) của một khung booking sang ca trực.
+     * < 12:00 → sáng; >= 13:30 → chiều; khoảng 12:00–13:30 (nghỉ trưa) → null (đóng).
+     */
+    public static function caTheoGio(?string $gioBatDau): ?string
+    {
+        if (! $gioBatDau || ! preg_match('/^(\d{2}):(\d{2})$/', $gioBatDau, $m)) {
+            return null;
+        }
+        $phut = (int) $m[1] * 60 + (int) $m[2];
+        if ($phut < 12 * 60) {
+            return 'sang';
+        }
+        if ($phut >= 13 * 60 + 30) {
+            return 'chieu';
+        }
+
+        return null; // 12:00–13:30: ngoài giờ trực
+    }
+
+    /**
      * Bản lịch ĐANG HIỆU LỰC (da_duyet) của 1 cơ sở cho tháng chứa $date.
      */
     public static function dangHieuLuc(int $coSoId, string $date): ?self

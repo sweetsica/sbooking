@@ -1,7 +1,7 @@
 # Tính năng: Lịch trực bác sĩ/KTV theo ngày + Duyệt
 
 > File bàn giao (handoff) cho người/agent tiếp quản. Đọc hết trước khi sửa.
-> Trạng thái: **Backend + UI quản lý lịch ĐÃ XONG & test. Còn 1 bước: nối vào form đặt lịch (xem mục 8).**
+> Trạng thái: **Backend + UI quản lý lịch ĐÃ XONG & test. Nối form đặt lịch (mục 8) ĐÃ XONG & test (2026-06-29).**
 
 ---
 
@@ -132,7 +132,26 @@ Mọi view dùng Tailwind CDN (KHÔNG npm/Vite — dự án không dùng build).
 
 ---
 
-## 8. ❗ VIỆC CÒN LẠI: nối vào form đặt lịch (booking)
+## 8. ✅ ĐÃ XONG: nối vào form đặt lịch (booking)
+
+> **Đã triển khai & test.** Quy ước chốt với user:
+> - Map ca theo **giờ bắt đầu**: `<12:00`→Sáng, `≥13:30`→Chiều, **12:00–13:30 (nghỉ trưa)→không có ca**. Helper `LichLamViec::caTheoGio()`.
+> - Áp dụng cho **cả bác sĩ (phòng khám) lẫn KTV (phòng dịch vụ)**. Lịch phân công BS cho `phong_kham`, KTV cho `phong_dich_vu`.
+>
+> **HÀNH VI = CẢNH BÁO MỀM, KHÔNG CHẶN** (đổi từ bản "chặn cứng" đầu tiên — 2026-06-29):
+> Vẫn cho chọn MỌI bác sĩ/KTV. Khi người được chọn không khớp lịch → hiện 1 **dòng đỏ** dưới dropdown:
+> - Chưa có lịch `da_duyet` cho tháng (`co_lich=false`) → "Bác sĩ/KTV **chưa đăng ký lịch làm việc**."
+> - Có lịch nhưng người đó không trực phòng+ngày+ca (`truc=false`, gồm cả nghỉ trưa) → "Bác sĩ/KTV **không làm việc vào thời gian này**."
+> - KHÔNG có chặn ở `store()`/`update()` (đã gỡ `lichTrucErrors`). Ràng buộc cứng còn lại chỉ là kín lịch/đủ thời lượng (xung đột thật).
+>
+> Thay đổi:
+> - `checkBacSi`: trả **tất cả** ứng viên, mỗi người có cờ `truc`, response thêm `co_lich`. KHÔNG lọc.
+> - `checkKtv` (route `GET /{slug}/tao-moi/check-ktv`): trả **tất cả KTV cơ sở** + cờ `truc` + `co_lich`.
+> - JS `create.blade.php`: `loadBacSi`/`loadKtv` render option kèm `data-truc`; hàm `updateLichWarn()` hiện/ẩn dòng đỏ (`#bs_lich_warn`, `#ktv_lich_warn`) theo option đang chọn. KTV chỉ áp dụng phòng `data-kieu=phong_dich_vu`.
+>
+> Mục tuỳ chọn CHƯA làm: hiển thị trạng thái "đóng" trên timeline `/lich-hen` (mục 8.4 cũ).
+
+<details><summary>Mô tả yêu cầu gốc (giữ để tham khảo)</summary>
 
 **Yêu cầu user**: khi đặt booking, dropdown bác sĩ chỉ hiện người được phân công đúng **phòng + ngày + ca**; nếu ô trống (không ai trực) → hiển thị **"Không có bác sĩ"** = đóng phòng ca đó. User nói "tạm thời đóng phòng (hiển thị trong form chọn là - Không có bác sĩ)".
 
@@ -145,6 +164,8 @@ Mọi view dùng Tailwind CDN (KHÔNG npm/Vite — dự án không dùng build).
 4. (Tuỳ chọn) Hiển thị trạng thái "đóng" trên timeline `/lich-hen`.
 
 **Lưu ý**: chỉ áp dụng khi có bản `da_duyet` cho tháng đó. Nếu cơ sở CHƯA có lịch hiệu lực cho tháng → nên fallback về hành vi cũ (không chặn) để không phá luồng đang chạy. Cần xác nhận quy ước này với user.
+
+</details>
 
 ---
 

@@ -355,6 +355,7 @@
 <select id="bac_si" name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 <option value="">-- Chọn khung giờ trước --</option>
 </select>
+<p id="bs_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
 </div>
 </div>
 @endif
@@ -374,6 +375,7 @@
 <option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
 @endforeach
 </select>
+<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
 </div>
 </div>
 @else
@@ -585,6 +587,8 @@
     const dichVu = document.getElementById('dich_vu');
     const bacSi = document.getElementById('bac_si');
     const bsHint = document.getElementById('bs_hint');
+    const bsLichWarn = document.getElementById('bs_lich_warn');
+    const ktvLichWarn = document.getElementById('ktv_lich_warn');
     const hCoTuVan = document.getElementById('co_tu_van');
     const hCoKhamCls = document.getElementById('co_kham_cls');
     const applyLoaiChinh = (v) => {
@@ -614,6 +618,22 @@
     if (initLoai) applyLoaiChinh(initLoai.value);
 
     let bsAbortCtl;
+    let bsCoLich = true; // có lịch da_duyet cho tháng hay chưa
+
+    // Hiện/ẩn dòng đỏ cảnh báo lịch làm việc cho ô <select> được chọn.
+    // coLich=false → "chưa đăng ký lịch làm việc"; chọn người không trực → "không làm việc vào thời gian này".
+    function updateLichWarn(sel, warnEl, coLich, nhan) {
+        if (!sel || !warnEl) return;
+        const opt = sel.selectedOptions[0];
+        const msgEl = warnEl.querySelector('span:last-child');
+        let msg = '';
+        if (opt && opt.value) {
+            if (!coLich) msg = `${nhan} chưa đăng ký lịch làm việc.`;
+            else if (opt.dataset.truc === '0') msg = `${nhan} không làm việc vào thời gian này.`;
+        }
+        if (msg) { if (msgEl) msgEl.textContent = msg; warnEl.classList.remove('hidden'); }
+        else warnEl.classList.add('hidden');
+    }
 
     async function loadBacSi() {
         if (!bacSi || !khung || !dichVu || !ngay || !phong) return;
@@ -622,6 +642,7 @@
         const kt = (ketThuc && ketThuc.value) || (opt && opt.getAttribute('data-kt')) || '';
         if (!phong.value || !dichVu.value || !ngay.value || !bd || !kt) {
             bacSi.innerHTML = '<option value="">-- Chọn khung giờ trước --</option>';
+            updateLichWarn(bacSi, bsLichWarn, bsCoLich, 'Bác sĩ');
             return;
         }
         const params = new URLSearchParams({
@@ -638,12 +659,14 @@
             const r = await fetch(`/${slug}/tao-moi/check-bac-si?${params}`, { signal: bsAbortCtl.signal });
             const j = await r.json();
             const list = j.list || [];
+            bsCoLich = j.co_lich !== false;
             const cur = bacSi.value;
             bacSi.innerHTML = '<option value="">-- Chọn --</option>' + list.map(b =>
-                `<option value="${b.id}" ${b.available ? '' : 'disabled'}>${b.name}${b.available ? '' : ' — (' + (b.reason || 'không khả dụng') + ')'}</option>`
+                `<option value="${b.id}" data-truc="${b.truc ? 1 : 0}" ${b.available ? '' : 'disabled'}>${b.name}${b.available ? '' : ' — (' + (b.reason || 'không khả dụng') + ')'}</option>`
             ).join('');
             if (cur && bacSi.querySelector(`option[value="${cur}"]:not([disabled])`)) bacSi.value = cur;
             if (bsHint) bsHint.textContent = list.length ? '' : '(không có bác sĩ phù hợp)';
+            updateLichWarn(bacSi, bsLichWarn, bsCoLich, 'Bác sĩ');
         } catch (e) {
             if (e.name !== 'AbortError' && bsHint) bsHint.textContent = '';
         }
@@ -651,7 +674,57 @@
     if (bacSi) {
         if (dichVu) dichVu.addEventListener('change', loadSlots);
         if (khung) khung.addEventListener('change', loadBacSi);
+        if (batDau) batDau.addEventListener('change', loadBacSi);
+        bacSi.addEventListener('change', () => updateLichWarn(bacSi, bsLichWarn, bsCoLich, 'Bác sĩ'));
         loadBacSi();
+    }
+
+    // ===== KTV động theo lịch trực (chỉ phòng dịch vụ) =====
+    // Vẫn hiện TẤT CẢ KTV; người không trực phòng+ngày+ca → cảnh báo dòng đỏ (không chặn).
+    const ktvSel = document.querySelector('[name="ktv_user_id"]');
+    let ktvAbortCtl;
+    let ktvCoLich = true;
+
+    async function loadKtv() {
+        if (!ktvSel || !phong || !ngay) return;
+        const opt = phong.options[phong.selectedIndex];
+        if (!opt || opt.dataset.kieu !== 'phong_dich_vu') return; // phòng khám: giữ KTV tĩnh
+        const kg = khung && khung.options[khung.selectedIndex];
+        const bd = (batDau && batDau.value) || (kg && kg.getAttribute('data-bd')) || '';
+        const oldVal = ktvSel.dataset.old || '';
+        const cur = ktvSel.value || oldVal;
+
+        if (!phong.value || !ngay.value || !bd) {
+            ktvSel.innerHTML = '<option value="">-- Chọn khung giờ trước --</option>';
+            updateLichWarn(ktvSel, ktvLichWarn, ktvCoLich, 'KTV');
+            return;
+        }
+        const params = new URLSearchParams({ phong_id: phong.value, ngay: ngay.value, gio_bat_dau: bd });
+
+        if (ktvAbortCtl) ktvAbortCtl.abort();
+        ktvAbortCtl = new AbortController();
+        try {
+            const r = await fetch(`/${slug}/tao-moi/check-ktv?${params}`, { signal: ktvAbortCtl.signal });
+            const j = await r.json();
+            const list = j.list || [];
+            ktvCoLich = j.co_lich !== false;
+            ktvSel.innerHTML = '<option value="">-- Chọn --</option>' + list.map(k =>
+                `<option value="${k.id}" data-truc="${k.truc ? 1 : 0}">${k.name}</option>`
+            ).join('');
+            if (cur && ktvSel.querySelector(`option[value="${cur}"]`)) ktvSel.value = cur;
+            updateLichWarn(ktvSel, ktvLichWarn, ktvCoLich, 'KTV');
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+        }
+    }
+    if (ktvSel) {
+        if (ktvSel.value) ktvSel.dataset.old = ktvSel.value;
+        if (phong) phong.addEventListener('change', loadKtv);
+        if (ngay) ngay.addEventListener('change', loadKtv);
+        if (khung) khung.addEventListener('change', loadKtv);
+        if (batDau) batDau.addEventListener('change', loadKtv);
+        ktvSel.addEventListener('change', () => updateLichWarn(ktvSel, ktvLichWarn, ktvCoLich, 'KTV'));
+        loadKtv();
     }
 
     // Kiểm tra trùng số điện thoại

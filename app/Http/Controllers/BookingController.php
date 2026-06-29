@@ -9,6 +9,7 @@ use App\Models\DichVu;
 use App\Models\KhachHang;
 use App\Models\KhungGio;
 use App\Models\LichHen;
+use App\Models\LichLamViec;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\User;
@@ -581,12 +582,18 @@ class BookingController extends Controller
             default   => true,
         })->sortBy('name')->values();
 
+        // Lịch trực hiệu lực: KHÔNG lọc ai — vẫn cho chọn mọi bác sĩ. Chỉ đánh dấu
+        // người không khớp lịch để UI hiện cảnh báo (cờ 'truc' mỗi người + 'co_lich').
+        $ca = LichLamViec::caTheoGio($bd);
+        $coLich = LichLamViec::dangHieuLuc($co_so->id, $ngay) !== null;
+        $truc = $ca ? LichLamViec::bacSiTruc($co_so->id, $phongId, $ngay, $ca) : collect();
+
         $toMin = fn ($t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
         $s = $toMin($bd);
         $e = $toMin($kt);
         $slotLen = $e - $s;
 
-        $list = $candidates->map(function ($bs) use ($ngay, $s, $e, $slotLen, $dv, $exceptId) {
+        $list = $candidates->map(function ($bs) use ($ngay, $s, $e, $slotLen, $dv, $exceptId, $truc) {
             // Bác sĩ cần đủ thời lượng cho loại dịch vụ; nếu cần nhiều hơn khung đã chọn → loại.
             $can = $this->phutCanCuaBookingBS($bs, $dv);
             $fit = $slotLen >= $can;
@@ -596,13 +603,41 @@ class BookingController extends Controller
                 'id'        => $bs->id,
                 'name'      => $bs->ten_day_du,
                 'available' => $fit && ! $busy,
+                'truc'      => $truc->has($bs->id), // có trực phòng+ngày+ca không
                 'reason'    => ! $fit
                     ? "Cần {$can} phút, khung chỉ {$slotLen} phút"
                     : ($busy ? 'Bác sĩ kín lịch' : null),
             ];
         });
 
-        return response()->json(['list' => $list]);
+        return response()->json(['list' => $list, 'co_lich' => $coLich]);
+    }
+
+    // Danh sách KTV cơ sở + cờ trực phòng dịch vụ theo ngày + ca (cảnh báo mềm, không lọc).
+    public function checkKtv(CoSo $co_so, Request $request)
+    {
+        $phongId = (int) $request->query('phong_id');
+        $ngay    = $request->query('ngay');
+        $bd      = $request->query('gio_bat_dau');
+
+        if (! $phongId || ! $ngay || ! $bd) {
+            return response()->json(['list' => []]);
+        }
+
+        $ca = LichLamViec::caTheoGio($bd);
+        $coLich = LichLamViec::dangHieuLuc($co_so->id, $ngay) !== null;
+        $truc = $ca ? LichLamViec::bacSiTruc($co_so->id, $phongId, $ngay, $ca) : collect();
+
+        $vrKtv = VaiTro::where('ma', 'ktv')->value('id');
+        $ktvs = User::where('vai_tro_id', $vrKtv)->where('co_so_id', $co_so->id)->orderBy('name')->get();
+
+        $list = $ktvs->map(fn ($k) => [
+            'id'   => $k->id,
+            'name' => $k->ten_day_du,
+            'truc' => $truc->has($k->id),
+        ])->values();
+
+        return response()->json(['list' => $list, 'co_lich' => $coLich]);
     }
 
     // Kiểm tra trùng số điện thoại trong cơ sở
