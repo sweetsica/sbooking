@@ -71,4 +71,9 @@ class CoSo extends Model
     {
         return $this->hasMany(LichLamViec::class, 'co_so_id');
     }
+
+    public function ngayNghis(): HasMany
+    {
+        return $this->hasMany(NgayNghi::class, 'co_so_id');
+    }
 }

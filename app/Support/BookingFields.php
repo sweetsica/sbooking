@@ -54,6 +54,9 @@ class BookingFields
             'quyen_lich_lam_viec' => 'Tạo / upload lịch làm việc',
             'duyet_lich_lam_viec' => 'Duyệt & áp dụng lịch làm việc',
 
+            // ----- Ngày nghỉ (đóng cửa / nghỉ) -----
+            'quyen_ngay_nghi' => 'Quản lý ngày nghỉ (đóng cửa / nghỉ)',
+
             // ----- Thông báo (in-app + email) -----
             'nhan_tb_tag_lich'      => 'Nhận TB khi được tag vào lịch',
             'nhan_tb_cap_nhat_lich' => 'Nhận TB khi lịch được cập nhật/duyệt',
@@ -117,6 +120,11 @@ class BookingFields
             'Quyền lịch làm việc' => [
                 'icon'   => 'event_available',
                 'fields' => $pick(['quyen_lich_lam_viec', 'duyet_lich_lam_viec']),
+                'sub'    => [],
+            ],
+            'Quyền ngày nghỉ' => [
+                'icon'   => 'event_busy',
+                'fields' => $pick(['quyen_ngay_nghi']),
                 'sub'    => [],
             ],
             'Thông báo' => [

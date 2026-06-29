@@ -19,6 +19,12 @@
         if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
     })->whereIn('truong', ['quyen_lich_lam_viec', 'duyet_lich_lam_viec'])->exists();
 
+    // Quyền vào Ngày nghỉ.
+    $canNgayNghi = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
+        if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
+        if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
+    })->where('truong', 'quyen_ngay_nghi')->exists();
+
     $items = [
         ['key' => 'lich-hen',  'label' => 'Đặt lịch phòng khám', 'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
         ['key' => 'dich-vu',   'label' => 'Đặt lịch dịch vụ',    'icon' => 'spa',            'href' => '/'.$coSo->slug.'/lich-hen?kieu=dich_vu'],
@@ -36,6 +42,11 @@
     // "Lịch làm việc": chỉ hiện cho người có quyền tạo/duyệt lịch làm việc.
     if ($canLichLamViec) {
         $items[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
+    }
+
+    // "Ngày nghỉ": chỉ hiện cho người có quyền quản lý ngày nghỉ.
+    if ($canNgayNghi) {
+        $items[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
     }
 
     // Nhân viên: chỉ thấy 2 loại đặt lịch.

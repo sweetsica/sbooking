@@ -628,7 +628,8 @@
         const msgEl = warnEl.querySelector('span:last-child');
         let msg = '';
         if (opt && opt.value) {
-            if (!coLich) msg = `${nhan} chưa đăng ký lịch làm việc.`;
+            if (opt.dataset.nghi === '1') msg = `${nhan} đang nghỉ (ngày nghỉ) vào ngày/ca này.`;
+            else if (!coLich) msg = `${nhan} chưa đăng ký lịch làm việc.`;
             else if (opt.dataset.truc === '0') msg = `${nhan} không làm việc vào thời gian này.`;
         }
         if (msg) { if (msgEl) msgEl.textContent = msg; warnEl.classList.remove('hidden'); }
@@ -662,7 +663,7 @@
             bsCoLich = j.co_lich !== false;
             const cur = bacSi.value;
             bacSi.innerHTML = '<option value="">-- Chọn --</option>' + list.map(b =>
-                `<option value="${b.id}" data-truc="${b.truc ? 1 : 0}" ${b.available ? '' : 'disabled'}>${b.name}${b.available ? '' : ' — (' + (b.reason || 'không khả dụng') + ')'}</option>`
+                `<option value="${b.id}" data-truc="${b.truc ? 1 : 0}" data-nghi="${b.nghi ? 1 : 0}" ${b.available ? '' : 'disabled'}>${b.name}${b.available ? '' : ' — (' + (b.reason || 'không khả dụng') + ')'}</option>`
             ).join('');
             if (cur && bacSi.querySelector(`option[value="${cur}"]:not([disabled])`)) bacSi.value = cur;
             if (bsHint) bsHint.textContent = list.length ? '' : '(không có bác sĩ phù hợp)';
@@ -709,7 +710,7 @@
             const list = j.list || [];
             ktvCoLich = j.co_lich !== false;
             ktvSel.innerHTML = '<option value="">-- Chọn --</option>' + list.map(k =>
-                `<option value="${k.id}" data-truc="${k.truc ? 1 : 0}">${k.name}</option>`
+                `<option value="${k.id}" data-truc="${k.truc ? 1 : 0}" data-nghi="${k.nghi ? 1 : 0}">${k.name}</option>`
             ).join('');
             if (cur && ktvSel.querySelector(`option[value="${cur}"]`)) ktvSel.value = cur;
             updateLichWarn(ktvSel, ktvLichWarn, ktvCoLich, 'KTV');

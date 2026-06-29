@@ -199,6 +199,21 @@ Pattern: viết script PHP vào scratchpad, chạy bằng `php artisan tinker --
 
 ---
 
+## 12b. ✅ Tính năng "Ngày nghỉ" (đóng cửa / nghỉ) — 2026-06-30
+
+Khai báo ngày nghỉ theo **khoảng ngày** (`tu_ngay`..`den_ngay`) cho 4 cấp: `co_so | phong | bac_si | ktv`, kèm `ca` (`ca_ngay | sang | chieu`).
+
+- **Hành vi chốt với user**: `co_so` & `phong` → **CHẶN CỨNG** ở `store()`/`update()` booking; `bac_si` & `ktv` → **CẢNH BÁO MỀM** (dòng đỏ trong form), KHÔNG chặn.
+- DB: bảng `ngay_nghi` (migration `2026_07_02_000001`), seed quyền `quyen_ngay_nghi` (`...000002`).
+- Model `App\Models\NgayNghi`: `coSoDong()`, `phongDong()` (bool, chặn cứng), `nguoiNghiIds()` (collection user_id, cảnh báo mềm). Ca booking suy từ `LichLamViec::caTheoGio(gio_thuc_hien)`; nghỉ trưa (ca=null) chỉ vướng nghỉ `ca_ngay`.
+- `BookingController`: helper `ngayNghiChan()` gọi trong cả `store()`/`update()` (sau check giờ-trong-khung). `checkBacSi`/`checkKtv` thêm cờ `nghi` mỗi người. `storeDichVu` ủy quyền `store()` nên đã được chặn.
+- Form `create.blade.php`: option có `data-nghi`; `updateLichWarn()` ưu tiên hiện "đang nghỉ (ngày nghỉ)" trước cảnh báo lịch làm việc.
+- Quản lý: `NgayNghiController` + view `longevity/ngay-nghi/index.blade.php` (form thêm + bảng + xóa) + routes `ngaynghi.{index,store,destroy}` + mục topnav "Ngày nghỉ" (icon `event_busy`, gate `$canNgayNghi`). Quyền trong `BookingFields` nhóm "Quyền ngày nghỉ".
+
+**Chặn giờ nghỉ trưa (toàn cục, không liên quan ngày nghỉ)** — 2026-06-30: KHÔNG cho đặt booking chạm khoảng **12:00–13:30** (giữa ca Sáng kt và ca Chiều bd). Helper `BookingController::chamGioTrua($s,$e)` (overlap [s,e) với [12:00,13:30); nếu chỉ có giờ bắt đầu → chặn khi rơi vào khoảng). Áp ở `validateGioTrongKhung()` (server-side, cả store/update) + bỏ slot giờ trưa khi sinh slot trong `khungGio()`.
+
+---
+
 ## 12. Bối cảnh dự án (tóm tắt)
 
 `lara-sbooking` = Laravel 12 + Tailwind Play CDN (KHÔNG npm/Vite). Hệ đặt lịch khám đa cơ sở theo slug `/{slug}/...`. Model tên tiếng Việt (CoSo, Phong, Booking, User...). Phân quyền theo `vai_tro` qua bảng `phan_quyen` + `BookingFields`. Có 4 cơ sở: 59ntn, 207nvt, lo23tdn, 137nct. Excel dùng package `maatwebsite/excel`. Xem thêm bộ nhớ agent (nếu có) hoặc các file controller/booking để hiểu luồng booking.

@@ -5,6 +5,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\ExcelController;
 use App\Http\Controllers\LichHenController;
 use App\Http\Controllers\LichLamViecController;
+use App\Http\Controllers\NgayNghiController;
 use App\Http\Controllers\PageController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\SettingsController;
@@ -93,6 +94,11 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::patch('/lich-lam-viec/{lich_lam_viec}/duyet',    [LichLamViecController::class, 'duyet'])->name('llv.duyet');
         Route::patch('/lich-lam-viec/{lich_lam_viec}/tu-choi',  [LichLamViecController::class, 'tuChoi'])->name('llv.tuchoi');
         Route::delete('/lich-lam-viec/{lich_lam_viec}',         [LichLamViecController::class, 'destroy'])->name('llv.destroy');
+
+        // ----- Ngày nghỉ (đóng cửa / nghỉ theo khoảng ngày) -----
+        Route::get('/ngay-nghi',                 [NgayNghiController::class, 'index'])->name('ngaynghi.index');
+        Route::post('/ngay-nghi',                [NgayNghiController::class, 'store'])->name('ngaynghi.store');
+        Route::delete('/ngay-nghi/{ngay_nghi}',  [NgayNghiController::class, 'destroy'])->name('ngaynghi.destroy');
 
         // ----- Lịch tư vấn bác sĩ -----
         Route::get('/lich-tu-van',                    [LichHenController::class, 'manage'])->name('lichhen.manage');

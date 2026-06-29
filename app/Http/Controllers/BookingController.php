@@ -10,6 +10,7 @@ use App\Models\KhachHang;
 use App\Models\KhungGio;
 use App\Models\LichHen;
 use App\Models\LichLamViec;
+use App\Models\NgayNghi;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\User;
@@ -205,6 +206,10 @@ class BookingController extends Controller
             $kg = $khungChua($t);
             $s = $t;
             $e = $t + $phutMoi;
+            // Bỏ qua slot chạm giờ nghỉ trưa (12:00–13:30) — không cho đặt.
+            if ($this->chamGioTrua($s, $e)) {
+                continue;
+            }
             // Phòng dịch vụ: đầy khi đủ số slot song song. Phòng khám: để bước chọn bác sĩ lọc.
             $full = $phong->kieu_phong === 'phong_dich_vu'
                 ? $this->phongDichVuBan($phong->id, (int) $kg->id, $ngayStr, $s, $e, $capacity, $except)
@@ -378,7 +383,29 @@ class BookingController extends Controller
         if ($bd !== null && $kt !== null && $kt <= $bd) {
             $errors['gio_ket_thuc'] = 'Giờ kết thúc phải sau giờ thực hiện.';
         }
+        // Cấm đặt vào giờ nghỉ trưa (giữa ca Sáng và ca Chiều).
+        if ($bd !== null && $this->chamGioTrua($bd, $kt)) {
+            $truaBd = $toMin(LichLamViec::CA['sang']['kt']);
+            $truaKt = $toMin(LichLamViec::CA['chieu']['bd']);
+            $errors['gio_thuc_hien'] = 'Không thể đặt vào giờ nghỉ trưa (' . $fmt($truaBd) . '–' . $fmt($truaKt) . ').';
+        }
         return $errors;
+    }
+
+    /**
+     * Khoảng [s, e) (phút trong ngày) có chạm giờ nghỉ trưa không?
+     * Giờ trưa = giữa kết thúc ca Sáng (12:00) và bắt đầu ca Chiều (13:30) — không được đặt lịch.
+     * Nếu chỉ có giờ bắt đầu ($e null) → coi là 1 mốc, chặn khi mốc rơi vào [12:00, 13:30).
+     */
+    private function chamGioTrua(int $s, ?int $e): bool
+    {
+        $toMin = fn (string $t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
+        $truaBd = $toMin(LichLamViec::CA['sang']['kt']);   // 12:00
+        $truaKt = $toMin(LichLamViec::CA['chieu']['bd']);  // 13:30
+
+        return $e !== null
+            ? ($s < $truaKt && $e > $truaBd)
+            : ($s >= $truaBd && $s < $truaKt);
     }
 
     /** Khoảng giờ [bd, kt] của 1 khung_gio (phút trong ngày). */
@@ -548,6 +575,29 @@ class BookingController extends Controller
      */
     // Danh sách bác sĩ cho 1 slot: bác sĩ CỦA PHÒNG (+ bác sĩ tư vấn global nếu là tư vấn),
     // lọc theo loại (nhan_tu_van / nhan_kham_ls) + đánh dấu bận theo khoảng giờ slot đã chọn.
+    /**
+     * Chặn cứng booking khi cơ sở hoặc phòng có "ngày nghỉ" phủ ngày/ca đã chọn.
+     * Trả mảng [field => message] để gắn vào withErrors, hoặc null nếu không vướng.
+     * Ca booking suy ra từ giờ thực hiện (nghỉ trưa → null, chỉ vướng nghỉ cả ngày).
+     */
+    private function ngayNghiChan(CoSo $co_so, array $data): ?array
+    {
+        $ngay = $data['ngay_dat'] ?? null;
+        if (! $ngay) {
+            return null;
+        }
+        $ca = LichLamViec::caTheoGio($data['gio_thuc_hien'] ?? null);
+
+        if (NgayNghi::coSoDong($co_so->id, $ngay, $ca)) {
+            return ['ngay_dat' => 'Cơ sở đóng cửa (ngày nghỉ) vào ngày/ca đã chọn. Vui lòng chọn ngày khác.'];
+        }
+        if (! empty($data['phong_id']) && NgayNghi::phongDong($co_so->id, (int) $data['phong_id'], $ngay, $ca)) {
+            return ['phong_id' => 'Phòng này nghỉ (ngày nghỉ) vào ngày/ca đã chọn. Vui lòng chọn phòng hoặc ngày khác.'];
+        }
+
+        return null;
+    }
+
     public function checkBacSi(CoSo $co_so, Request $request)
     {
         $phongId  = (int) $request->query('phong_id');
@@ -587,13 +637,14 @@ class BookingController extends Controller
         $ca = LichLamViec::caTheoGio($bd);
         $coLich = LichLamViec::dangHieuLuc($co_so->id, $ngay) !== null;
         $truc = $ca ? LichLamViec::bacSiTruc($co_so->id, $phongId, $ngay, $ca) : collect();
+        $nghiIds = NgayNghi::nguoiNghiIds($co_so->id, $ngay, $ca);
 
         $toMin = fn ($t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
         $s = $toMin($bd);
         $e = $toMin($kt);
         $slotLen = $e - $s;
 
-        $list = $candidates->map(function ($bs) use ($ngay, $s, $e, $slotLen, $dv, $exceptId, $truc) {
+        $list = $candidates->map(function ($bs) use ($ngay, $s, $e, $slotLen, $dv, $exceptId, $truc, $nghiIds) {
             // Bác sĩ cần đủ thời lượng cho loại dịch vụ; nếu cần nhiều hơn khung đã chọn → loại.
             $can = $this->phutCanCuaBookingBS($bs, $dv);
             $fit = $slotLen >= $can;
@@ -604,6 +655,7 @@ class BookingController extends Controller
                 'name'      => $bs->ten_day_du,
                 'available' => $fit && ! $busy,
                 'truc'      => $truc->has($bs->id), // có trực phòng+ngày+ca không
+                'nghi'      => $nghiIds->contains($bs->id), // có ngày nghỉ phủ ngày/ca không
                 'reason'    => ! $fit
                     ? "Cần {$can} phút, khung chỉ {$slotLen} phút"
                     : ($busy ? 'Bác sĩ kín lịch' : null),
@@ -627,6 +679,7 @@ class BookingController extends Controller
         $ca = LichLamViec::caTheoGio($bd);
         $coLich = LichLamViec::dangHieuLuc($co_so->id, $ngay) !== null;
         $truc = $ca ? LichLamViec::bacSiTruc($co_so->id, $phongId, $ngay, $ca) : collect();
+        $nghiIds = NgayNghi::nguoiNghiIds($co_so->id, $ngay, $ca);
 
         $vrKtv = VaiTro::where('ma', 'ktv')->value('id');
         $ktvs = User::where('vai_tro_id', $vrKtv)->where('co_so_id', $co_so->id)->orderBy('name')->get();
@@ -635,6 +688,7 @@ class BookingController extends Controller
             'id'   => $k->id,
             'name' => $k->ten_day_du,
             'truc' => $truc->has($k->id),
+            'nghi' => $nghiIds->contains($k->id),
         ])->values();
 
         return response()->json(['list' => $list, 'co_lich' => $coLich]);
@@ -695,6 +749,12 @@ class BookingController extends Controller
         $gioErrors = $this->validateGioTrongKhung($data);
         if (! empty($gioErrors)) {
             return back()->withInput()->withErrors($gioErrors);
+        }
+
+        // Ngày nghỉ: cơ sở / phòng đóng cửa → chặn cứng (bác sĩ/KTV nghỉ chỉ cảnh báo mềm ở form).
+        $nghiErr = $this->ngayNghiChan($co_so, $data);
+        if ($nghiErr) {
+            return back()->withInput()->withErrors($nghiErr);
         }
 
         // KTV conflict check - theo khoảng giờ thực, chặn cả khi ở phòng khác
@@ -848,6 +908,12 @@ class BookingController extends Controller
         $gioErrors = $this->validateGioTrongKhung($data);
         if (! empty($gioErrors)) {
             return back()->withInput()->withErrors($gioErrors);
+        }
+
+        // Ngày nghỉ: cơ sở / phòng đóng cửa → chặn cứng (bác sĩ/KTV nghỉ chỉ cảnh báo mềm ở form).
+        $nghiErr = $this->ngayNghiChan($co_so, $data);
+        if ($nghiErr) {
+            return back()->withInput()->withErrors($nghiErr);
         }
 
         // KTV conflict check (trừ booking hiện tại) - theo khoảng giờ thực
