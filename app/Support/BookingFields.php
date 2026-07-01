@@ -17,7 +17,9 @@ class BookingFields
             // ----- Đặt phòng (booking) -----
             'xem_booking'     => 'Xem booking',
             'them_booking'    => 'Thêm booking',
-            'sua_booking'     => 'Sửa booking (cho phép sửa)',
+            'sua_booking'     => 'Sửa booking — tất cả (mọi lịch)',
+            'sua_booking_lien_quan' => 'Sửa booking — chỉ lịch liên quan (mình tạo / BS / KTV / Sale)',
+            'sua_booking_dich_vu_cua_toi' => 'Sửa booking phòng dịch vụ — chỉ của tôi (dịch vụ + mình là BS/KTV/Sale/người tạo)',
             'xoa_booking'     => 'Xóa booking',
             // Trường con của "Sửa booking"
             'dau_thoi_gian'   => 'Dấu thời gian',
@@ -49,6 +51,9 @@ class BookingFields
             // ----- Duyệt -----
             'duyet_booking'   => 'Duyệt lịch đặt phòng',
             'duyet_tu_van'    => 'Duyệt lịch tư vấn',
+
+            // ----- Phản hồi khách -----
+            'ghi_chu_phan_hoi' => 'Ghi chú phản hồi khách (trạng thái + note)',
 
             // ----- Lịch làm việc (theo tháng) -----
             'quyen_lich_lam_viec' => 'Tạo / upload lịch làm việc',
@@ -96,10 +101,14 @@ class BookingFields
         return [
             'Quyền đặt phòng' => [
                 'icon'   => 'edit_calendar',
-                'fields' => $pick(['xem_booking', 'them_booking', 'sua_booking', 'xoa_booking']),
+                'fields' => $pick(['xem_booking', 'them_booking', 'sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi', 'xoa_booking']),
                 'sub'    => [
-                    // Trường con xuất hiện ngay dưới quyền cha 'sua_booking'
+                    // Sub-fields hiển thị dưới từng loại "Sửa booking" để admin dễ đối chiếu.
+                    // Backend: 3 loại quyền chia sẻ cùng danh sách trường (không tạo key mới)
+                    // → tick 1 trường ở bất kỳ nhóm nào cũng cấp cùng field-level cho vai trò.
                     'sua_booking' => self::suaSubFields(),
+                    'sua_booking_lien_quan' => self::suaSubFields(),
+                    'sua_booking_dich_vu_cua_toi' => self::suaSubFields(),
                 ],
             ],
             'Quyền đặt lịch bác sĩ' => [
@@ -115,6 +124,11 @@ class BookingFields
             'Quyền duyệt' => [
                 'icon'   => 'verified',
                 'fields' => $pick(['duyet_booking', 'duyet_tu_van']),
+                'sub'    => [],
+            ],
+            'Quyền phản hồi khách' => [
+                'icon'   => 'rate_review',
+                'fields' => $pick(['ghi_chu_phan_hoi']),
                 'sub'    => [],
             ],
             'Quyền lịch làm việc' => [

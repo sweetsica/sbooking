@@ -67,27 +67,7 @@ body { background-color: #f7f9fb; }
 </div>
 @endif
 
-@if ($done)
-<div class="mb-6 p-4 rounded-xl bg-primary/5 border border-primary/20">
-<div class="flex items-center gap-2 mb-2">
-<span class="material-symbols-outlined text-primary text-[20px]">rate_review</span>
-<h3 class="text-body-md font-semibold text-on-surface">Phản hồi từ khách</h3>
-</div>
-@if ($canDuyet)
-<form method="POST" action="/{{ $coSo->slug }}/phan-hoi-dat-phong/{{ $booking->id }}" class="space-y-2">
-@csrf @method('PATCH')
-<textarea name="phan_hoi_khach" rows="3" placeholder="Nhập phản hồi / đánh giá của khách sau buổi hẹn..." class="w-full px-3 py-2 rounded-lg text-body-md border border-outline-variant bg-surface focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all">{{ old('phan_hoi_khach', $booking->phan_hoi_khach) }}</textarea>
-<div class="flex justify-end">
-<button type="submit" class="px-4 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity text-body-sm">
-<span class="material-symbols-outlined text-[18px]">save</span> Lưu phản hồi
-</button>
-</div>
-</form>
-@else
-<div class="ro whitespace-pre-line">{{ $booking->phan_hoi_khach ?: '— Chưa có phản hồi —' }}</div>
-@endif
-</div>
-@endif
+@include('longevity._phan_hoi_section', ['booking' => $booking, 'canPhanHoi' => $canPhanHoi ?? false, 'coSo' => $coSo])
 
 <div class="mb-6 flex items-center gap-2 p-3 rounded-xl bg-secondary-container/20 border border-secondary/20 text-on-secondary-container text-body-sm">
 <span class="material-symbols-outlined text-[20px]">visibility</span>

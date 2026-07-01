@@ -44,16 +44,16 @@
         $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'dich-vu'], true)));
     }
 
-    // "Lịch làm việc" & "Ngày nghỉ" gộp vào dropdown bánh răng (Thiết lập) để rút gọn thanh menu.
+    // Admin: gear icon → /thiet-lap (cards "Lịch làm việc" & "Ngày nghỉ" nằm trong đó).
+    // Non-admin có quyền: dropdown nhỏ chứa 2 mục theo cơ sở.
     $settingsItems = [];
-    if ($isAdmin) {
-        $settingsItems[] = ['key' => 'thiet-lap', 'label' => 'Thiết lập chung', 'icon' => 'tune', 'href' => '/'.$coSo->slug.'/thiet-lap'];
-    }
-    if ($canLichLamViec) {
-        $settingsItems[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
-    }
-    if ($canNgayNghi) {
-        $settingsItems[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
+    if (! $isAdmin) {
+        if ($canLichLamViec) {
+            $settingsItems[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
+        }
+        if ($canNgayNghi) {
+            $settingsItems[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
+        }
     }
     $settingsActive = in_array($active, ['thiet-lap', 'lich-lam-viec', 'ngay-nghi'], true);
 @endphp
@@ -124,7 +124,11 @@
 <a href="/thong-bao" class="p-3 text-center text-body-sm font-semibold text-secondary hover:bg-surface-container-low transition-colors border-t border-outline-variant">Xem tất cả</a>
 </div>
 </details>
-@if (count($settingsItems))
+@if ($isAdmin)
+<a href="/{{ $coSo->slug }}/thiet-lap" title="Thiết lập" class="p-1.5 sm:p-2 transition-all rounded-full flex {{ $settingsActive ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[22px] sm:text-[24px]" @if($settingsActive) style="font-variation-settings: 'FILL' 1;" @endif>settings</span>
+</a>
+@elseif (count($settingsItems))
 <details class="relative shrink-0" id="thietlap-details">
 <summary title="Thiết lập" class="list-none cursor-pointer select-none p-1.5 sm:p-2 transition-all rounded-full flex [&::-webkit-details-marker]:hidden {{ $settingsActive ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">
 <span class="material-symbols-outlined text-[22px] sm:text-[24px]" @if($settingsActive) style="font-variation-settings: 'FILL' 1;" @endif>settings</span>

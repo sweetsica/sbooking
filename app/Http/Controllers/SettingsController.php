@@ -234,6 +234,10 @@ class SettingsController extends Controller
             'cho_duyet'=> $coll->where($field, 'cho_duyet')->count(),
             'tu_choi'  => $coll->where($field, 'tu_choi')->count(),
             'da_xong'  => $coll->where($field, 'da_xong')->count(),
+            // Trạng thái khách sau khi sử dụng dịch vụ (chỉ áp cho booking).
+            'kh_dung_gio' => $coll->where('trang_thai_khach', 'dung_gio')->count(),
+            'kh_muon'     => $coll->where('trang_thai_khach', 'muon')->count(),
+            'kh_huy'      => $coll->where('trang_thai_khach', 'huy')->count(),
         ];
 
         $counter = [
@@ -246,6 +250,10 @@ class SettingsController extends Controller
             'cho_duyet'=> $counter['booking']['cho_duyet'] + $counter['tu_van']['cho_duyet'],
             'tu_choi'  => $counter['booking']['tu_choi'] + $counter['tu_van']['tu_choi'],
             'da_xong'  => $counter['booking']['da_xong'],
+            // Trạng thái khách chỉ có ở booking → total = số của booking.
+            'kh_dung_gio' => $counter['booking']['kh_dung_gio'],
+            'kh_muon'     => $counter['booking']['kh_muon'],
+            'kh_huy'      => $counter['booking']['kh_huy'],
         ];
 
         // ----- Options cho dropdown filter -----
@@ -452,7 +460,9 @@ class SettingsController extends Controller
 
         DB::transaction(function () use ($allow, $validKeys) {
             foreach (VaiTro::pluck('id') as $vtId) {
-                $truongs = array_values(array_intersect((array) ($allow[$vtId] ?? []), $validKeys));
+                // array_unique để dedupe: 1 trường có thể được tick ở nhiều nhóm mirror
+                // (sub của sua_booking / sua_lien_quan / sua_dich_vu_cua_toi) — chỉ lưu 1 row.
+                $truongs = array_values(array_unique(array_intersect((array) ($allow[$vtId] ?? []), $validKeys)));
                 PhanQuyen::where('vai_tro_id', $vtId)->delete();
                 foreach ($truongs as $t) {
                     PhanQuyen::create(['vai_tro_id' => $vtId, 'truong' => $t]);

@@ -95,6 +95,38 @@ $cards = [
 @endforeach
 </div>
 
+{{-- Counter trạng thái khách sau khi sử dụng dịch vụ (chỉ áp cho Đặt phòng) --}}
+@php
+    $khCards = [
+        ['Khách đúng giờ', $c['tong']['kh_dung_gio'], 'schedule', 'bg-emerald-100 text-emerald-700'],
+        ['Khách đến muộn', $c['tong']['kh_muon'],     'update',   'bg-amber-100 text-amber-700'],
+        ['Khách hủy',      $c['tong']['kh_huy'],      'cancel',   'bg-red-100 text-red-700'],
+    ];
+    $khTotal = $c['tong']['kh_dung_gio'] + $c['tong']['kh_muon'] + $c['tong']['kh_huy'];
+@endphp
+<div class="mb-2 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary text-[20px]">rate_review</span>
+<h3 class="text-body-md font-semibold text-on-surface">Trạng thái khách sau buổi hẹn</h3>
+<span class="text-body-sm text-on-surface-variant">({{ $khTotal }} lịch đã cập nhật / {{ $c['booking']['total'] }} tổng booking)</span>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-5">
+@foreach ($khCards as [$label, $val, $icon, $cls])
+@php $pct = $c['booking']['total'] > 0 ? round($val / $c['booking']['total'] * 100, 1) : 0; @endphp
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
+<div class="flex items-center gap-2 mb-1">
+<div class="w-8 h-8 rounded-lg flex items-center justify-center {{ $cls }}">
+<span class="material-symbols-outlined text-[18px]">{{ $icon }}</span>
+</div>
+<span class="text-label-caps font-label-caps text-on-surface-variant uppercase">{{ $label }}</span>
+</div>
+<div class="flex items-baseline gap-2">
+<div class="text-display-sm font-display-sm">{{ $val }}</div>
+<div class="text-body-sm text-on-surface-variant">{{ $pct }}%</div>
+</div>
+</div>
+@endforeach
+</div>
+
 {{-- Tách số liệu booking vs tư vấn --}}
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-3 mb-6">
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
@@ -105,6 +137,10 @@ $cards = [
 <span>Chờ: <strong>{{ $c['booking']['cho_duyet'] }}</strong></span>
 <span>Từ chối: <strong class="text-error">{{ $c['booking']['tu_choi'] }}</strong></span>
 <span>Xong: <strong class="text-primary">{{ $c['booking']['da_xong'] }}</strong></span>
+<span class="w-full border-t border-outline-variant/50 pt-1 mt-1 text-body-sm text-on-surface-variant">Sau buổi hẹn:</span>
+<span>Đúng giờ: <strong class="text-emerald-700">{{ $c['booking']['kh_dung_gio'] }}</strong></span>
+<span>Muộn: <strong class="text-amber-700">{{ $c['booking']['kh_muon'] }}</strong></span>
+<span>Hủy: <strong class="text-red-700">{{ $c['booking']['kh_huy'] }}</strong></span>
 </div>
 </div>
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4">

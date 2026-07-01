@@ -95,10 +95,21 @@
     $hasSub = ! empty($subFields);
 @endphp
 <tr class="hover:bg-surface-container-low/40">
-<td class="px-4 py-2.5 pl-10 sticky left-0 bg-surface-container-lowest font-medium">
-<span class="{{ $isApprove ? 'text-secondary font-semibold' : '' }}{{ $hasSub ? ' text-on-surface font-semibold' : '' }}">{{ $flabel }}</span>
-@if ($isApprove)<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container uppercase">duyệt</span>@endif
-@if ($hasSub)<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase">{{ count($subFields) }} trường</span>@endif
+<td class="px-4 py-2.5 pl-6 sticky left-0 bg-surface-container-lowest font-medium align-top">
+@if ($hasSub)
+<button type="button" data-toggle-sub="{{ $fkey }}" aria-expanded="false" class="w-full flex items-start gap-1.5 hover:text-secondary transition-colors text-left" title="Ẩn / hiện trường con">
+<span class="material-symbols-outlined text-[18px] chevron-icon transition-transform shrink-0 mt-0.5 leading-none">chevron_right</span>
+<span class="text-on-surface font-semibold flex-1 min-w-0 leading-snug flex flex-wrap items-center gap-1.5">
+<span>{{ $flabel }}</span>
+<span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase font-label-caps whitespace-nowrap">{{ count($subFields) }} trường</span>
+</span>
+</button>
+@else
+<span class="flex flex-wrap items-center gap-1.5 leading-snug">
+<span class="{{ $isApprove ? 'text-secondary font-semibold' : '' }}">{{ $flabel }}</span>
+@if ($isApprove)<span class="text-[10px] px-1.5 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container uppercase font-label-caps whitespace-nowrap">duyệt</span>@endif
+</span>
+@endif
 </td>
 @foreach ($vaiTros as $pb)
 <td class="px-3 py-2.5 text-center">
@@ -112,7 +123,7 @@
 @endforeach
 </tr>
 @foreach ($subFields as $subKey => $subLabel)
-<tr class="hover:bg-surface-container-low/40 bg-surface-container-low/20">
+<tr data-sub-of="{{ $fkey }}" class="hover:bg-surface-container-low/40 bg-surface-container-low/20 hidden">
 <td class="px-4 py-2 pl-16 sticky left-0 bg-surface-container-lowest text-body-sm text-on-surface-variant">
 <span class="inline-block mr-1 text-on-surface-variant/60">└</span> {{ $subLabel }}
 </td>
@@ -152,6 +163,35 @@
         }
         master.addEventListener('change', sync);
         sync();
+    });
+
+    // Collapsible: click mũi tên ở parent-row → toggle các sub-row cùng parent.
+    document.querySelectorAll('[data-toggle-sub]').forEach(function (btn) {
+        var key = btn.dataset.toggleSub;
+        var rows = document.querySelectorAll('tr[data-sub-of="' + key + '"]');
+        var icon = btn.querySelector('.chevron-icon');
+        function setOpen(open) {
+            rows.forEach(function (r) { r.classList.toggle('hidden', ! open); });
+            if (icon) icon.classList.toggle('rotate-90', open);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            setOpen(btn.getAttribute('aria-expanded') !== 'true');
+        });
+    });
+
+    // Sub-fields được nhân bản dưới 3 loại "Sửa booking" nhưng cùng lưu 1 field key.
+    // Đồng bộ trạng thái các checkbox có cùng (name, value) trong toàn form để admin
+    // không hoang mang khi thấy 3 ô cùng trường: tick 1 ô → 3 ô cùng đồng loạt tick.
+    document.querySelectorAll('form input[type="checkbox"][name^="allow["]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            var name = cb.getAttribute('name');
+            var val = cb.value;
+            document.querySelectorAll('input[type="checkbox"][name="' + name + '"][value="' + val + '"]').forEach(function (peer) {
+                if (peer !== cb && peer.checked !== cb.checked) peer.checked = cb.checked;
+            });
+        });
     });
 })();
 </script>

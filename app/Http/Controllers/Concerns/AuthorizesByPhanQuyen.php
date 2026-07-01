@@ -62,4 +62,33 @@ trait AuthorizesByPhanQuyen
     {
         return in_array($field, $this->allowedFieldKeys(), true);
     }
+
+    /**
+     * Được phép sửa booking cụ thể? Quy tắc từ RỘNG → HẸP:
+     *  - Admin → OK.
+     *  - 'sua_booking' → OK mọi booking.
+     *  - 'sua_booking_lien_quan' VÀ user là người tạo / BS / KTV / Sale → OK.
+     *  - 'sua_booking_dich_vu_cua_toi' VÀ loai_dat_lich=dich_vu VÀ user liên quan → OK.
+     *  - Còn lại → không.
+     */
+    protected function canEditBooking(\App\Models\Booking $booking): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+        if ($user->is_admin) return true;
+        if ($this->hasPerm('sua_booking')) return true;
+
+        $lienQuan = $booking->laLienQuan($user);
+        if ($this->hasPerm('sua_booking_lien_quan') && $lienQuan) return true;
+
+        return $this->hasPerm('sua_booking_dich_vu_cua_toi')
+            && $booking->loai_dat_lich === 'dich_vu'
+            && $lienQuan;
+    }
+
+    /** Bật 403 nếu user không được phép sửa booking này. */
+    protected function authorizeEditBooking(\App\Models\Booking $booking): void
+    {
+        abort_unless($this->canEditBooking($booking), 403, 'Bạn không có quyền sửa lịch này.');
+    }
 }

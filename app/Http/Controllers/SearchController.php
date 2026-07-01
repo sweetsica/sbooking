@@ -50,12 +50,14 @@ class SearchController extends Controller
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
 
-        $booking->load(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale', 'menus']);
+        $booking->load(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale', 'menus',
+            'phanHois.nguoiDung.vaiTro', 'phanHois.nguoiDung.phongBan']);
 
         return view('longevity.show', [
             'coSo' => $co_so,
             'booking' => $booking,
             'canDuyet' => $this->hasPerm('duyet_booking'),
+            'canPhanHoi' => $this->hasPerm('ghi_chu_phan_hoi'),
         ]);
     }
 }

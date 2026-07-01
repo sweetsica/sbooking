@@ -469,8 +469,7 @@ class PageController extends Controller
         $this->authorizePerm($approvalMode ? 'duyet_booking' : 'xem_booking');
 
         $query = Booking::where('co_so_id', $co_so->id)
-            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
-            ->latest('id');
+            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale']);
 
         if ($request->filled('ngay_tu')) {
             $query->whereDate('ngay_dat', '>=', $request->query('ngay_tu'));
@@ -496,7 +495,37 @@ class PageController extends Controller
             $query->where('trang_thai', $request->query('trang_thai'));
         }
 
+        // Sort: mặc định latest('id'); cho phép sort theo ngay_dat hoặc khung_gio (gio_thuc_hien).
+        $sort = in_array($request->query('sort'), ['ngay_dat', 'khung_gio'], true) ? $request->query('sort') : null;
+        $dir = $request->query('dir') === 'asc' ? 'asc' : 'desc';
+        if ($sort === 'ngay_dat') {
+            // Cùng ngày → xếp theo id (thứ tự tạo) cùng chiều để không nhảy lộn xộn.
+            $query->orderBy('ngay_dat', $dir)->orderBy('id', $dir);
+        } elseif ($sort === 'khung_gio') {
+            // Cùng giờ thực hiện → xếp theo id cùng chiều để tránh nhảy lộn xộn.
+            $query->orderByRaw("gio_thuc_hien IS NULL, gio_thuc_hien {$dir}")->orderBy('id', $dir);
+        } else {
+            $query->latest('id');
+        }
+
         $bookings = $query->paginate(20)->withQueryString();
+
+        // Lịch trong khung giờ hiện tại (H:00 → H+1:00) của HÔM NAY — độc lập với bộ lọc phía trên.
+        // Mục đích: giúp NV theo dõi nhanh khách đang / sắp đến trong 60' hiện tại.
+        $now = now();
+        $hStart = sprintf('%02d:00', $now->hour);
+        $hEnd = sprintf('%02d:00', ($now->hour + 1) % 24);
+        $currentSlotBookings = Booking::where('co_so_id', $co_so->id)
+            ->whereDate('ngay_dat', $now->toDateString())
+            ->where('trang_thai', '!=', 'tu_choi')
+            ->whereNotNull('gio_thuc_hien')
+            ->where('gio_thuc_hien', '<', $hEnd)
+            ->where(function ($q) use ($hStart) {
+                $q->whereNull('gio_ket_thuc')->orWhere('gio_ket_thuc', '>', $hStart);
+            })
+            ->with(['khachHang', 'phong', 'bacSi', 'ktv', 'dichVu'])
+            ->orderBy('gio_thuc_hien')
+            ->get();
 
         // BS để filter: thuộc cơ sở hoặc global (is_tu_van=true)
         $vrBacSiIds = \App\Models\VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
@@ -520,6 +549,10 @@ class PageController extends Controller
             'nguons' => Booking::where('co_so_id', $co_so->id)
                 ->whereNotNull('nguon')->distinct()->pluck('nguon'),
             'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
+            'sort' => $sort,
+            'dir' => $dir,
+            'currentSlotBookings' => $currentSlotBookings,
+            'currentSlotLabel' => $hStart . ' - ' . $hEnd,
             'approvalMode' => $approvalMode,
         ]);
     }

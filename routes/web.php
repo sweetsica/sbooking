@@ -80,6 +80,10 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::patch('/tu-choi-dat-phong/{booking}', [BookingController::class, 'tuChoi'])->name('booking.reject');
         Route::patch('/xong-dat-phong/{booking}',  [BookingController::class, 'xong'])->name('booking.done');
         Route::patch('/phan-hoi-dat-phong/{booking}', [BookingController::class, 'phanHoi'])->name('booking.feedback');
+        // Phản hồi sau khi sử dụng dịch vụ (trạng thái khách + note nhiều dòng có tác giả)
+        Route::patch('/trang-thai-khach/{booking}', [BookingController::class, 'capNhatTrangThaiKhach'])->name('booking.tt-khach');
+        Route::post('/them-phan-hoi/{booking}',     [BookingController::class, 'themPhanHoi'])->name('booking.them-phan-hoi');
+        Route::delete('/xoa-phan-hoi/{booking}/{note}', [BookingController::class, 'xoaPhanHoi'])->name('booking.xoa-phan-hoi');
 
         Route::get('/xuat-booking',  [ExcelController::class, 'exportBooking'])->name('excel.exportBooking');
         Route::post('/nhap-booking', [ExcelController::class, 'importBooking'])->name('excel.importBooking');

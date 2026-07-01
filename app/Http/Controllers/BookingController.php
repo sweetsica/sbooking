@@ -58,13 +58,14 @@ class BookingController extends Controller
     public function edit(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('sua_booking');
+        $this->authorizeEditBooking($booking);
 
-        $booking->load(['khachHang', 'menus']);
+        $booking->load(['khachHang', 'menus', 'phanHois.nguoiDung.vaiTro', 'phanHois.nguoiDung.phongBan']);
 
         return view('longevity.create', $this->formData($co_so) + [
             'bk' => $booking,
             'allowedFields' => $this->allowedFieldKeys(),
+            'canPhanHoi' => $this->hasPerm('ghi_chu_phan_hoi'),
         ]);
     }
 
@@ -826,6 +827,7 @@ class BookingController extends Controller
             'bac_si_user_id' => $data['bac_si_user_id'] ?? null,
             'ktv_user_id'   => $data['ktv_user_id'] ?? null,
             'sale_id'       => $data['sale_id'] ?? null,
+            'nguoi_tao_id'  => auth()->id(),
             'ngay_dat'      => $data['ngay_dat'],
             'gio_thuc_hien' => $gioBatDau,
             'gio_ket_thuc'  => $gioKetThuc,
@@ -871,7 +873,7 @@ class BookingController extends Controller
     public function update(CoSo $co_so, Booking $booking, Request $request)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('sua_booking');
+        $this->authorizeEditBooking($booking);
 
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
@@ -1119,6 +1121,62 @@ class BookingController extends Controller
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
 
         return back()->with('ok', 'Đã lưu phản hồi từ khách cho lịch hẹn của ' . $ten . '.');
+    }
+
+    /**
+     * Cập nhật trạng thái khách (đến đúng giờ / đến muộn / hủy).
+     * Yêu cầu quyền 'ghi_chu_phan_hoi' — tách hẳn với quyền xem/sửa booking để tránh nhầm.
+     */
+    public function capNhatTrangThaiKhach(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('ghi_chu_phan_hoi');
+
+        $data = $request->validate([
+            'trang_thai_khach' => ['nullable', 'in:dung_gio,muon,huy'],
+        ]);
+
+        $booking->trang_thai_khach = $data['trang_thai_khach'] ?: null;
+        $booking->save();
+
+        return back()->with('ok', 'Đã cập nhật trạng thái khách.');
+    }
+
+    /**
+     * Thêm 1 dòng ghi chú phản hồi. Tác giả = người đang đăng nhập, thời gian tự lưu.
+     */
+    public function themPhanHoi(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('ghi_chu_phan_hoi');
+
+        $data = $request->validate([
+            'noi_dung' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $booking->phanHois()->create([
+            'noi_dung'      => trim($data['noi_dung']),
+            'nguoi_dung_id' => auth()->id(),
+        ]);
+
+        return back()->with('ok', 'Đã thêm ghi chú phản hồi.');
+    }
+
+    /**
+     * Xóa 1 dòng phản hồi. Chỉ tác giả hoặc admin mới xóa được — tránh
+     * người khác cùng quyền 'ghi_chu_phan_hoi' xóa ghi chú của đồng nghiệp.
+     */
+    public function xoaPhanHoi(CoSo $co_so, Booking $booking, int $note)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('ghi_chu_phan_hoi');
+
+        $ph = \App\Models\BookingPhanHoi::where('booking_id', $booking->id)->findOrFail($note);
+        $user = auth()->user();
+        abort_unless($user && ($user->is_admin || $ph->nguoi_dung_id === $user->id), 403);
+        $ph->delete();
+
+        return back()->with('ok', 'Đã xóa ghi chú phản hồi.');
     }
 
     /** Đánh dấu đã xong / hoàn tác về đã duyệt. */

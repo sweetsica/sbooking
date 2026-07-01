@@ -234,6 +234,7 @@
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Phòng <span class="text-error">*</span></label>
 <select id="phong" name="phong_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
 @foreach ($phongs as $p)
 <option value="{{ $p->id }}"
     data-kieu="{{ $p->kieu_phong }}"
@@ -361,8 +362,8 @@
 @endif
 
 @if ($isDichVu)
-<!-- Section 3 (Đặt dịch vụ): chỉ KTV -->
-<div class="space-y-6 order-1">
+<!-- Section 3 (Đặt dịch vụ): chỉ KTV — đặt SAU "Lịch trình & Phòng" để user chọn khung giờ trước. -->
+<div class="space-y-6 order-3">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">engineering</span>
 <h3 class="text-headline-md font-headline-md">Kỹ thuật viên</h3>
@@ -389,6 +390,7 @@
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-error">*</span></label>
 <select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
 @foreach ($dichVus as $dv)
 <option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
 @endforeach
@@ -469,6 +471,12 @@
 </button>
 </div>
 </form>
+@if ($editing)
+{{-- Phản hồi sau khi sử dụng dịch vụ — chỉ ở edit mode (booking đã tồn tại). Đặt NGOÀI form chính vì có form con riêng. --}}
+<div class="p-8 pt-0">
+@include('longevity._phan_hoi_section', ['booking' => $bk, 'canPhanHoi' => $canPhanHoi ?? false, 'coSo' => $coSo])
+</div>
+@endif
 </div>
 </div>
 </main>
@@ -519,10 +527,15 @@
     // Generate options cho gio_thuc_hien / gio_ket_thuc THEO khung giờ đã chọn (step 5 phút)
     function rebuildGioOptions() {
         const opt = khung.options[khung.selectedIndex];
-        if (!opt || !batDau || !ketThuc) return;
-        const bd = opt.getAttribute('data-bd') || '';
-        const kt = opt.getAttribute('data-kt') || '';
-        if (!bd || !kt) return;
+        if (!batDau || !ketThuc) return;
+        const bd = opt ? (opt.getAttribute('data-bd') || '') : '';
+        const kt = opt ? (opt.getAttribute('data-kt') || '') : '';
+        // Chưa chọn phòng / phòng chưa cấu hình khung → clear giờ để user thấy trạng thái sạch.
+        if (!bd || !kt) {
+            batDau.innerHTML = '<option value="">-- Chọn giờ --</option>';
+            ketThuc.innerHTML = '<option value="">-- Chọn giờ --</option>';
+            return;
+        }
 
         const toMin = t => parseInt(t.slice(0, 2)) * 60 + parseInt(t.slice(3, 5));
         const fmt = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
@@ -597,17 +610,16 @@
         if (hCoKhamCls) hCoKhamCls.value = v === 'kham_ls' ? '1' : '0';
         // Lọc dịch vụ theo nhóm đã chọn (Tư vấn / Khám LS): ẩn dịch vụ khác nhóm.
         if (v && dichVu) {
-            let firstMatch = null;
             [...dichVu.options].forEach(o => {
                 if (!o.value) return;
                 const match = o.dataset.nhom === v;
                 o.hidden = !match;
                 o.disabled = !match;
-                if (match && !firstMatch) firstMatch = o;
             });
-            // Nếu dịch vụ đang chọn không thuộc nhóm → chuyển sang dịch vụ hợp lệ đầu tiên.
+            // Nếu dịch vụ đang chọn không thuộc nhóm mới → reset về "-- Chọn --"
+            // (không tự chọn dịch vụ đầu tiên để user chủ động load dữ liệu).
             const cur = dichVu.selectedOptions[0];
-            if ((!cur || cur.dataset.nhom !== v) && firstMatch) dichVu.value = firstMatch.value;
+            if (cur && cur.value && cur.dataset.nhom !== v) dichVu.value = '';
         }
         loadSlots();
     };
