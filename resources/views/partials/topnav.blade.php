@@ -39,21 +39,23 @@
         ]);
     }
 
-    // "Lịch làm việc": chỉ hiện cho người có quyền tạo/duyệt lịch làm việc.
-    if ($canLichLamViec) {
-        $items[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
-    }
-
-    // "Ngày nghỉ": chỉ hiện cho người có quyền quản lý ngày nghỉ.
-    if ($canNgayNghi) {
-        $items[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
-    }
-
     // Nhân viên: chỉ thấy 2 loại đặt lịch.
     if ($vaiTroMa === 'nhan_vien') {
         $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'dich-vu'], true)));
     }
-    // "Thiết lập" đã có icon bánh răng ở góc phải -> không lặp lại trong menu.
+
+    // "Lịch làm việc" & "Ngày nghỉ" gộp vào dropdown bánh răng (Thiết lập) để rút gọn thanh menu.
+    $settingsItems = [];
+    if ($isAdmin) {
+        $settingsItems[] = ['key' => 'thiet-lap', 'label' => 'Thiết lập chung', 'icon' => 'tune', 'href' => '/'.$coSo->slug.'/thiet-lap'];
+    }
+    if ($canLichLamViec) {
+        $settingsItems[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
+    }
+    if ($canNgayNghi) {
+        $settingsItems[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
+    }
+    $settingsActive = in_array($active, ['thiet-lap', 'lich-lam-viec', 'ngay-nghi'], true);
 @endphp
 <!-- Top Navigation Bar -->
 <header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center px-container-margin z-50">
@@ -122,10 +124,20 @@
 <a href="/thong-bao" class="p-3 text-center text-body-sm font-semibold text-secondary hover:bg-surface-container-low transition-colors border-t border-outline-variant">Xem tất cả</a>
 </div>
 </details>
-@if ($isAdmin)
-<a href="/{{ $coSo->slug }}/thiet-lap" class="p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full">
-<span class="material-symbols-outlined text-[22px] sm:text-[24px]">settings</span>
+@if (count($settingsItems))
+<details class="relative shrink-0" id="thietlap-details">
+<summary title="Thiết lập" class="list-none cursor-pointer select-none p-1.5 sm:p-2 transition-all rounded-full flex [&::-webkit-details-marker]:hidden {{ $settingsActive ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[22px] sm:text-[24px]" @if($settingsActive) style="font-variation-settings: 'FILL' 1;" @endif>settings</span>
+</summary>
+<div class="absolute right-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
+@foreach ($settingsItems as $si)
+@php $siOn = $active === $si['key']; @endphp
+<a href="{{ $si['href'] }}" class="flex items-center gap-3 px-4 py-2.5 text-body-md transition-colors {{ $siOn ? 'bg-secondary-container/40 text-on-secondary-container font-semibold' : 'text-on-surface hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">{{ $si['icon'] }}</span> {{ $si['label'] }}
 </a>
+@endforeach
+</div>
+</details>
 @endif
 @auth
 <details class="relative group">
