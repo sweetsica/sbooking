@@ -528,9 +528,10 @@
         const fmt = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
         const s = toMin(bd), e = toMin(kt);
 
-        // Giữ giá trị đang chọn (hoặc data-old) để khôi phục
-        const bdOld = batDau.value || batDau.dataset.old || '';
-        const ktOld = ketThuc.value || ketThuc.dataset.old || '';
+        // Lần đầu (mở form): khôi phục theo data-old từ server. Các lần sau (đổi ngày/phòng/dịch vụ/khung):
+        // luôn đồng bộ theo khung giờ hiện tại — tránh giữ giá trị cũ ngắn hơn khung mới khiến slotLen sai.
+        const bdOld = firstRun ? (batDau.dataset.old || '') : '';
+        const ktOld = firstRun ? (ketThuc.dataset.old || '') : '';
 
         // Bắt đầu: từ s đến e-5 (bao gồm s, không bao gồm e)
         let opts = '<option value="">-- Chọn giờ --</option>';
@@ -559,8 +560,8 @@
 
     // updateEnd: khi đổi khung giờ → rebuild + auto-fill bd/kt theo khung
     function updateEnd() {
-        if (firstRun) { firstRun = false; }
         rebuildGioOptions();
+        firstRun = false;
     }
 
     // Auto-fill KTV mặc định + cập nhật meta khi chọn phòng dịch vụ
