@@ -466,10 +466,19 @@ class PageController extends Controller
 
     public function bookings(CoSo $co_so, Request $request, bool $approvalMode = false)
     {
-        $this->authorizePerm($approvalMode ? 'duyet_booking' : 'xem_booking');
+        if ($approvalMode) {
+            $this->authorizePerm('duyet_booking');
+        } else {
+            $scope = $this->bookingViewScope();
+            if ($scope === null) abort(403, 'Bạn không có quyền xem booking.');
+        }
 
         $query = Booking::where('co_so_id', $co_so->id)
             ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale']);
+
+        if (! $approvalMode) {
+            $this->applyViewScope($query);
+        }
 
         if ($request->filled('ngay_tu')) {
             $query->whereDate('ngay_dat', '>=', $request->query('ngay_tu'));
@@ -515,7 +524,7 @@ class PageController extends Controller
         $now = now();
         $hStart = sprintf('%02d:00', $now->hour);
         $hEnd = sprintf('%02d:00', ($now->hour + 1) % 24);
-        $currentSlotBookings = Booking::where('co_so_id', $co_so->id)
+        $currentSlotQuery = Booking::where('co_so_id', $co_so->id)
             ->whereDate('ngay_dat', $now->toDateString())
             ->where('trang_thai', '!=', 'tu_choi')
             ->whereNotNull('gio_thuc_hien')
@@ -524,8 +533,12 @@ class PageController extends Controller
                 $q->whereNull('gio_ket_thuc')->orWhere('gio_ket_thuc', '>', $hStart);
             })
             ->with(['khachHang', 'phong', 'bacSi', 'ktv', 'dichVu'])
-            ->orderBy('gio_thuc_hien')
-            ->get();
+            ->orderBy('gio_thuc_hien');
+
+        if (! $approvalMode) {
+            $this->applyViewScope($currentSlotQuery);
+        }
+        $currentSlotBookings = $currentSlotQuery->get();
 
         // BS để filter: thuộc cơ sở hoặc global (is_tu_van=true)
         $vrBacSiIds = \App\Models\VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
@@ -534,7 +547,7 @@ class PageController extends Controller
             ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
 
         // Sale để filter: nhân viên phụ trách đơn (tư vấn viên / lễ tân / nhân viên)
-        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'le_tan', 'nhan_vien'])->pluck('id');
+        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'sales_lead', 'sales_manager', 'le_tan', 'nhan_vien'])->pluck('id');
         $sales = \App\Models\User::whereIn('vai_tro_id', $vrSaleIds)
             ->where('co_so_id', $co_so->id)
             ->where('is_admin', false)

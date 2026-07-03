@@ -2,9 +2,11 @@
 
 namespace Database\Seeders;
 
+use App\Models\BacSi;
 use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\KhungGio;
+use App\Models\Ktv;
 use App\Models\Menu;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
@@ -18,37 +20,33 @@ class LongevitySeeder extends Seeder
 {
     public function run(): void
     {
-        $matKhau = Hash::make('59@ntn');
-
         // ---- Vai trò ----
-        $vrNhanVien  = VaiTro::firstOrCreate(['ma' => 'nhan_vien'],     ['ten' => 'Nhân viên']);
-        $vrKtv       = VaiTro::firstOrCreate(['ma' => 'ktv'],           ['ten' => 'Kỹ thuật viên']);
-        $vrBacSi     = VaiTro::firstOrCreate(['ma' => 'bac_si'],        ['ten' => 'Bác sĩ']);
-        $vrBsTuVan   = VaiTro::firstOrCreate(['ma' => 'bac_si_tu_van'], ['ten' => 'Bác sĩ tư vấn']);
-        $vrTuVanVien = VaiTro::firstOrCreate(['ma' => 'tu_van_vien'],   ['ten' => 'Tư vấn viên']);
-        VaiTro::firstOrCreate(['ma' => 'le_tan'],        ['ten' => 'Lễ tân']);
-        $vrVanHanh   = VaiTro::firstOrCreate(['ma' => 'quan_tri_van_hanh'], ['ten' => 'Quản trị vận hành']);
-        $vrAdmin     = VaiTro::firstOrCreate(['ma' => 'admin'],         ['ten' => 'Quản trị hệ thống']);
-
-        // ---- Phòng ban: tạo RIÊNG từng cơ sở ở bên dưới (sau khi cơ sở đã tồn tại) ----
+        $vrNhanVien     = VaiTro::firstOrCreate(['ma' => 'nhan_vien'],          ['ten' => 'Nhân viên']);
+        $vrKtv          = VaiTro::firstOrCreate(['ma' => 'ktv'],                ['ten' => 'Kỹ thuật viên']);
+        $vrBacSi        = VaiTro::firstOrCreate(['ma' => 'bac_si'],             ['ten' => 'Bác sĩ']);
+        $vrBsTuVan      = VaiTro::firstOrCreate(['ma' => 'bac_si_tu_van'],      ['ten' => 'Bác sĩ tư vấn']);
+        $vrTuVanVien    = VaiTro::updateOrCreate(['ma' => 'tu_van_vien'],       ['ten' => 'Sales']);
+        $vrLeTan        = VaiTro::firstOrCreate(['ma' => 'le_tan'],             ['ten' => 'Lễ tân']);
+        $vrVanHanh      = VaiTro::firstOrCreate(['ma' => 'quan_tri_van_hanh'],  ['ten' => 'Quản trị vận hành']);
+        $vrAdmin        = VaiTro::firstOrCreate(['ma' => 'admin'],              ['ten' => 'Quản trị hệ thống']);
+        $vrSalesLead    = VaiTro::firstOrCreate(['ma' => 'sales_lead'],         ['ten' => 'Quản lý Sales']);
+        $vrSalesManager = VaiTro::firstOrCreate(['ma' => 'sales_manager'],      ['ten' => 'Quản lý kinh doanh']);
+        $vrAdminCoSo    = VaiTro::firstOrCreate(['ma' => 'admin_co_so'],        ['ten' => 'Admin cơ sở']);
+        $vrQuyenXem     = VaiTro::firstOrCreate(['ma' => 'quyen_xem'],          ['ten' => 'Quyền xem']);
 
         // ---- Phân quyền mặc định theo vai trò ----
         $quyenMacDinh = [
-            // Tư vấn viên: xem + sửa booking, sửa lịch tư vấn
-            $vrTuVanVien->id => ['xem_booking', 'sua_booking', 'sua_lich_tu_van'],
-            // Nhân viên: thêm + xem booking (danh sách chỉ đọc)
-            $vrNhanVien->id  => ['them_booking', 'xem_booking'],
-            // Quản trị vận hành: xem + thêm + duyệt (đặt phòng & tư vấn)
-            $vrVanHanh->id   => ['xem_booking', 'them_booking', 'duyet_booking', 'duyet_tu_van'],
-            // KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân: chỉ xem booking
-            $vrKtv->id       => ['xem_booking'],
-            $vrBacSi->id     => ['xem_booking'],
-            $vrBsTuVan->id   => ['xem_booking'],
+            $vrTuVanVien->id    => ['them_booking', 'xem_booking_cua_toi', 'ghi_chu_phan_hoi'],
+            $vrSalesLead->id    => ['them_booking', 'xem_booking_phong_toi', 'ghi_chu_phan_hoi'],
+            $vrSalesManager->id => ['them_booking', 'xem_booking_co_so_toi', 'ghi_chu_phan_hoi'],
+            $vrKtv->id          => ['xem_booking_cua_toi', 'ghi_chu_phan_hoi'],
+            $vrBacSi->id        => ['xem_booking_cua_toi', 'ghi_chu_phan_hoi'],
+            $vrBsTuVan->id      => ['xem_booking_cua_toi', 'ghi_chu_phan_hoi'],
+            $vrLeTan->id        => ['xem_booking_co_so_toi', 'ghi_chu_phan_hoi'],
+            $vrAdminCoSo->id    => ['duyet_booking', 'xem_booking_co_so_toi', 'duyet_tu_van'],
+            $vrQuyenXem->id     => ['xem_booking_tat_ca'],
+            $vrVanHanh->id      => ['xem_booking_tat_ca', 'them_booking', 'duyet_booking', 'duyet_tu_van'],
         ];
-        // Lễ tân (không có biến sẵn) — lấy theo mã: xem + thêm booking
-        if ($vrLeTan = VaiTro::where('ma', 'le_tan')->first()) {
-            $quyenMacDinh[$vrLeTan->id] = ['xem_booking', 'them_booking'];
-        }
         foreach ($quyenMacDinh as $vaiTroId => $truongs) {
             foreach ($truongs as $truong) {
                 PhanQuyen::firstOrCreate(['vai_tro_id' => $vaiTroId, 'truong' => $truong]);
@@ -73,10 +71,9 @@ class LongevitySeeder extends Seeder
             'dia_chi' => '137 NCT HCM',
         ]);
 
-        // ---- Phòng ban RIÊNG cho TỪNG cơ sở (8 bộ phận chuẩn / cơ sở) ----
+        // ---- Phòng ban chuẩn (8 bộ phận / cơ sở) ----
         $phongBanChuan = [
             'sales'            => 'Kinh doanh (Sales)',
-            'tu_van'           => 'Phòng tư vấn',
             'admin'            => 'Admin Vận hành',
             'phong_kham_ngoai' => 'Phòng khám Ngoại',
             'phong_chuyen_gia' => 'Phòng chuyên gia',
@@ -84,7 +81,7 @@ class LongevitySeeder extends Seeder
             'phong_kham_noi_2' => 'Phòng khám Nội 2',
             'phong_sieu_am'    => 'Phòng siêu âm',
         ];
-        $pb = []; // $pb[co_so_id][ma] = PhongBan
+        $pb = [];
         foreach ([$cs59ntn, $cs207nvt, $cslo23tdn, $cs137nct] as $cs) {
             foreach ($phongBanChuan as $ma => $ten) {
                 $pb[$cs->id][$ma] = PhongBan::updateOrCreate(
@@ -93,19 +90,24 @@ class LongevitySeeder extends Seeder
                 );
             }
         }
-        // Alias cho cơ sở 1 (phần tạo user bên dưới dùng các biến này).
-        $pbSales     = $pb[$cs59ntn->id]['sales'];
-        $pbTuVan     = $pb[$cs59ntn->id]['tu_van'];
-        $pbAdmin     = $pb[$cs59ntn->id]['admin'];
-        $pbKhamNgoai = $pb[$cs59ntn->id]['phong_kham_ngoai'];
-        $pbChuyenGia = $pb[$cs59ntn->id]['phong_chuyen_gia'];
-        $pbKhamNoi1  = $pb[$cs59ntn->id]['phong_kham_noi_1'];
-        $pbKhamNoi2  = $pb[$cs59ntn->id]['phong_kham_noi_2'];
-        $pbSieuAm    = $pb[$cs59ntn->id]['phong_sieu_am'];
-        // Tư vấn HCM thuộc cơ sở 2.
-        $pbTuVan207  = $pb[$cs207nvt->id]['tu_van'];
 
-        // ---- Admin Hệ thống (IT) — tài khoản đặc biệt, không thuộc phòng ban / cơ sở nào, full quyền ----
+        // ---- Sales team phòng ban ----
+        $pbTeamGiang = PhongBan::updateOrCreate(
+            ['co_so_id' => $cs59ntn->id, 'ma' => 'team_giang'],
+            ['ten' => 'Team Giang (HN)']
+        );
+        $pbTeamHoi = PhongBan::updateOrCreate(
+            ['co_so_id' => $cs59ntn->id, 'ma' => 'team_hoi'],
+            ['ten' => 'Team Hợi (HN)']
+        );
+        $pbTeamHcm = PhongBan::updateOrCreate(
+            ['co_so_id' => $cs207nvt->id, 'ma' => 'team_hcm'],
+            ['ten' => 'Team HCM']
+        );
+
+        // =============================================
+        // TÀI KHOẢN ADMIN HỆ THỐNG (giữ nguyên)
+        // =============================================
         User::updateOrCreate(['username' => 'admin'], [
             'name'         => 'Admin Hệ thống',
             'email'        => 'admin@sweetsica.com',
@@ -115,7 +117,6 @@ class LongevitySeeder extends Seeder
             'vai_tro_id'   => $vrAdmin->id,
             'is_admin'     => true,
         ]);
-
         User::updateOrCreate(['username' => 'adminvh'], [
             'name'         => 'Admin Vận hành',
             'email'        => 'adminvh@sweetsica.com',
@@ -126,169 +127,189 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
+        // ---- Admin hệ thống mới (is_admin=true) ----
+        foreach ([
+            ['username' => 'baoit', 'name' => 'Bảo IT'],
+            ['username' => 'tumod', 'name' => 'Tú MOD'],
+        ] as $a) {
+            User::updateOrCreate(['username' => $a['username']], [
+                'name'         => $a['name'],
+                'email'        => $a['username'] . '@sweetsica.com',
+                'password'     => Hash::make($a['username']),
+                'co_so_id'     => null,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $vrAdmin->id,
+                'is_admin'     => true,
+            ]);
+        }
+
+        $matKhauHn  = Hash::make('59@ntn');
+        $matKhauHcm = Hash::make('207nvt');
+
         // =============================================
-        // CƠ SỞ 1 — 59 Ngô Thì Nhậm (8h - 18h)
+        // SALES HÀ NỘI — Team Giang (STT 1–7)
+        // =============================================
+        $salesGiang = [
+            ['username' => 'tttg1',  'name' => 'Trần Thị Thu Giang',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
+            ['username' => 'thk2',   'name' => 'Trần Huy Kiên',       'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'nhg3',   'name' => 'Nguyễn Hương Giang',  'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'nta5',   'name' => 'Nguyễn Thị Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'ntn6',   'name' => 'Nguyễn Thị Nga',      'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'ctla7',  'name' => 'Cao Thị Lan Anh',     'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+        ];
+        foreach ($salesGiang as $s) {
+            User::updateOrCreate(['username' => $s['username']], [
+                'name' => $s['name'], 'email' => $s['username'] . '@59ntn.local',
+                'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHn,
+                'co_so_id' => $cs59ntn->id, 'phong_ban_id' => $pbTeamGiang->id,
+                'vai_tro_id' => $s['vai_tro_id'], 'is_admin' => false,
+            ]);
+        }
+
+        // NMP4 — KTV Da liễu (không thuộc sales team)
+        User::updateOrCreate(['username' => 'nmp4'], [
+            'name'         => 'Nguyễn Minh Phương',
+            'email'        => 'nmp4@59ntn.local',
+            'chuc_danh'    => 'KTV',
+            'password'     => $matKhauHn,
+            'co_so_id'     => $cs59ntn->id,
+            'phong_ban_id' => null,
+            'vai_tro_id'   => $vrKtv->id,
+            'is_admin'     => false,
+        ]);
+
+        // =============================================
+        // SALES HÀ NỘI — Team Hợi (STT 8–15)
+        // =============================================
+        $salesHoi = [
+            ['username' => 'tvh8',   'name' => 'Tạ Văn Hợi',          'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
+            ['username' => 'ptt9',   'name' => 'Phạm Thanh Trúc',     'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'ntt10',  'name' => 'Nguyễn Thị Thúy',     'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'nhd11',  'name' => 'Nguyễn Hoành Đức',    'chuc_danh' => 'TL',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'pta12',  'name' => 'Phạm Tú Anh',         'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'ntm13',  'name' => 'Nguyễn Trà My',       'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'nma14',  'name' => 'Nguyễn Mai Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'ltkp15', 'name' => 'Lương Thị Kim Phấn',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrTuVanVien->id],
+        ];
+        foreach ($salesHoi as $s) {
+            User::updateOrCreate(['username' => $s['username']], [
+                'name' => $s['name'], 'email' => $s['username'] . '@59ntn.local',
+                'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHn,
+                'co_so_id' => $cs59ntn->id, 'phong_ban_id' => $pbTeamHoi->id,
+                'vai_tro_id' => $s['vai_tro_id'], 'is_admin' => false,
+            ]);
+        }
+
+        // =============================================
+        // SALES HCM — Team HCM (STT 19–30 + Ashley)
         // =============================================
 
-        // --- Bác sĩ + KTV theo phòng chức năng ---
-
-        // Phòng khám Ngoại — BS tư vấn 1: Nguyễn Tiến Dũng (30 phút/khách)
-        $bsTuVan1 = User::updateOrCreate(['username' => 'ntd'], [
-            'name'           => 'Nguyễn Tiến Dũng',
-            'email'          => 'ntd@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNgoai->id,
-            'vai_tro_id'     => $vrBsTuVan->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 30,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
-        User::updateOrCreate(['username' => 'ktv1'], [
-            'name'         => 'KTV Phòng Ngoại',
-            'email'        => 'ktv1@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbKhamNgoai->id,
-            'vai_tro_id'   => $vrKtv->id,
+        // Kim Ngân — DM (Quản lý kinh doanh, quản lý toàn bộ HCM)
+        User::updateOrCreate(['username' => 'tnkn19'], [
+            'name'         => 'Trần Nguyễn Kim Ngân',
+            'email'        => 'tnkn19@207nvt.local',
+            'chuc_danh'    => 'DM',
+            'password'     => $matKhauHcm,
+            'co_so_id'     => $cs207nvt->id,
+            'phong_ban_id' => $pbTeamHcm->id,
+            'vai_tro_id'   => $vrSalesManager->id,
             'is_admin'     => false,
         ]);
 
-        // Phòng chuyên gia — BS tư vấn 2: Lê Tuyên Hồng Dương (30 phút/khách)
-        $bsTuVan2 = User::updateOrCreate(['username' => 'lthd'], [
-            'name'           => 'Lê Tuyên Hồng Dương',
-            'email'          => 'lthd@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbChuyenGia->id,
-            'vai_tro_id'     => $vrBsTuVan->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 30,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
-        User::updateOrCreate(['username' => 'ktv2'], [
-            'name'         => 'KTV Phòng Chuyên gia',
-            'email'        => 'ktv2@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbChuyenGia->id,
-            'vai_tro_id'   => $vrKtv->id,
+        // Ashley — CM (Team lead HCM)
+        User::updateOrCreate(['username' => 'ashley34'], [
+            'name'         => 'Ashley',
+            'email'        => 'ashley34@207nvt.local',
+            'chuc_danh'    => 'CM',
+            'password'     => $matKhauHcm,
+            'co_so_id'     => $cs207nvt->id,
+            'phong_ban_id' => $pbTeamHcm->id,
+            'vai_tro_id'   => $vrSalesLead->id,
             'is_admin'     => false,
         ]);
 
-        // Phòng khám Nội 1 — BS: Trương Thị Biên (12 khách/giờ → 5 phút/khách)
-        $bsTTB = User::updateOrCreate(['username' => 'ttb'], [
-            'name'           => 'Trương Thị Biên',
-            'email'          => 'ttb@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNoi1->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 5,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
-        User::updateOrCreate(['username' => 'ktv3'], [
-            'name'         => 'KTV Phòng Nội 1',
-            'email'        => 'ktv3@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbKhamNoi1->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
+        $salesHcm = [
+            ['username' => 'ptkq20', 'name' => 'Phan Trần Khánh Quỳnh', 'chuc_danh' => 'TL'],
+            ['username' => 'ttyn21', 'name' => 'Trương Thị Yến Nhi',    'chuc_danh' => 'SHC'],
+            ['username' => 'nthn22', 'name' => 'Nguyễn Thị Hoài Như',    'chuc_danh' => 'SHC'],
+            ['username' => 'htmm23', 'name' => 'Huỳnh Thị My My',       'chuc_danh' => 'HC'],
+            ['username' => 'ntth24', 'name' => 'Nguyễn Thị Thanh',      'chuc_danh' => 'HC'],
+            ['username' => 'ntkc25', 'name' => 'Nguyễn Thị Kim Chi',    'chuc_danh' => 'HC'],
+            ['username' => 'ltpt26', 'name' => 'Lê Thị Phương Tự',      'chuc_danh' => 'Trợ lý KD'],
+            ['username' => 'ttbt27', 'name' => 'Trần Thị Bích Trâm',    'chuc_danh' => 'CM'],
+            ['username' => 'ntmt28', 'name' => 'Nguyễn Thị Minh Thư',   'chuc_danh' => 'Trợ lý KD/CM HCM'],
+            ['username' => 'lpd29',  'name' => 'Lê Phát Đạt',           'chuc_danh' => 'SHC'],
+            ['username' => 'hbtl30', 'name' => 'Huỳnh Bùi Thanh Lan',   'chuc_danh' => 'CM'],
+        ];
+        foreach ($salesHcm as $s) {
+            User::updateOrCreate(['username' => $s['username']], [
+                'name' => $s['name'], 'email' => $s['username'] . '@207nvt.local',
+                'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHcm,
+                'co_so_id' => $cs207nvt->id, 'phong_ban_id' => $pbTeamHcm->id,
+                'vai_tro_id' => $vrTuVanVien->id, 'is_admin' => false,
+            ]);
+        }
 
-        // Phòng khám Nội 2 — BS: Ngô Thị Ngà (12 khách/giờ → 5 phút) + BS Bác Biên (Tim mạch, 30 phút/khách)
-        $bsNTN = User::updateOrCreate(['username' => 'ntn_bs'], [
-            'name'           => 'Ngô Thị Ngà',
-            'email'          => 'ntn_bs@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNoi2->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => false,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 5,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
-        $bsBBTM = User::updateOrCreate(['username' => 'bb_tm'], [
-            'name'           => 'Bác Biên (Tim mạch)',
-            'email'          => 'bb_tm@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNoi2->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => false,
-            'thoi_gian_kham' => 30,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
-        User::updateOrCreate(['username' => 'ktv4'], [
-            'name'         => 'KTV Phòng Nội 2',
-            'email'        => 'ktv4@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbKhamNoi2->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
+        // =============================================
+        // TÀI KHOẢN CHUNG THEO CƠ SỞ (BS / KTV / Lễ tân)
+        // =============================================
+        $sharedAccounts = [
+            ['username' => 'bsi59ntn',  'name' => 'BS chung 59 NTN',   'co_so' => $cs59ntn,  'vai_tro' => $vrBacSi,  'pw' => '59@ntn'],
+            ['username' => 'bsi207nvt', 'name' => 'BS chung 207 NVT',  'co_so' => $cs207nvt, 'vai_tro' => $vrBacSi,  'pw' => '207nvt'],
+            ['username' => 'ktv59ntn',  'name' => 'KTV chung 59 NTN',  'co_so' => $cs59ntn,  'vai_tro' => $vrKtv,    'pw' => '59@ntn'],
+            ['username' => 'ktv207nvt', 'name' => 'KTV chung 207 NVT', 'co_so' => $cs207nvt, 'vai_tro' => $vrKtv,    'pw' => '207nvt'],
+            ['username' => 'lt59ntn',   'name' => 'Lễ tân 59 NTN',     'co_so' => $cs59ntn,  'vai_tro' => $vrLeTan,  'pw' => '59@ntn'],
+            ['username' => 'lt207nvt',  'name' => 'Lễ tân 207 NVT',    'co_so' => $cs207nvt, 'vai_tro' => $vrLeTan,  'pw' => '207nvt'],
+        ];
+        foreach ($sharedAccounts as $a) {
+            User::updateOrCreate(['username' => $a['username']], [
+                'name'         => $a['name'],
+                'email'        => $a['username'] . '@local',
+                'password'     => Hash::make($a['pw']),
+                'co_so_id'     => $a['co_so']->id,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $a['vai_tro']->id,
+                'is_admin'     => false,
+            ]);
+        }
 
-        // Phòng siêu âm — BS: Bác Hồng (25 phút/khách)
-        $bsBH = User::updateOrCreate(['username' => 'bh_sa'], [
-            'name'           => 'Bác Hồng',
-            'email'          => 'bh_sa@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbSieuAm->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'thoi_gian_kham' => 25,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
-        User::updateOrCreate(['username' => 'ktv5'], [
-            'name'         => 'KTV Phòng Siêu âm',
-            'email'        => 'ktv5@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbSieuAm->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
+        // ---- Admin cơ sở ----
+        $adminCoSos = [
+            ['username' => 'admin59ntn',  'name' => 'Admin 59 NTN',       'co_so' => $cs59ntn,   'pw' => '59ntn'],
+            ['username' => 'admin207nvt', 'name' => 'Admin 207 NVT',      'co_so' => $cs207nvt,  'pw' => '207nvt'],
+            ['username' => 'adminl23tdn', 'name' => 'Admin Lô 2+3 TĐN',  'co_so' => $cslo23tdn, 'pw' => 'l23tdn'],
+        ];
+        foreach ($adminCoSos as $a) {
+            User::updateOrCreate(['username' => $a['username']], [
+                'name'         => $a['name'],
+                'email'        => $a['username'] . '@local',
+                'password'     => Hash::make($a['pw']),
+                'co_so_id'     => $a['co_so']->id,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $vrAdminCoSo->id,
+                'is_admin'     => false,
+            ]);
+        }
 
-        // --- Phòng khám 59 NTN: 5 phòng khám, 12 slot mỗi phòng ---
+        // ---- Quyền xem (viewer) ----
+        $viewers = ['huyently', 'hangktt', 'lyktdt', 'msan', 'mstuyet'];
+        foreach ($viewers as $v) {
+            User::updateOrCreate(['username' => $v], [
+                'name'         => $v,
+                'email'        => $v . '@sweetsica.com',
+                'password'     => Hash::make('123'),
+                'co_so_id'     => null,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $vrQuyenXem->id,
+                'is_admin'     => false,
+            ]);
+        }
+
+        // =============================================
+        // PHÒNG KHÁM + PHÒNG DỊCH VỤ
+        // =============================================
+
+        // --- CƠ SỞ 1: 59 NTN — 5 phòng khám ---
         $this->seedPhong($cs59ntn, [
             'Phòng khám Ngoại' => 12,
             'Phòng chuyên gia' => 12,
@@ -297,130 +318,94 @@ class LongevitySeeder extends Seeder
             'Phòng siêu âm'   => 12,
         ]);
 
-        // --- Phòng dịch vụ 59 NTN (Xông T4: 10 slot × 30p, YHCT T4: 12 slot × 60p) ---
+        // --- CƠ SỞ 1: 59 NTN — phòng dịch vụ (Tầng 3 + Tầng 4) ---
+        Phong::where('co_so_id', $cs59ntn->id)->whereIn('ten', ['Phòng Xông T4', 'Phòng trị liệu YHCT T4'])->delete();
         $this->seedPhong($cs59ntn, [
-            'Phòng Xông T4'          => ['kieu' => 'phong_dich_vu', 'so_slot' => 10, 'phut' => 30, 'ktv_username' => 'ktv4'],
-            'Phòng trị liệu YHCT T4' => ['kieu' => 'phong_dich_vu', 'so_slot' => 12, 'phut' => 60, 'ktv_username' => 'ktv5'],
+            'Phòng Thủ thuật T3'  => ['kieu' => 'phong_dich_vu', 'so_slot' => 1,  'phut' => 30],
+            'Phòng Metaboost 1 T4' => ['kieu' => 'phong_dich_vu', 'so_slot' => 3, 'phut' => 120],
+            'Phòng Metaboost 2 T4' => ['kieu' => 'phong_dich_vu', 'so_slot' => 3, 'phut' => 120],
+            'Phòng Metaboost 3 T4' => ['kieu' => 'phong_dich_vu', 'so_slot' => 3, 'phut' => 120],
+            'Phòng YHCT 1 T4'      => ['kieu' => 'phong_dich_vu', 'so_slot' => 2, 'phut' => 60],
+            'Phòng YHCT 2 T4'      => ['kieu' => 'phong_dich_vu', 'so_slot' => 2, 'phut' => 60],
+            'Phòng YHCT 3 T4'      => ['kieu' => 'phong_dich_vu', 'so_slot' => 2, 'phut' => 60],
         ]);
 
-        // Tạo ca khám cho tất cả bác sĩ (cả tư vấn lẫn thăm khám)
-        foreach ([$bsTuVan1, $bsTuVan2, $bsTTB, $bsNTN, $bsBBTM, $bsBH] as $bs) {
-            if ($bs->caKhams()->count() === 0) {
-                $bs->taoCaKham();
-            }
-        }
-
-        // Gán bác sĩ vào phòng (phong_bac_si) theo bảng cấu hình phòng khám 59 NTN.
-        $ganBacSiPhong = [
-            'Phòng khám Ngoại' => [$bsTuVan1->id],            // Nguyễn Tiến Dũng
-            'Phòng chuyên gia' => [$bsTuVan2->id],            // Lê Tuyên Hồng Dương
-            'Phòng khám Nội 1' => [$bsTTB->id],               // Trương Thị Biên
-            'Phòng khám Nội 2' => [$bsNTN->id, $bsBBTM->id],  // Ngô Thị Ngà + Bác Biên (Tim mạch)
-            'Phòng siêu âm'    => [$bsBH->id],                // Bác Hồng
-        ];
-        foreach ($ganBacSiPhong as $tenPhong => $bsIds) {
-            $phong = Phong::where('co_so_id', $cs59ntn->id)->where('ten', $tenPhong)->first();
-            $phong?->bacSis()->sync($bsIds);
-        }
-
-        // --- Tư vấn viên Hà Nội (cơ sở 59 NTN) ---
-        $tvHN = [
-            ['username' => 'tttg', 'name' => 'Trần Thị Thu Giang',  'chuc_danh' => 'CM'],
-            ['username' => 'thk',  'name' => 'Trần Huy Kiên',       'chuc_danh' => 'HC'],
-            ['username' => 'nhg',  'name' => 'Nguyễn Hương Giang',  'chuc_danh' => 'SHC'],
-            ['username' => 'nmp',  'name' => 'Nguyễn Minh Phương',  'chuc_danh' => 'HC'],
-            ['username' => 'nta',  'name' => 'Nguyễn Thị Anh',      'chuc_danh' => 'HC'],
-            ['username' => 'ntn',  'name' => 'Nguyễn Thị Nga',      'chuc_danh' => 'SHC'],
-            ['username' => 'ctla', 'name' => 'Cao Thị Lan Anh',     'chuc_danh' => 'SHC'],
-            ['username' => 'tvh',  'name' => 'Tạ Văn Hợi',          'chuc_danh' => 'CM'],
-            ['username' => 'ptt',  'name' => 'Phạm Thanh Trúc',     'chuc_danh' => 'HC'],
-            ['username' => 'ntt',  'name' => 'Nguyễn Thị Thúy',     'chuc_danh' => 'SHC'],
-            ['username' => 'nhd',  'name' => 'Nguyễn Hoành Đức',    'chuc_danh' => 'TL'],
-            ['username' => 'pta',  'name' => 'Phạm Tú Anh',         'chuc_danh' => 'HC'],
-            ['username' => 'ntm',  'name' => 'Nguyễn Trà My',       'chuc_danh' => 'SHC'],
-            ['username' => 'nma',  'name' => 'Nguyễn Mai Anh',      'chuc_danh' => 'HC'],
-        ];
-        foreach ($tvHN as $tv) {
-            User::updateOrCreate(['username' => $tv['username']], [
-                'name'         => $tv['name'],
-                'email'        => $tv['username'] . '@59ntn.local',
-                'chuc_danh'    => $tv['chuc_danh'],
-                'password'     => $matKhau,
-                'co_so_id'     => $cs59ntn->id,
-                'phong_ban_id' => $pbTuVan->id,
-                'vai_tro_id'   => $vrTuVanVien->id,
-                'is_admin'     => false,
-            ]);
-        }
-
-        // =============================================
-        // CƠ SỞ 2 — 207 Nguyễn Văn Thủ, HCM (8h - 18h)
-        // =============================================
+        // --- CƠ SỞ 2: 207 NVT ---
+        Phong::where('co_so_id', $cs207nvt->id)->where('ten', 'Phòng khám Nội')->update(['ten' => 'Phòng Tư vấn']);
         $this->seedPhong($cs207nvt, [
-            'Phòng khám Nội' => 1,
-            'Phòng siêu âm'  => ['so_slot' => 24, 'phut' => 25], // 25 phút/ca, 8h–18h = 24 ca
+            'Phòng Tư vấn'   => 1,
+            'Phòng siêu âm'  => ['so_slot' => 24, 'phut' => 25],
             'Phòng YHCT'     => 1,
         ]);
 
-        // --- Tư vấn viên HCM (cơ sở 207 NVT) ---
-        $tvHCM = [
-            ['username' => 'tnkn', 'name' => 'Trần Nguyễn Kim Ngân',  'chuc_danh' => 'DM'],
-            ['username' => 'ptkq', 'name' => 'Phan Trần Khánh Quỳnh', 'chuc_danh' => 'TL'],
-            ['username' => 'ttyn', 'name' => 'Trương Thị Yến Nhi',    'chuc_danh' => 'SHC'],
-            ['username' => 'nthn', 'name' => 'Nguyễn Thị Hoài Như',    'chuc_danh' => 'SHC'],
-            ['username' => 'htmm', 'name' => 'Huỳnh Thị My My',       'chuc_danh' => 'HC'],
-            ['username' => 'ntth', 'name' => 'Nguyễn Thị Thanh',      'chuc_danh' => 'HC'],
-            ['username' => 'ntkc', 'name' => 'Nguyễn Thị Kim Chi',    'chuc_danh' => 'HC'],
-            ['username' => 'ltpt', 'name' => 'Lê Thị Phương Tự',      'chuc_danh' => 'Trợ lý KD'],
-            ['username' => 'ttbt', 'name' => 'Trần Thị Bích Trâm',    'chuc_danh' => 'CM'],
-            ['username' => 'ntmt', 'name' => 'Nguyễn Thị Minh Thư',   'chuc_danh' => 'Trợ lý KD/CM HCM'],
-            ['username' => 'lpd',  'name' => 'Lê Phát Đạt',           'chuc_danh' => 'SHC'],
-            ['username' => 'hbtl', 'name' => 'Huỳnh Bùi Thanh Lan',   'chuc_danh' => 'CM'],
-        ];
-        foreach ($tvHCM as $tv) {
-            User::updateOrCreate(['username' => $tv['username']], [
-                'name'         => $tv['name'],
-                'email'        => $tv['username'] . '@207nvt.local',
-                'chuc_danh'    => $tv['chuc_danh'],
-                'password'     => $matKhau,
-                'co_so_id'     => $cs207nvt->id,
-                'phong_ban_id' => $pbTuVan207->id,
-                'vai_tro_id'   => $vrTuVanVien->id,
-                'is_admin'     => false,
-            ]);
-        }
-
-        // =============================================
-        // CƠ SỞ 3 — Lô 2+3 KĐT Trần Đăng Ninh (8h - 18h)
-        // =============================================
+        // --- CƠ SỞ 3 + 4 ---
         $this->seedPhong($cslo23tdn, ['Phòng khám' => 1]);
-
-        // =============================================
-        // CƠ SỞ 4 — 137 NCT HCM (8h - 18h)
-        // =============================================
         $this->seedPhong($cs137nct, ['Phòng khám' => 1]);
 
         // =============================================
+        // DANH MỤC BÁC SĨ + KTV
+        // =============================================
+
+        // --- 59 NTN ---
+        $bacSi59 = [
+            ['ten' => 'Nguyễn Tiến Dũng',    'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5],
+            ['ten' => 'Lê Tuyên Hồng Dương', 'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5],
+            ['ten' => 'Trương Thị Biên',     'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5],
+            ['ten' => 'Ngô Thị Ngà',         'chuc_danh' => 'BS.',  'nhan_tu_van' => false, 'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5],
+            ['ten' => 'Bác Biên Tim mạch',   'chuc_danh' => 'BS.',  'nhan_tu_van' => false, 'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 30],
+            ['ten' => 'Bác Hồng',            'chuc_danh' => 'BS.',  'nhan_tu_van' => false, 'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 15],
+            ['ten' => 'Bác Bình',            'chuc_danh' => 'BS.',  'nhan_tu_van' => false, 'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 25],
+        ];
+        foreach ($bacSi59 as $bs) {
+            BacSi::updateOrCreate(
+                ['co_so_id' => $cs59ntn->id, 'ten' => $bs['ten']],
+                $bs + ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00', 'active' => true]
+            );
+        }
+
+        // --- 207 NVT ---
+        BacSi::where('co_so_id', $cs207nvt->id)->whereIn('ten', ['Bác sĩ Đồng', 'Bác sĩ Da liễu', 'Bác sĩ YHCT'])->delete();
+        $bacSi207 = [
+            ['ten' => 'Hoàng Văn Đông',   'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5, 'xuat_hien_moi_co_so' => true],
+            ['ten' => 'Lê Huy Thư',       'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5],
+            ['ten' => 'Đặng Công Danh',   'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false, 'phut_kham_ls' => 5],
+        ];
+        foreach ($bacSi207 as $bs) {
+            BacSi::updateOrCreate(
+                ['co_so_id' => $cs207nvt->id, 'ten' => $bs['ten']],
+                $bs + ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00', 'active' => true]
+            );
+        }
+
+        // --- KTV 59 NTN ---
+        $ktv59 = [
+            'Nguyễn Mạnh Tráng', 'Trần Trà Mi', 'Phạm Thị Thanh Nhàn', 'Nguyễn Thị Diễm Quỳnh',
+            'Nguyễn Chí Bách', 'Nguyễn Thị Lan Vi', 'Trần Văn Quang',
+            'Trịnh Thị Thảo', 'Nguyễn Thị Minh Phương', 'Đỗ Thu Hương',
+        ];
+        foreach ($ktv59 as $ten) {
+            Ktv::updateOrCreate(
+                ['co_so_id' => $cs59ntn->id, 'ten' => $ten],
+                ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00', 'active' => true]
+            );
+        }
+
+        // =============================================
         // MENU + DỊCH VỤ (= Liệu pháp) — RIÊNG cho TỪNG cơ sở
-        // Sửa ở cơ sở này KHÔNG ảnh hưởng cơ sở khác.
         // =============================================
         $dsCoSo = CoSo::orderBy('id')->get();
         $primary = $dsCoSo->first();
 
-        // Tự chữa: nếu còn bản dùng chung (co_so_id = NULL) từ phiên bản cũ → gán về
-        // cơ sở đầu tiên (giữ nguyên id nên các booking đang trỏ vào không bị hỏng).
         if ($primary) {
             Menu::whereNull('co_so_id')->update(['co_so_id' => $primary->id]);
             DichVu::whereNull('co_so_id')->update(['co_so_id' => $primary->id]);
         }
 
-        // Xóa các tên dịch vụ cũ bị trùng nghĩa (idempotent: chạy lại nhiều lần OK)
         DichVu::whereIn('ten', ['Tư vấn', 'Thăm khám lâm sàng (trừ tim mạch)', 'Massage'])->delete();
 
         $menus = ['Trà', 'Hoa quả', 'Bánh kẹo'];
 
         $services = [
-            // 8 LIỆU PHÁP THĂM KHÁM (la_dich_vu=false) → hiện ở form đặt lịch phòng khám
             ['ten' => 'Thăm khám lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
             ['ten' => 'Thăm khám tim mạch',    'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => false],
             ['ten' => 'Thực hiện lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
@@ -429,7 +414,6 @@ class LongevitySeeder extends Seeder
             ['ten' => 'Lấy máu',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10, 'la_dich_vu' => false],
             ['ten' => 'Đọc kết quả Gene',      'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
             ['ten' => 'Tư vấn - đọc kết quả',  'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
-            // 2 DỊCH VỤ (la_dich_vu=true) → hiện ở form đặt lịch dịch vụ
             ['ten' => 'Xông hơi',              'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => true],
             ['ten' => 'Trị liệu YHCT',         'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60, 'la_dich_vu' => true],
         ];
@@ -459,7 +443,6 @@ class LongevitySeeder extends Seeder
     private function seedPhong(CoSo $coSo, array $phongs): void
     {
         foreach ($phongs as $ten => $cfg) {
-            // Backward compat: int = so_slot_toi_da
             if (is_int($cfg)) $cfg = ['so_slot' => $cfg];
             $attrs = [
                 'loai' => 'kham',
@@ -468,26 +451,15 @@ class LongevitySeeder extends Seeder
                 'phut_moi_khach' => $cfg['phut'] ?? null,
                 'trang_thai' => 'hoat_dong',
             ];
-            if (! empty($cfg['ktv_username'])) {
-                $attrs['ktv_mac_dinh_id'] = User::where('username', $cfg['ktv_username'])->value('id');
-            }
 
             $phong = Phong::updateOrCreate(
                 ['co_so_id' => $coSo->id, 'ten' => $ten],
                 $attrs
             );
 
-            // Thời lượng mỗi khung: ưu tiên cfg['phut'], mặc định theo loại phòng
-            // phong_kham: 5 phút (12 khách/giờ); phong_dich_vu: 30 phút/khách
             $khungLen = $cfg['phut'] ?? ($phong->kieu_phong === 'phong_dich_vu' ? 30 : 5);
+            $soKhung = intdiv(600, $khungLen);
 
-            // Số khung: nếu cfg chỉ định so_slot + phut → dùng so_slot;
-            // còn lại tính theo giờ làm việc 8h–18h (600 phút)
-            $soKhung = (isset($cfg['phut']) && isset($cfg['so_slot']))
-                ? (int) $cfg['so_slot']
-                : intdiv(600, $khungLen);
-
-            // Xóa khung giờ cũ để seed lại đúng (tránh giữ data sai từ lần chạy trước)
             $phong->khungGios()->delete();
             for ($i = 0; $i < $soKhung; $i++) {
                 $startMin = 8 * 60 + $i * $khungLen;

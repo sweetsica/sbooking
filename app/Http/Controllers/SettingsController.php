@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BacSi;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\DichVu;
+use App\Models\Ktv;
 use App\Models\LichHen;
 use App\Models\Menu;
 use App\Models\PhanQuyen;
@@ -20,15 +22,16 @@ use Illuminate\Validation\Rule;
 
 class SettingsController extends Controller
 {
-    // 8 mục thiết lập
     public const SECTIONS = [
         'phong'      => ['Phòng chức năng', 'meeting_room', 'Phòng khám: số slot tối đa, khung giờ phục vụ.'],
+        'bac-si'     => ['Bác sĩ', 'stethoscope', 'Quản lý danh sách bác sĩ — chức danh, giờ làm, thời gian khám.'],
+        'ktv'        => ['Kỹ thuật viên', 'spa', 'Quản lý danh sách KTV — giờ làm việc theo cơ sở.'],
         'phong-ban'  => ['Phòng ban', 'corporate_fare', 'Bộ phận: Kinh doanh (Sales), Quản trị... — dùng cho phân quyền & gán người dùng.'],
         'vai-tro'    => ['Vai trò', 'badge', 'Vai trò: Nhân viên, KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân...'],
         'co-so'      => ['Cơ sở', 'store', 'Mỗi cơ sở (chi nhánh) có nhân sự, bác sĩ, phòng riêng.'],
         'quyen'      => ['Quyền', 'admin_panel_settings', 'Vai trò nào được Xem / Thêm / Sửa / Xóa booking.'],
         'nguoi-dung' => ['Người dùng', 'group', 'Thêm/sửa/xóa người dùng (bao gồm KTV, Bác sĩ, Lễ tân...).'],
-        'dich-vu'    => ['Liệu pháp', 'spa', 'Liệu pháp / Dịch vụ — đưa vào form đặt lịch.'],
+        'dich-vu'    => ['Liệu pháp', 'healing', 'Liệu pháp / Dịch vụ — đưa vào form đặt lịch.'],
         'menu'       => ['Menu', 'restaurant_menu', 'CRUD tên Menu — đưa vào form tạo mới (dạng ô tick).'],
         'bao-cao'    => ['Báo cáo', 'analytics', 'Tổng hợp lịch đặt phòng + lịch tư vấn theo bộ lọc, xuất Excel.'],
     ];
@@ -99,6 +102,24 @@ class SettingsController extends Controller
                     'active'  => ['label' => 'Hoạt động', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
                 ],
             ],
+            'bac-si' => $catalog(BacSi::class, [
+                'ten'            => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255'], 'required' => true],
+                'chuc_danh'      => ['label' => 'Chức danh', 'type' => 'text', 'rules' => ['nullable', 'string', 'max:50'], 'placeholder' => 'BS. / PGS.TS.BS.'],
+                'xuat_hien_moi_co_so' => ['label' => 'Xuất hiện mọi cơ sở', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                'nhan_tu_van'    => ['label' => 'Nhận tư vấn', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                'phut_tu_van'    => ['label' => 'Phút tư vấn', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => '30'],
+                'nhan_kham_ls'   => ['label' => 'Nhận khám lâm sàng', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+                'phut_kham_ls'   => ['label' => 'Phút khám LS', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => '5'],
+                'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5']],
+                'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5']],
+                'active'         => ['label' => 'Hoạt động', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+            ]),
+            'ktv' => $catalog(Ktv::class, [
+                'ten'            => ['label' => 'Họ tên', 'type' => 'text', 'rules' => ['required', 'string', 'max:255'], 'required' => true],
+                'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5']],
+                'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5']],
+                'active'         => ['label' => 'Hoạt động', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
+            ]),
             'phong-ban' => [
                 'model' => PhongBan::class, 'kind' => 'phongban',
                 'fields' => [
@@ -126,6 +147,9 @@ class SettingsController extends Controller
 
         $rows = match ($section) {
             'phong'      => $co_so->phongs()->with('khungGios')->get(),
+            'bac-si'     => BacSi::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
+                ->orderBy('ten')->get(),
+            'ktv'        => Ktv::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
             'dich-vu'    => \App\Models\DichVu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
             'menu'       => \App\Models\Menu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
             'nguoi-dung' => User::with(['phongBan', 'vaiTro'])

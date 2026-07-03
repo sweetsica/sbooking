@@ -11,7 +11,7 @@
 @php
     // Section nào thuộc về từng cơ sở (dữ liệu tách theo co_so_id) → gắn tag "Theo cơ sở".
     // Còn lại (vai-tro, co-so, quyen) là toàn hệ thống → gắn tag "Toàn hệ thống".
-    $perCoSo = ['phong', 'phong-ban', 'nguoi-dung', 'dich-vu', 'menu', 'bao-cao'];
+    $perCoSo = ['phong', 'bac-si', 'ktv', 'phong-ban', 'nguoi-dung', 'dich-vu', 'menu', 'bao-cao'];
 
     // Card ngoại (link tới trang riêng — không đi qua SettingsController::section):
     // "Lịch làm việc" & "Ngày nghỉ" đặt tại đây vì mỗi cơ sở có dữ liệu khác nhau.
