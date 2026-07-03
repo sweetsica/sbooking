@@ -15,7 +15,10 @@ class BookingFields
     {
         return [
             // ----- Đặt phòng (booking) -----
-            'xem_booking'     => 'Xem booking',
+            'xem_booking_cua_toi'   => 'Xem booking — của tôi (mình tạo / BS / KTV / Sale)',
+            'xem_booking_phong_toi' => 'Xem booking — của phòng tôi',
+            'xem_booking_co_so_toi' => 'Xem booking — của cơ sở tôi',
+            'xem_booking_tat_ca'    => 'Xem booking — tất cả',
             'them_booking'    => 'Thêm booking',
             'sua_booking'     => 'Sửa booking — tất cả (mọi lịch)',
             'sua_booking_lien_quan' => 'Sửa booking — chỉ lịch liên quan (mình tạo / BS / KTV / Sale)',
@@ -101,7 +104,7 @@ class BookingFields
         return [
             'Quyền đặt phòng' => [
                 'icon'   => 'edit_calendar',
-                'fields' => $pick(['xem_booking', 'them_booking', 'sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi', 'xoa_booking']),
+                'fields' => $pick(['xem_booking_cua_toi', 'xem_booking_phong_toi', 'xem_booking_co_so_toi', 'xem_booking_tat_ca', 'them_booking', 'sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi', 'xoa_booking']),
                 'sub'    => [
                     // Sub-fields hiển thị dưới từng loại "Sửa booking" để admin dễ đối chiếu.
                     // Backend: 3 loại quyền chia sẻ cùng danh sách trường (không tạo key mới)

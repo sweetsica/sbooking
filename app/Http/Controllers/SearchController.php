@@ -29,8 +29,10 @@ class SearchController extends Controller
                 })
                 ->pluck('id');
 
-            $bookings = Booking::where('co_so_id', $co_so->id)
-                ->whereIn('khach_hang_id', $khIds)
+            $bkQuery = Booking::where('co_so_id', $co_so->id)
+                ->whereIn('khach_hang_id', $khIds);
+            $this->applyViewScope($bkQuery, $co_so);
+            $bookings = $bkQuery
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
                 ->latest('ngay_dat')->latest('id')->limit(50)->get();
         }
@@ -49,6 +51,15 @@ class SearchController extends Controller
     public function showBooking(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
+
+        $user = auth()->user();
+        if ($user && ! $user->is_admin) {
+            $checkQuery = Booking::where('id', $booking->id);
+            if (! $this->applyViewScope($checkQuery)) {
+                abort(403, 'Bạn không có quyền xem lịch này.');
+            }
+            abort_unless($checkQuery->exists(), 403, 'Bạn không có quyền xem lịch này.');
+        }
 
         $booking->load(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale', 'menus',
             'phanHois.nguoiDung.vaiTro', 'phanHois.nguoiDung.phongBan']);

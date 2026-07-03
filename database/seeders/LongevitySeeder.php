@@ -35,19 +35,19 @@ class LongevitySeeder extends Seeder
         // ---- Phân quyền mặc định theo vai trò ----
         $quyenMacDinh = [
             // Tư vấn viên: xem + sửa booking, sửa lịch tư vấn
-            $vrTuVanVien->id => ['xem_booking', 'sua_booking', 'sua_lich_tu_van'],
-            // Nhân viên: thêm + xem booking (danh sách chỉ đọc)
-            $vrNhanVien->id  => ['them_booking', 'xem_booking'],
-            // Quản trị vận hành: xem + thêm + duyệt (đặt phòng & tư vấn)
-            $vrVanHanh->id   => ['xem_booking', 'them_booking', 'duyet_booking', 'duyet_tu_van'],
-            // KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân: chỉ xem booking
-            $vrKtv->id       => ['xem_booking'],
-            $vrBacSi->id     => ['xem_booking'],
-            $vrBsTuVan->id   => ['xem_booking'],
+            $vrTuVanVien->id => ['xem_booking_co_so_toi', 'sua_booking', 'sua_lich_tu_van'],
+            // Nhân viên: thêm + xem booking cơ sở
+            $vrNhanVien->id  => ['them_booking', 'xem_booking_co_so_toi'],
+            // Quản trị vận hành: xem tất cả + thêm + duyệt (đặt phòng & tư vấn)
+            $vrVanHanh->id   => ['xem_booking_tat_ca', 'them_booking', 'duyet_booking', 'duyet_tu_van'],
+            // KTV: xem của phòng tôi, Bác sĩ / Bác sĩ tư vấn: xem của tôi
+            $vrKtv->id       => ['xem_booking_phong_toi'],
+            $vrBacSi->id     => ['xem_booking_cua_toi'],
+            $vrBsTuVan->id   => ['xem_booking_cua_toi'],
         ];
         // Lễ tân (không có biến sẵn) — lấy theo mã: xem + thêm booking
         if ($vrLeTan = VaiTro::where('ma', 'le_tan')->first()) {
-            $quyenMacDinh[$vrLeTan->id] = ['xem_booking', 'them_booking'];
+            $quyenMacDinh[$vrLeTan->id] = ['xem_booking_co_so_toi', 'them_booking'];
         }
         foreach ($quyenMacDinh as $vaiTroId => $truongs) {
             foreach ($truongs as $truong) {
@@ -104,6 +104,20 @@ class LongevitySeeder extends Seeder
         $pbSieuAm    = $pb[$cs59ntn->id]['phong_sieu_am'];
         // Tư vấn HCM thuộc cơ sở 2.
         $pbTuVan207  = $pb[$cs207nvt->id]['tu_van'];
+
+        // ---- Phòng ban chuyên môn (cơ sở 59 NTN) ----
+        $pbMedical = PhongBan::updateOrCreate(
+            ['co_so_id' => $cs59ntn->id, 'ma' => 'medical'],
+            ['ten' => 'Medical']
+        );
+        $pbYHCT = PhongBan::updateOrCreate(
+            ['co_so_id' => $cs59ntn->id, 'ma' => 'yhct'],
+            ['ten' => 'YHCT']
+        );
+        $pbDaLieu = PhongBan::updateOrCreate(
+            ['co_so_id' => $cs59ntn->id, 'ma' => 'da_lieu'],
+            ['ten' => 'Da liễu']
+        );
 
         // ---- Admin Hệ thống (IT) — tài khoản đặc biệt, không thuộc phòng ban / cơ sở nào, full quyền ----
         User::updateOrCreate(['username' => 'admin'], [
@@ -353,6 +367,95 @@ class LongevitySeeder extends Seeder
             ]);
         }
 
+        // --- Tư vấn viên Sale (cơ sở 59 NTN) ---
+        $tvSale = [
+            ['username' => 'nhn',  'name' => 'Nguyễn Hoàng Nam'],
+            ['username' => 'tlp',  'name' => 'Trần Lê Phú'],
+            ['username' => 'dh',   'name' => 'Diệu Hạnh'],
+            ['username' => 'nvn',  'name' => 'Nguyễn Văn Nam'],
+        ];
+        foreach ($tvSale as $tv) {
+            User::updateOrCreate(['username' => $tv['username']], [
+                'name'         => $tv['name'],
+                'email'        => $tv['username'] . '@59ntn.local',
+                'chuc_danh'    => null,
+                'password'     => $matKhau,
+                'co_so_id'     => $cs59ntn->id,
+                'phong_ban_id' => $pbSales->id,
+                'vai_tro_id'   => $vrTuVanVien->id,
+                'is_admin'     => false,
+            ]);
+        }
+
+        // --- KTV Medical (cơ sở 59 NTN) ---
+        $ktvMedical = [
+            ['username' => 'nmtrang', 'name' => 'Nguyễn Mạnh Tráng'],
+            ['username' => 'ttmi',    'name' => 'Trần Trà Mi'],
+            ['username' => 'pttn',    'name' => 'Phạm Thị Thanh Nhàn'],
+            ['username' => 'ntdq',    'name' => 'Nguyễn Thị Diễm Quỳnh'],
+        ];
+        foreach ($ktvMedical as $ktv) {
+            User::updateOrCreate(['username' => $ktv['username']], [
+                'name'         => $ktv['name'],
+                'email'        => $ktv['username'] . '@59ntn.local',
+                'chuc_danh'    => null,
+                'password'     => $matKhau,
+                'co_so_id'     => $cs59ntn->id,
+                'phong_ban_id' => $pbMedical->id,
+                'vai_tro_id'   => $vrKtv->id,
+                'is_admin'     => false,
+            ]);
+        }
+
+        // --- KTV YHCT (cơ sở 59 NTN) ---
+        $ktvYHCT = [
+            ['username' => 'ncb',  'name' => 'Nguyễn Chí Bách'],
+            ['username' => 'ntlv', 'name' => 'Nguyễn Thị Lan Vi'],
+            ['username' => 'tvq',  'name' => 'Trần Văn Quang'],
+        ];
+        foreach ($ktvYHCT as $ktv) {
+            User::updateOrCreate(['username' => $ktv['username']], [
+                'name'         => $ktv['name'],
+                'email'        => $ktv['username'] . '@59ntn.local',
+                'chuc_danh'    => null,
+                'password'     => $matKhau,
+                'co_so_id'     => $cs59ntn->id,
+                'phong_ban_id' => $pbYHCT->id,
+                'vai_tro_id'   => $vrKtv->id,
+                'is_admin'     => false,
+            ]);
+        }
+
+        // --- KTV Da liễu (cơ sở 59 NTN) ---
+        $ktvDaLieu = [
+            ['username' => 'ttt', 'name' => 'Trịnh Thị Thảo'],
+            ['username' => 'dth', 'name' => 'Đỗ Thu Hương'],
+        ];
+        foreach ($ktvDaLieu as $ktv) {
+            User::updateOrCreate(['username' => $ktv['username']], [
+                'name'         => $ktv['name'],
+                'email'        => $ktv['username'] . '@59ntn.local',
+                'chuc_danh'    => null,
+                'password'     => $matKhau,
+                'co_so_id'     => $cs59ntn->id,
+                'phong_ban_id' => $pbDaLieu->id,
+                'vai_tro_id'   => $vrKtv->id,
+                'is_admin'     => false,
+            ]);
+        }
+
+        // Nguyễn Minh Phương: chuyển sang KTV Da liễu
+        User::updateOrCreate(['username' => 'nmp'], [
+            'name'         => 'Nguyễn Minh Phương',
+            'email'        => 'nmp@59ntn.local',
+            'chuc_danh'    => null,
+            'password'     => $matKhau,
+            'co_so_id'     => $cs59ntn->id,
+            'phong_ban_id' => $pbDaLieu->id,
+            'vai_tro_id'   => $vrKtv->id,
+            'is_admin'     => false,
+        ]);
+
         // =============================================
         // CƠ SỞ 2 — 207 Nguyễn Văn Thủ, HCM (8h - 18h)
         // =============================================
@@ -419,19 +522,78 @@ class LongevitySeeder extends Seeder
 
         $menus = ['Trà', 'Hoa quả', 'Bánh kẹo'];
 
+        // Đổi tên dịch vụ phòng khám
+        $renames = [
+            'Thăm khám lâm sàng'   => 'Tư Vấn Thăm Khám',
+            'Tư vấn - đọc kết quả' => 'Đọc Kết Quả',
+            'Lấy máu'              => 'XN Máu',
+            'Siêu âm'              => 'Siêu Âm',
+            'Chụp XQuang'          => 'X Quang',
+            'Đọc kết quả Gene'     => 'XN Gene',
+        ];
+        foreach ($dsCoSo as $cs) {
+            foreach ($renames as $old => $new) {
+                DichVu::where('co_so_id', $cs->id)->where('ten', $old)->update(['ten' => $new]);
+            }
+        }
+
+        // Ngưng dịch vụ cũ
+        foreach ($dsCoSo as $cs) {
+            DichVu::where('co_so_id', $cs->id)
+                ->whereIn('ten', ['Thăm khám tim mạch', 'Thực hiện lâm sàng'])
+                ->update(['active' => false]);
+        }
+
         $services = [
-            // 8 LIỆU PHÁP THĂM KHÁM (la_dich_vu=false) → hiện ở form đặt lịch phòng khám
-            ['ten' => 'Thăm khám lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
-            ['ten' => 'Thăm khám tim mạch',    'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => false],
-            ['ten' => 'Thực hiện lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
-            ['ten' => 'Siêu âm',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25, 'la_dich_vu' => false],
-            ['ten' => 'Chụp XQuang',           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15, 'la_dich_vu' => false],
-            ['ten' => 'Lấy máu',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10, 'la_dich_vu' => false],
-            ['ten' => 'Đọc kết quả Gene',      'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
-            ['ten' => 'Tư vấn - đọc kết quả',  'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
-            // 2 DỊCH VỤ (la_dich_vu=true) → hiện ở form đặt lịch dịch vụ
-            ['ten' => 'Xông hơi',              'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => true],
-            ['ten' => 'Trị liệu YHCT',         'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60, 'la_dich_vu' => true],
+            // PHÒNG KHÁM (la_dich_vu=false)
+            ['ten' => 'Tư Vấn Thăm Khám',          'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
+            ['ten' => 'Đọc Kết Quả',                'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            ['ten' => 'XN Máu',                     'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10, 'la_dich_vu' => false],
+            ['ten' => 'Siêu Âm',                    'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25, 'la_dich_vu' => false],
+            ['ten' => 'X Quang',                     'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15, 'la_dich_vu' => false],
+            ['ten' => 'XN Gene',                     'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            ['ten' => 'Tái khám_XN Máu',             'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10, 'la_dich_vu' => false],
+            ['ten' => 'Tái khám_Siêu âm',            'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25, 'la_dich_vu' => false],
+            ['ten' => 'Tái khám_X-Quang',             'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15, 'la_dich_vu' => false],
+            ['ten' => 'Tái khám_Đọc kết quả',        'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            ['ten' => 'Tái khám_Tư Vấn Thăm Khám',   'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
+            ['ten' => 'Khám BS Da Liễu',              'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            ['ten' => 'Mục khác',                     'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            // DỊCH VỤ chung (la_dich_vu=true)
+            ['ten' => 'Xông hơi',                    'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => true],
+            ['ten' => 'Trị liệu YHCT',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60, 'la_dich_vu' => true],
+        ];
+
+        // Dịch vụ Da liễu (la_dich_vu=true) — chỉ seed cho cơ sở 59 NTN
+        $dichVuDaLieu = [
+            ['ten' => 'AP',                        'thoi_gian_phut' => 60],
+            ['ten' => 'EAQ 8M',                    'thoi_gian_phut' => 15],
+            ['ten' => 'EAQ 16M',                   'thoi_gian_phut' => 15],
+            ['ten' => 'Deep Scalp Revive',         'thoi_gian_phut' => 30],
+            ['ten' => 'Scalp Revive',              'thoi_gian_phut' => 30],
+            ['ten' => 'Xcell Plasma',              'thoi_gian_phut' => 70],
+            ['ten' => 'Xcell Micro',               'thoi_gian_phut' => 100],
+            ['ten' => 'Xcell Prime',               'thoi_gian_phut' => 100],
+            ['ten' => 'Skin Hydration',            'thoi_gian_phut' => 60],
+            ['ten' => 'Skin Balance Sensitive',    'thoi_gian_phut' => 60],
+            ['ten' => 'Skin Acne Detox',           'thoi_gian_phut' => 90],
+            ['ten' => 'Lift Firm Jawline',         'thoi_gian_phut' => 70],
+            ['ten' => 'Lift Face Yoga Therapy',    'thoi_gian_phut' => 70],
+            ['ten' => 'Lift Firm Eyes Smileline',  'thoi_gian_phut' => 70],
+            ['ten' => 'Lift Firm Full Face',       'thoi_gian_phut' => 120],
+            ['ten' => 'Deep Hydration Therapy',    'thoi_gian_phut' => 70],
+            ['ten' => 'Deep Glow Boost',           'thoi_gian_phut' => 70],
+            ['ten' => 'Deep Collagen Boost',       'thoi_gian_phut' => 70],
+            ['ten' => 'Botox',                     'thoi_gian_phut' => 30],
+            ['ten' => 'Filler',                    'thoi_gian_phut' => 30],
+            ['ten' => 'Skin Detox',                'thoi_gian_phut' => 90],
+            ['ten' => 'Deep Boost',                'thoi_gian_phut' => 60],
+            ['ten' => 'Lift Firm 1 vùng',          'thoi_gian_phut' => 60],
+            ['ten' => 'Lift Firm 2 vùng',          'thoi_gian_phut' => 30],
+            ['ten' => 'Meso F + Lăn kim',          'thoi_gian_phut' => 100],
+            ['ten' => 'CSD bằng Xsome',            'thoi_gian_phut' => 60],
+            ['ten' => 'Facial',                    'thoi_gian_phut' => 60],
+            ['ten' => 'DV khác',                   'thoi_gian_phut' => 30],
         ];
 
         foreach ($dsCoSo as $cs) {
@@ -453,6 +615,19 @@ class LongevitySeeder extends Seeder
                     ]
                 );
             }
+        }
+
+        // Dịch vụ Da liễu — chỉ cơ sở 59 NTN
+        foreach ($dichVuDaLieu as $dv) {
+            DichVu::updateOrCreate(
+                ['co_so_id' => $cs59ntn->id, 'ten' => $dv['ten']],
+                [
+                    'thoi_gian_phut' => $dv['thoi_gian_phut'],
+                    'thuoc_nhom' => 'khac',
+                    'la_dich_vu' => true,
+                    'active' => true,
+                ]
+            );
         }
     }
 

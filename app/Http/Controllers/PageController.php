@@ -466,10 +466,18 @@ class PageController extends Controller
 
     public function bookings(CoSo $co_so, Request $request, bool $approvalMode = false)
     {
-        $this->authorizePerm($approvalMode ? 'duyet_booking' : 'xem_booking');
+        if ($approvalMode) {
+            $this->authorizePerm('duyet_booking');
+        } else {
+            abort_unless($this->bookingViewScope(), 403, 'Bạn không có quyền xem lịch.');
+        }
 
         $query = Booking::where('co_so_id', $co_so->id)
             ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale']);
+
+        if (! $approvalMode) {
+            $this->applyViewScope($query, $co_so);
+        }
 
         if ($request->filled('ngay_tu')) {
             $query->whereDate('ngay_dat', '>=', $request->query('ngay_tu'));
@@ -515,14 +523,18 @@ class PageController extends Controller
         $now = now();
         $hStart = sprintf('%02d:00', $now->hour);
         $hEnd = sprintf('%02d:00', ($now->hour + 1) % 24);
-        $currentSlotBookings = Booking::where('co_so_id', $co_so->id)
+        $currentSlotQuery = Booking::where('co_so_id', $co_so->id)
             ->whereDate('ngay_dat', $now->toDateString())
             ->where('trang_thai', '!=', 'tu_choi')
             ->whereNotNull('gio_thuc_hien')
             ->where('gio_thuc_hien', '<', $hEnd)
             ->where(function ($q) use ($hStart) {
                 $q->whereNull('gio_ket_thuc')->orWhere('gio_ket_thuc', '>', $hStart);
-            })
+            });
+        if (! $approvalMode) {
+            $this->applyViewScope($currentSlotQuery, $co_so);
+        }
+        $currentSlotBookings = $currentSlotQuery
             ->with(['khachHang', 'phong', 'bacSi', 'ktv', 'dichVu'])
             ->orderBy('gio_thuc_hien')
             ->get();

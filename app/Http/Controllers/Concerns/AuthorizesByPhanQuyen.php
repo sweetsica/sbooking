@@ -64,6 +64,65 @@ trait AuthorizesByPhanQuyen
     }
 
     /**
+     * Xác định phạm vi xem booking của user hiện tại.
+     * Trả về: 'tat_ca' | 'co_so_toi' | 'phong_toi' | 'cua_toi' | null (không có quyền).
+     * Ưu tiên từ rộng → hẹp: nếu có quyền rộng hơn thì dùng quyền đó.
+     */
+    protected function bookingViewScope(): ?string
+    {
+        $perms = $this->allowedFieldKeys();
+        if (in_array('xem_booking_tat_ca', $perms, true)) return 'tat_ca';
+        if (in_array('xem_booking_co_so_toi', $perms, true)) return 'co_so_toi';
+        if (in_array('xem_booking_phong_toi', $perms, true)) return 'phong_toi';
+        if (in_array('xem_booking_cua_toi', $perms, true)) return 'cua_toi';
+        return null;
+    }
+
+    /**
+     * Áp dụng bộ lọc phạm vi xem booking lên query.
+     * Admin luôn thấy tất cả. Trả về false nếu user không có quyền xem.
+     */
+    protected function applyViewScope($query, ?\App\Models\CoSo $coSo = null): bool
+    {
+        $user = auth()->user();
+        if (! $user) return false;
+        if ($user->is_admin) return true;
+
+        $scope = $this->bookingViewScope();
+        if (! $scope) return false;
+
+        switch ($scope) {
+            case 'tat_ca':
+                break;
+            case 'co_so_toi':
+                if ($user->co_so_id) {
+                    $query->where('co_so_id', $user->co_so_id);
+                }
+                break;
+            case 'phong_toi':
+                $sameDepUsers = \App\Models\User::where('phong_ban_id', $user->phong_ban_id)
+                    ->pluck('id');
+                $query->where(function ($q) use ($user, $sameDepUsers) {
+                    $q->whereIn('nguoi_tao_id', $sameDepUsers)
+                      ->orWhereIn('bac_si_user_id', $sameDepUsers)
+                      ->orWhereIn('ktv_user_id', $sameDepUsers)
+                      ->orWhereIn('sale_id', $sameDepUsers);
+                });
+                break;
+            case 'cua_toi':
+                $query->where(function ($q) use ($user) {
+                    $q->where('nguoi_tao_id', $user->id)
+                      ->orWhere('bac_si_user_id', $user->id)
+                      ->orWhere('ktv_user_id', $user->id)
+                      ->orWhere('sale_id', $user->id);
+                });
+                break;
+        }
+
+        return true;
+    }
+
+    /**
      * Được phép sửa booking cụ thể? Quy tắc từ RỘNG → HẸP:
      *  - Admin → OK.
      *  - 'sua_booking' → OK mọi booking.
