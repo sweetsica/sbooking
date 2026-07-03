@@ -216,6 +216,13 @@
 <input name="email" value="{{ old('email', $bk?->khachHang?->email) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="email (tuỳ chọn)" type="email"/>
 </div>
 </div>
+<label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="text-body-md font-medium text-on-surface">Đây có phải lần đầu khách tới không?</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" name="lan_dau" value="1" @checked(old('lan_dau', $bk?->lan_dau))/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</div>
+</label>
 </div>
 </div>
 
@@ -342,6 +349,19 @@
 </div>
 </details>
 @endif
+
+@if ($isDichVu)
+<div class="mt-6">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
+<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
+@foreach ($ktvs as $k)
+<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
+@endforeach
+</select>
+<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
+</div>
+@endif
 </div>
 
 @if (! $isDichVu)
@@ -361,25 +381,7 @@
 </div>
 @endif
 
-@if ($isDichVu)
-<!-- Section 3 (Đặt dịch vụ): chỉ KTV — đặt SAU "Lịch trình & Phòng" để user chọn khung giờ trước. -->
-<div class="space-y-6 order-3">
-<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
-<span class="material-symbols-outlined text-secondary">engineering</span>
-<h3 class="text-headline-md font-headline-md">Kỹ thuật viên</h3>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
-<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach ($ktvs as $k)
-<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
-@endforeach
-</select>
-<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
-</div>
-</div>
-@else
+@if (! $isDichVu)
 <!-- Section 3: Chi tiết Dịch vụ (đặt phòng khám) -->
 <div class="space-y-6 order-1">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
@@ -422,8 +424,36 @@
 </div>
 @endif
 
-<!-- Section 4: Admin & Notes -->
+<!-- Section: Khách tặng & Ghi chú -->
 <div class="space-y-6 order-5">
+<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
+<span class="material-symbols-outlined text-secondary">card_giftcard</span>
+<h3 class="text-headline-md font-headline-md">Khách tặng &amp; Ghi chú</h3>
+</div>
+<div class="space-y-4">
+@php $khachTang = old('khach_tang', $bk?->khach_tang ?? 'khong'); @endphp
+<div class="space-y-2">
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
+<input type="radio" name="khach_tang" value="co" @checked($khachTang === 'co') class="w-4 h-4 text-secondary"/>
+<span class="text-body-md">Có</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
+<input type="radio" name="khach_tang" value="khong" @checked($khachTang === 'khong') class="w-4 h-4 text-secondary"/>
+<span class="text-body-md">Không</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
+<input type="radio" name="khach_tang" value="khac" @checked($khachTang === 'khac') class="w-4 h-4 text-secondary"/>
+<span class="text-body-md">Mục khác</span>
+</label>
+<div id="khach_tang_ghi_chu_wrap" class="{{ $khachTang === 'khac' ? '' : 'hidden' }}">
+<input name="khach_tang_ghi_chu" value="{{ old('khach_tang_ghi_chu', $bk?->khach_tang_ghi_chu) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập ghi chú..." type="text"/>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Section 4: Admin & Notes -->
+<div class="space-y-6 order-6">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">assignment_ind</span>
 <h3 class="text-headline-md font-headline-md">Hành chính &amp; Ghi chú</h3>
@@ -761,6 +791,16 @@
         }, 350);
     });
 
+    // Toggle "Mục khác" text input for Khách tặng
+    const khachTangWrap = document.getElementById('khach_tang_ghi_chu_wrap');
+    if (khachTangWrap) {
+        document.querySelectorAll('input[name="khach_tang"]').forEach(r => {
+            r.addEventListener('change', () => {
+                khachTangWrap.classList.toggle('hidden', r.value !== 'khac');
+            });
+        });
+    }
+
     if (window.lucide) lucide.createIcons();
 })();
 </script>
@@ -775,7 +815,7 @@
     form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
         const n = el.getAttribute('name');
         // Bỏ qua các field không thuộc danh mục phân quyền (csrf, menu_ids[]).
-        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','bac_si_user_id','ktv_user_id','ghi_chu'];
+        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','lan_dau','khach_tang','khach_tang_ghi_chu','bac_si_user_id','ktv_user_id','ghi_chu'];
         if (! trackable.includes(n)) return;
         if (! allowed.includes(n)) {
             el.disabled = true;

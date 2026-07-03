@@ -14,13 +14,15 @@ class Booking extends Model
     protected $fillable = [
         'co_so_id', 'loai_dat_lich', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
         'bac_si_user_id', 'ktv_user_id', 'sale_id', 'nguoi_tao_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
-        'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
+        'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'lan_dau', 'khach_tang', 'khach_tang_ghi_chu',
+        'co_tu_van', 'co_kham_cls',
         'ghi_chu', 'trang_thai', 'trang_thai_khach', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet',
     ];
 
     protected $casts = [
         'ngay_dat' => 'date',
         'ket_hop_medical' => 'boolean',
+        'lan_dau' => 'boolean',
         'co_tu_van' => 'boolean',
         'co_kham_cls' => 'boolean',
         'da_duyet' => 'boolean',

@@ -184,6 +184,14 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <span class="text-body-md font-medium text-on-surface">KH có SD kết hợp Medical không?</span>
 <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->ket_hop_medical ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->ket_hop_medical ? 'Có' : 'Không' }}</span>
 </div>
+<div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
+<span class="text-body-md font-medium text-on-surface">Lần đầu khách tới</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->lan_dau ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->lan_dau ? 'Có' : 'Không' }}</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
+<span class="text-body-md font-medium text-on-surface">Khách tặng & Ghi chú</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->khach_tang === 'co' ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->khach_tang === 'co' ? 'Có' : ($booking->khach_tang === 'khac' ? $booking->khach_tang_ghi_chu : 'Không') }}</span>
+</div>
 </div>
 </div>
 </div>
