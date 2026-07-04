@@ -8,6 +8,7 @@ use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\KhachHang;
 use App\Models\KhungGio;
+use App\Models\Ktv;
 use App\Models\LichHen;
 use App\Models\LichLamViec;
 use App\Models\NgayNghi;
@@ -102,10 +103,10 @@ class BookingController extends Controller
             ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
             ->orderBy('name')->get();
 
-        // KTV thuộc cơ sở
-        $ktvs = User::where('vai_tro_id', $vrKtv?->id)
-            ->where('co_so_id', $co_so->id)
-            ->orderBy('name')->get();
+        // KTV thuộc cơ sở (từ bảng danh mục ktv, không phải users)
+        $ktvs = Ktv::where('co_so_id', $co_so->id)
+            ->where('active', true)
+            ->orderBy('ten')->get();
 
         // Nhân viên Sale: chỉ lấy các vai trò mang tính chất sale/lễ tân/nhân viên
         // (tránh lẫn bác sĩ / KTV / admin vào dropdown sale)
@@ -682,12 +683,11 @@ class BookingController extends Controller
         $truc = $ca ? LichLamViec::bacSiTruc($co_so->id, $phongId, $ngay, $ca) : collect();
         $nghiIds = NgayNghi::nguoiNghiIds($co_so->id, $ngay, $ca);
 
-        $vrKtv = VaiTro::where('ma', 'ktv')->value('id');
-        $ktvs = User::where('vai_tro_id', $vrKtv)->where('co_so_id', $co_so->id)->orderBy('name')->get();
+        $ktvs = Ktv::where('co_so_id', $co_so->id)->where('active', true)->orderBy('ten')->get();
 
         $list = $ktvs->map(fn ($k) => [
             'id'   => $k->id,
-            'name' => $k->ten_day_du,
+            'name' => $k->ten,
             'truc' => $truc->has($k->id),
             'nghi' => $nghiIds->contains($k->id),
         ])->values();
@@ -727,7 +727,7 @@ class BookingController extends Controller
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
             'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
-            'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
+            'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],
@@ -893,7 +893,7 @@ class BookingController extends Controller
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
             'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
-            'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
+            'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],

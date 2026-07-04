@@ -80,7 +80,7 @@ class Booking extends Model
 
     public function ktv(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'ktv_user_id');
+        return $this->belongsTo(Ktv::class, 'ktv_user_id');
     }
 
     public function sale(): BelongsTo

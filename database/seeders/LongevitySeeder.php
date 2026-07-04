@@ -379,14 +379,21 @@ class LongevitySeeder extends Seeder
 
         // --- KTV 59 NTN ---
         $ktv59 = [
-            'Nguyễn Mạnh Tráng', 'Trần Trà Mi', 'Phạm Thị Thanh Nhàn', 'Nguyễn Thị Diễm Quỳnh',
-            'Nguyễn Chí Bách', 'Nguyễn Thị Lan Vi', 'Trần Văn Quang',
-            'Trịnh Thị Thảo', 'Nguyễn Thị Minh Phương', 'Đỗ Thu Hương',
+            ['ten' => 'Nguyễn Mạnh Tráng',       'nhom' => 'Medical'],
+            ['ten' => 'Trần Trà Mi',              'nhom' => 'Medical'],
+            ['ten' => 'Phạm Thị Thanh Nhàn',      'nhom' => 'Medical'],
+            ['ten' => 'Nguyễn Thị Diễm Quỳnh',    'nhom' => 'Medical'],
+            ['ten' => 'Nguyễn Chí Bách',           'nhom' => 'YHCT'],
+            ['ten' => 'Nguyễn Thị Lan Vi',         'nhom' => 'YHCT'],
+            ['ten' => 'Trần Văn Quang',            'nhom' => 'YHCT'],
+            ['ten' => 'Trịnh Thị Thảo',            'nhom' => 'Da liễu'],
+            ['ten' => 'Nguyễn Thị Minh Phương',    'nhom' => 'Da liễu'],
+            ['ten' => 'Đỗ Thu Hương',              'nhom' => 'Da liễu'],
         ];
-        foreach ($ktv59 as $ten) {
+        foreach ($ktv59 as $ktv) {
             Ktv::updateOrCreate(
-                ['co_so_id' => $cs59ntn->id, 'ten' => $ten],
-                ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00', 'active' => true]
+                ['co_so_id' => $cs59ntn->id, 'ten' => $ktv['ten']],
+                ['nhom' => $ktv['nhom'], 'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00', 'active' => true]
             );
         }
 
@@ -401,22 +408,66 @@ class LongevitySeeder extends Seeder
             DichVu::whereNull('co_so_id')->update(['co_so_id' => $primary->id]);
         }
 
-        DichVu::whereIn('ten', ['Tư vấn', 'Thăm khám lâm sàng (trừ tim mạch)', 'Massage'])->delete();
+        DichVu::whereIn('ten', ['Thăm khám lâm sàng', 'Massage', 'Xông hơi', 'Trị liệu YHCT'])->delete();
 
         $menus = ['Trà', 'Hoa quả', 'Bánh kẹo'];
 
-        $services = [
-            ['ten' => 'Thăm khám lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
-            ['ten' => 'Thăm khám tim mạch',    'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => false],
-            ['ten' => 'Thực hiện lâm sàng',    'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5,  'la_dich_vu' => false],
-            ['ten' => 'Siêu âm',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25, 'la_dich_vu' => false],
-            ['ten' => 'Chụp XQuang',           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15, 'la_dich_vu' => false],
-            ['ten' => 'Lấy máu',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10, 'la_dich_vu' => false],
-            ['ten' => 'Đọc kết quả Gene',      'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
-            ['ten' => 'Tư vấn - đọc kết quả',  'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
-            ['ten' => 'Xông hơi',              'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => true],
-            ['ten' => 'Trị liệu YHCT',         'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60, 'la_dich_vu' => true],
+        // --- 1. Danh mục thăm khám ---
+        $thamKham = [
+            ['ten' => 'Thăm khám lâm sàng (trừ tim mạch)', 'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
+            ['ten' => 'Thăm khám tim mạch',                'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30],
+            ['ten' => 'Thực hiện lâm sàng',                'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
+            ['ten' => 'Siêu âm',                           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25],
+            ['ten' => 'Chụp XQuang',                       'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15],
+            ['ten' => 'Lấy máu',                           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10],
+            ['ten' => 'Đọc kết quả Gene',                  'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
+            ['ten' => 'Tư vấn - đọc kết quả',              'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
+            ['ten' => 'Tư vấn',                            'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
         ];
+
+        // --- 2. Danh mục sử dụng dịch vụ ---
+        $dichVu = [
+            'Gói khám sức khỏe chuyên sâu Signature nam',
+            'Gói khám sức khỏe chuyên sâu Signature nữ',
+            'Gói khám sức khỏe định kỳ Diamond Nam',
+            'Gói khám sức khỏe định kỳ Diamond Nữ',
+            'Gói khám sức khỏe Excutive Health Check Nam (Doanh nghiệp)',
+            'Gói khám sức khỏe Excutive Health Check Nữ (Doanh nghiệp)',
+            'Gói khám sức khỏe tổng quát',
+            'Gói khám sức khỏe chuyên sâu về Cơ xương khớp',
+            'Gói khám sức khỏe chuyên sâu về Tim mạch & đột quỵ',
+            'Gói khám sức khỏe chuyên sâu về Gan',
+            'Gói khám sức khỏe chuyên sâu về Tiểu đường',
+            'Gói khám sức khỏe chuyên sâu về Tuyến giáp',
+            'Gói khám sức khỏe chuyên sâu về Rối loạn chuyển hóa',
+            'Gói khám VVIP Nữ',
+            'Gói khám VVIP Nam',
+            'Gói khám xét nghiệm và siêu âm tổng quát',
+            'Gene2 me Plus',
+            'Gene2 me',
+            'TruAge',
+            'Gene2 + Gene2 Plus + TruAge',
+            'Return TruAge',
+            'EAQ (1 vùng)',
+            'BJR (1 khớp)',
+            'HA 1%/khớp',
+            'HA 2%/khớp',
+            'PRP/khớp',
+            'Y học Phương Đông',
+            'DeepOxy & DetoxCell (xông)',
+            'DeepOxy & DetoxCell (tổng hợp)',
+            'STC Japan',
+            'NK',
+            'Recells',
+        ];
+
+        $services = [];
+        foreach ($thamKham as $tk) {
+            $services[] = array_merge($tk, ['la_dich_vu' => false]);
+        }
+        foreach ($dichVu as $ten) {
+            $services[] = ['ten' => $ten, 'thuoc_nhom' => 'khac', 'thoi_gian_phut' => 30, 'la_dich_vu' => true];
+        }
 
         foreach ($dsCoSo as $cs) {
             foreach ($menus as $tenMenu) {

@@ -552,6 +552,7 @@
         applyTimeLocks();
         updateEnd();
         loadBacSi();
+        if (typeof loadKtv === 'function') loadKtv();
     }
 
     // Generate options cho gio_thuc_hien / gio_ket_thuc THEO khung giờ đã chọn (step 5 phút)
