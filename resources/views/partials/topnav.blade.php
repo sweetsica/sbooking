@@ -46,8 +46,17 @@
 
     // Admin: gear icon → /thiet-lap (cards "Lịch làm việc" & "Ngày nghỉ" nằm trong đó).
     // Non-admin có quyền: dropdown nhỏ chứa 2 mục theo cơ sở.
+    $canBaoCao = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
+        if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
+        if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
+    })->where('truong', 'xem_bao_cao')->exists();
+
     $settingsItems = [];
     if (! $isAdmin) {
+        if ($canBaoCao) {
+            $settingsItems[] = ['key' => 'bao-cao', 'label' => 'Báo cáo', 'icon' => 'analytics', 'href' => '/'.$coSo->slug.'/bao-cao'];
+            $settingsItems[] = ['key' => 'so-do', 'label' => 'Sơ đồ tổ chức', 'icon' => 'account_tree', 'href' => '/'.$coSo->slug.'/so-do-to-chuc'];
+        }
         if ($canLichLamViec) {
             $settingsItems[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
         }
@@ -55,7 +64,7 @@
             $settingsItems[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
         }
     }
-    $settingsActive = in_array($active, ['thiet-lap', 'lich-lam-viec', 'ngay-nghi'], true);
+    $settingsActive = in_array($active, ['thiet-lap', 'lich-lam-viec', 'ngay-nghi', 'bao-cao', 'so-do'], true);
 @endphp
 <!-- Top Navigation Bar -->
 <header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center px-container-margin z-50">

@@ -44,7 +44,7 @@ class LongevitySeeder extends Seeder
             $vrBsTuVan->id      => ['xem_booking_cua_toi', 'ghi_chu_phan_hoi'],
             $vrLeTan->id        => ['xem_booking_co_so_toi', 'ghi_chu_phan_hoi'],
             $vrAdminCoSo->id    => ['duyet_booking', 'xem_booking_co_so_toi', 'duyet_tu_van'],
-            $vrQuyenXem->id     => ['xem_booking_tat_ca'],
+            $vrQuyenXem->id     => ['xem_booking_tat_ca', 'xem_bao_cao'],
             $vrVanHanh->id      => ['xem_booking_tat_ca', 'them_booking', 'duyet_booking', 'duyet_tu_van'],
         ];
         foreach ($quyenMacDinh as $vaiTroId => $truongs) {
@@ -292,11 +292,18 @@ class LongevitySeeder extends Seeder
         }
 
         // ---- Quyền xem (viewer) ----
-        $viewers = ['huyently', 'hangktt', 'lyktdt', 'msan', 'mstuyet'];
+        $viewers = [
+            ['username' => 'huyently', 'name' => 'Ms Huyền',     'chuc_danh' => 'Trợ lý kinh doanh'],
+            ['username' => 'hangktt',  'name' => 'Ms Hằng KTT',  'chuc_danh' => 'Kế toán trưởng'],
+            ['username' => 'lyktdt',   'name' => 'Ms Ly',        'chuc_danh' => 'Kế toán doanh thu'],
+            ['username' => 'msan',     'name' => 'Ms An',        'chuc_danh' => 'COO'],
+            ['username' => 'mstuyet',  'name' => 'Ms Tuyết',     'chuc_danh' => 'CEO'],
+        ];
         foreach ($viewers as $v) {
-            User::updateOrCreate(['username' => $v], [
-                'name'         => $v,
-                'email'        => $v . '@sweetsica.com',
+            User::updateOrCreate(['username' => $v['username']], [
+                'name'         => $v['name'],
+                'chuc_danh'    => $v['chuc_danh'],
+                'email'        => $v['username'] . '@sweetsica.com',
                 'password'     => Hash::make('123'),
                 'co_so_id'     => null,
                 'phong_ban_id' => null,

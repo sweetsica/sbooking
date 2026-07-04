@@ -116,10 +116,16 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::get('/xuat-tu-van',  [ExcelController::class, 'exportLichHen'])->name('excel.exportLichHen');
         Route::post('/nhap-tu-van', [ExcelController::class, 'importLichHen'])->name('excel.importLichHen');
 
+        // ----- Báo cáo (admin HOẶC quyền xem_bao_cao) -----
+        Route::get('/bao-cao',      [SettingsController::class, 'baoCao'])->name('settings.baocao');
+        Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('settings.baocao.xuat');
+
+        // ----- Sơ đồ tổ chức -----
+        Route::get('/so-do-to-chuc', [SettingsController::class, 'soDo'])->name('settings.sodo');
+
         // ----- CHỈ ADMIN: Thiết lập -----
         Route::middleware('admin')->prefix('thiet-lap')->name('settings.')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');
-            Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('baocao.xuat');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
             Route::post('/{section}', [SettingsController::class, 'store'])->name('store');
             Route::put('/{section}/{id}', [SettingsController::class, 'update'])->name('update');

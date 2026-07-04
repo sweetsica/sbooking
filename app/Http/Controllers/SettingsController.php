@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
 use App\Models\BacSi;
 use App\Models\Booking;
 use App\Models\CoSo;
@@ -22,6 +23,8 @@ use Illuminate\Validation\Rule;
 
 class SettingsController extends Controller
 {
+    use AuthorizesByPhanQuyen;
+
     public const SECTIONS = [
         'phong'      => ['Phòng chức năng', 'meeting_room', 'Phòng khám: số slot tối đa, khung giờ phục vụ.'],
         'bac-si'     => ['Bác sĩ', 'stethoscope', 'Quản lý danh sách bác sĩ — chức danh, giờ làm, thời gian khám.'],
@@ -138,6 +141,62 @@ class SettingsController extends Controller
     public function index(CoSo $co_so)
     {
         return view('longevity.settings.index', ['coSo' => $co_so, 'sections' => self::SECTIONS]);
+    }
+
+    public function soDo(CoSo $co_so)
+    {
+        $this->authorizePerm('xem_bao_cao');
+
+        $coSos = CoSo::where('active', true)->orderBy('id')->get();
+
+        $tree = $coSos->map(function (CoSo $cs) {
+            $phongBans = PhongBan::where('co_so_id', $cs->id)
+                ->with(['nguoiDungs' => fn ($q) => $q->orderByRaw("FIELD(vai_tro_id, 4, 3, 10, 7, 11, 8, 9, 5, 2, 1) ASC")->orderBy('name')])
+                ->orderBy('ten')
+                ->get()
+                ->filter(fn ($pb) => $pb->nguoiDungs->isNotEmpty());
+
+            $unassigned = User::where('co_so_id', $cs->id)
+                ->whereNull('phong_ban_id')
+                ->orderBy('name')
+                ->get();
+
+            return [
+                'coSo' => $cs,
+                'phongBans' => $phongBans,
+                'unassigned' => $unassigned,
+            ];
+        });
+
+        $global = User::whereNull('co_so_id')->whereNull('phong_ban_id')->orderBy('name')->get();
+        $vaiTros = VaiTro::pluck('ten', 'id');
+
+        return view('longevity.settings.so-do', [
+            'coSo' => $co_so,
+            'tree' => $tree,
+            'global' => $global,
+            'vaiTros' => $vaiTros,
+            'navActive' => 'so-do',
+        ]);
+    }
+
+    public function baoCao(CoSo $co_so, Request $request)
+    {
+        $this->authorizePerm('xem_bao_cao');
+
+        $section = 'bao-cao';
+        return view('longevity.settings.section', [
+            'coSo' => $co_so,
+            'sections' => self::SECTIONS,
+            'key' => $section,
+            'meta' => self::SECTIONS[$section],
+            'rows' => collect(),
+            'config' => null,
+            'quyen' => null,
+            'userFilters' => null,
+            'baoCao' => $this->buildBaoCao($co_so, $request),
+            'navActive' => 'bao-cao',
+        ]);
     }
 
     public function section(CoSo $co_so, string $section, Request $request)
@@ -286,9 +345,8 @@ class SettingsController extends Controller
             ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
             ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
 
-        $vrKtv = VaiTro::where('ma', 'ktv')->first();
-        $ktvs = $vrKtv ? User::where('vai_tro_id', $vrKtv->id)->where('co_so_id', $co_so->id)
-            ->orderBy('name')->get(['id', 'name']) : collect();
+        $ktvs = Ktv::where('co_so_id', $co_so->id)->where('active', true)
+            ->orderBy('ten')->get(['id', 'ten as name']);
 
         $sales = $co_so->nguoiDungs()->orderBy('name')->get(['users.id', 'users.name']);
 

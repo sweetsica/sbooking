@@ -29,6 +29,9 @@
     })->where('truong', 'quyen_ngay_nghi')->exists();
 
     $external = [];
+    $external[] = ['ten' => 'Sơ đồ tổ chức', 'icon' => 'account_tree',
+        'mota' => 'Cấu trúc phòng ban, đội nhóm và nhân sự theo cơ sở.',
+        'href' => '/'.$coSo->slug.'/so-do-to-chuc'];
     if ($canLichLamViec) {
         $external[] = ['ten' => 'Lịch làm việc', 'icon' => 'event_available',
             'mota' => 'Đăng ký / upload lịch làm việc của bác sĩ theo tháng cho cơ sở này.',
