@@ -20,6 +20,9 @@ Route::get('/', function () {
     return redirect("/{$cs->slug}/lich-hen");
 });
 
+// Trang hướng dẫn nhanh (demo luồng vận hành) — public, không cần đăng nhập
+Route::view('/demo', 'longevity.demo')->name('demo');
+
 // Đăng nhập / đăng xuất
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
