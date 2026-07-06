@@ -50,6 +50,10 @@ class BookingFields
             'duyet_booking'   => 'Duyệt lịch đặt phòng',
             'duyet_tu_van'    => 'Duyệt lịch tư vấn',
 
+            // ----- Sau dịch vụ -----
+            'cap_nhat_trang_thai_khach' => 'Cập nhật trạng thái khách (đã tới / trễ / hủy / đã xong)',
+            'binh_luan_booking'         => 'Bình luận sau dịch vụ',
+
             // ----- Lịch làm việc (theo tháng) -----
             'quyen_lich_lam_viec' => 'Tạo / upload lịch làm việc',
             'duyet_lich_lam_viec' => 'Duyệt & áp dụng lịch làm việc',
@@ -115,6 +119,11 @@ class BookingFields
             'Quyền duyệt' => [
                 'icon'   => 'verified',
                 'fields' => $pick(['duyet_booking', 'duyet_tu_van']),
+                'sub'    => [],
+            ],
+            'Quyền sau dịch vụ' => [
+                'icon'   => 'reviews',
+                'fields' => $pick(['cap_nhat_trang_thai_khach', 'binh_luan_booking']),
                 'sub'    => [],
             ],
             'Quyền lịch làm việc' => [

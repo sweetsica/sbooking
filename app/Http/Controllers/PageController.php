@@ -154,7 +154,7 @@ class PageController extends Controller
             ->get()->keyBy('phong_id');
 
         $bookingsByPhong = Booking::where('co_so_id', $co_so->id)
-            ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
+            ->giuCho() // đơn bị từ chối không chiếm chỗ
             ->whereDate('ngay_dat', $date)
             ->get(['id', 'phong_id', 'khung_gio_id', 'gio_thuc_hien', 'gio_ket_thuc'])
             ->groupBy('phong_id');
@@ -283,7 +283,7 @@ class PageController extends Controller
         if ($view === 'thang') {
             $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room, $staffId, $staffCol) {
                 $q = Booking::where('co_so_id', $co_so->id)
-                    ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
+                    ->giuCho() // đơn bị từ chối không chiếm chỗ
                     ->whereBetween('ngay_dat', [$from, $to]);
                 if ($room) $q->where('phong_id', $room->id);
                 if ($staffId) $q->where($staffCol, $staffId);
@@ -314,7 +314,7 @@ class PageController extends Controller
         if ($room) {
             $bookings = Booking::where('co_so_id', $co_so->id)
                 ->where('phong_id', $room->id)
-                ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ trong lịch biểu
+                ->giuCho() // đơn bị từ chối không chiếm chỗ trong lịch biểu
                 ->whereDate('ngay_dat', $date)
                 ->when($staffId, fn ($q) => $q->where($staffCol, $staffId))
                 ->with(['khachHang', 'dichVu', 'bacSi', 'ktv', 'khungGio'])

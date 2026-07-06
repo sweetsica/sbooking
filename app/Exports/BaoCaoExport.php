@@ -54,6 +54,9 @@ class BaoCaoSummarySheet implements FromCollection, WithHeadings, WithTitle
             ['ĐẶT PHÒNG — Chờ duyệt', $c['booking']['cho_duyet']],
             ['ĐẶT PHÒNG — Từ chối', $c['booking']['tu_choi']],
             ['ĐẶT PHÒNG — Đã xong', $c['booking']['da_xong']],
+            ['KHÁCH — Đúng giờ', $c['booking']['dung_gio'] ?? 0],
+            ['KHÁCH — Chậm/Trễ', $c['booking']['tre'] ?? 0],
+            ['KHÁCH — Hủy', $c['booking']['huy'] ?? 0],
             ['---', '---'],
             ['TƯ VẤN — Tổng', $c['tu_van']['total']],
             ['TƯ VẤN — Đã duyệt', $c['tu_van']['da_duyet']],
@@ -78,7 +81,7 @@ class BaoCaoBookingSheet implements FromCollection, WithHeadings, WithTitle
     public function headings(): array
     {
         return ['ID', 'Ngày', 'Khách', 'SĐT', 'Phòng', 'Khung giờ', 'Giờ thực hiện', 'Giờ kết thúc',
-                'Bác sĩ', 'KTV', 'Sale', 'Dịch vụ', 'Nguồn', 'Ghi chú', 'Trạng thái'];
+                'Bác sĩ', 'KTV', 'Sale', 'Dịch vụ', 'Nguồn', 'Ghi chú', 'Trạng thái', 'Trạng thái khách'];
     }
 
     public function collection()
@@ -103,6 +106,12 @@ class BaoCaoBookingSheet implements FromCollection, WithHeadings, WithTitle
                 'tu_choi'  => 'Từ chối',
                 'da_xong'  => 'Đã xong',
                 default    => 'Chờ duyệt',
+            },
+            match ($bk->trang_thai_khach) {
+                'da_toi'  => 'Đúng giờ',
+                'toi_tre' => 'Chậm/Trễ',
+                'huy'     => 'Hủy',
+                default   => '',
             },
         ]);
     }

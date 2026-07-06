@@ -246,6 +246,10 @@ class SettingsController extends Controller
             'booking' => $countByStatus($bookings),
             'tu_van'  => $countByStatus($lichHens),
         ];
+        // Thống kê trạng thái khách (chỉ áp dụng cho booking đặt phòng).
+        $counter['booking']['dung_gio'] = $bookings->where('trang_thai_khach', 'da_toi')->count();
+        $counter['booking']['tre']      = $bookings->where('trang_thai_khach', 'toi_tre')->count();
+        $counter['booking']['huy']      = $bookings->where('trang_thai_khach', 'huy')->count();
         $counter['tong'] = [
             'total'    => $counter['booking']['total'] + $counter['tu_van']['total'],
             'da_duyet' => $counter['booking']['da_duyet'] + $counter['tu_van']['da_duyet'],

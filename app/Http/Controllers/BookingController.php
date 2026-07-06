@@ -236,7 +236,7 @@ class BookingController extends Controller
             ->where('phong_id', $phongId)
             ->where('khung_gio_id', $khungGioId)
             ->whereDate('ngay_dat', $ngay)
-            ->where('trang_thai', '!=', 'tu_choi')
+            ->giuCho()
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->count();
 
@@ -286,7 +286,7 @@ class BookingController extends Controller
         $bookings = Booking::with(['dichVu', 'khungGio'])
             ->where('bac_si_id', $bacSiId)
             ->whereDate('ngay_dat', $ngay)
-            ->where('trang_thai', '!=', 'tu_choi')
+            ->giuCho()
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->get();
 
@@ -337,7 +337,7 @@ class BookingController extends Controller
             ->where('phong_id', $phongId)
             ->where('khung_gio_id', $khungGioId)
             ->whereDate('ngay_dat', $ngay)
-            ->where('trang_thai', '!=', 'tu_choi')
+            ->giuCho()
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->get();
         $count = 0;
@@ -483,7 +483,7 @@ class BookingController extends Controller
         $others = Booking::where('co_so_id', $co_so->id)
             ->where('bac_si_id', $bacSiId)
             ->whereDate('ngay_dat', $ngay)
-            ->where('trang_thai', '!=', 'tu_choi')
+            ->giuCho()
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->with(['phong', 'khungGio'])
             ->get();
@@ -530,7 +530,7 @@ class BookingController extends Controller
         $others = Booking::where('co_so_id', $co_so->id)
             ->where('ktv_user_id', $ktvId)
             ->whereDate('ngay_dat', $ngay)
-            ->where('trang_thai', '!=', 'tu_choi')
+            ->giuCho()
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->with('khungGio')
             ->get();
@@ -1105,7 +1105,7 @@ class BookingController extends Controller
     public function xong(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('duyet_booking');
+        $this->authorizePerm('cap_nhat_trang_thai_khach');
 
         $done = $booking->trang_thai !== 'da_xong';
         if ($done) {
@@ -1120,6 +1120,61 @@ class BookingController extends Controller
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
 
         return back()->with('ok', ($done ? 'Đã hoàn thành' : 'Đã chuyển lại "Đã duyệt"') . ' lịch hẹn của ' . $ten . '.');
+    }
+
+    /** Cập nhật trạng thái khách: đã tới / tới trễ / hủy (hoặc bỏ chọn). Khách hủy → trả slot. */
+    public function capNhatTrangThaiKhach(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('cap_nhat_trang_thai_khach');
+
+        $data = $request->validate([
+            'trang_thai_khach' => ['nullable', Rule::in(['da_toi', 'toi_tre', 'huy'])],
+        ]);
+
+        // Bấm lại đúng trạng thái đang chọn → bỏ chọn (toggle về null).
+        $moi = $data['trang_thai_khach'] ?? null;
+        $booking->trang_thai_khach = ($booking->trang_thai_khach === $moi) ? null : $moi;
+        $booking->save();
+
+        $nhan = ['da_toi' => 'Khách đã tới', 'toi_tre' => 'Khách tới trễ', 'huy' => 'Khách hủy'];
+        $msg = $booking->trang_thai_khach
+            ? 'Đã cập nhật: ' . ($nhan[$booking->trang_thai_khach] ?? $booking->trang_thai_khach)
+                . ($booking->trang_thai_khach === 'huy' ? ' — khung giờ đã được trả về kho.' : '.')
+            : 'Đã bỏ trạng thái khách.';
+
+        return back()->with('ok', $msg);
+    }
+
+    /** Thêm bình luận "sau dịch vụ" (nhiều vai trò được phép). */
+    public function themBinhLuan(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('binh_luan_booking');
+
+        $data = $request->validate([
+            'noi_dung' => ['required', 'string', 'max:2000'],
+        ], [
+            'noi_dung.required' => 'Vui lòng nhập nội dung bình luận.',
+        ]);
+
+        $booking->binhLuans()->create([
+            'user_id'  => auth()->id(),
+            'noi_dung' => $data['noi_dung'],
+        ]);
+
+        return back()->with('ok', 'Đã gửi bình luận.');
+    }
+
+    /** Xóa bình luận — chỉ Admin hệ thống. */
+    public function xoaBinhLuan(CoSo $co_so, Booking $booking, \App\Models\BookingBinhLuan $binh_luan)
+    {
+        abort_unless($booking->co_so_id === $co_so->id && $binh_luan->booking_id === $booking->id, 404);
+        abort_unless(auth()->user()?->is_admin, 403, 'Chỉ quản trị hệ thống được xóa bình luận.');
+
+        $binh_luan->delete();
+
+        return back()->with('ok', 'Đã xóa bình luận.');
     }
 
 }

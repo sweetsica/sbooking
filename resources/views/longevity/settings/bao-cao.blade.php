@@ -106,6 +106,12 @@ $cards = [
 <span>Từ chối: <strong class="text-error">{{ $c['booking']['tu_choi'] }}</strong></span>
 <span>Xong: <strong class="text-primary">{{ $c['booking']['da_xong'] }}</strong></span>
 </div>
+<div class="flex flex-wrap gap-x-6 gap-y-1 text-body-sm mt-1 pt-1 border-t border-outline-variant/60">
+<span class="text-on-surface-variant">Khách:</span>
+<span>Đúng giờ: <strong class="text-tertiary">{{ $c['booking']['dung_gio'] }}</strong></span>
+<span>Chậm/Trễ: <strong class="text-amber-600">{{ $c['booking']['tre'] }}</strong></span>
+<span>Hủy: <strong class="text-error">{{ $c['booking']['huy'] }}</strong></span>
+</div>
 </div>
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
 <div class="flex items-center gap-2 mb-2"><span class="material-symbols-outlined text-secondary">medical_services</span><span class="font-semibold">Tư vấn</span></div>

@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Booking extends Model
 {
@@ -14,7 +16,7 @@ class Booking extends Model
         'co_so_id', 'loai_dat_lich', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
         'bac_si_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
         'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
-        'ghi_chu', 'trang_thai', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet',
+        'ghi_chu', 'trang_thai', 'trang_thai_khach', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet',
     ];
 
     protected $casts = [
@@ -68,5 +70,20 @@ class Booking extends Model
     public function menus(): BelongsToMany
     {
         return $this->belongsToMany(Menu::class, 'booking_menu', 'booking_id', 'menu_id');
+    }
+
+    public function binhLuans(): HasMany
+    {
+        return $this->hasMany(BookingBinhLuan::class, 'booking_id')->latest();
+    }
+
+    /**
+     * Booking đang GIỮ CHỖ (chiếm slot): không bị từ chối và khách không hủy.
+     * Dùng cho mọi tính toán occupancy để "khách hủy" trả slot về kho.
+     */
+    public function scopeGiuCho(Builder $q): Builder
+    {
+        return $q->where('trang_thai', '!=', 'tu_choi')
+            ->where(fn ($qq) => $qq->whereNull('trang_thai_khach')->orWhere('trang_thai_khach', '!=', 'huy'));
     }
 }

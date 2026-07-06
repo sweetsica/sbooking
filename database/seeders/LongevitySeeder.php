@@ -35,20 +35,21 @@ class LongevitySeeder extends Seeder
 
         // ---- Phân quyền mặc định theo vai trò ----
         $quyenMacDinh = [
-            // Tư vấn viên: xem + sửa booking, sửa lịch tư vấn
-            $vrTuVanVien->id => ['xem_booking', 'sua_booking', 'sua_lich_tu_van'],
+            // Tư vấn viên: xem + sửa booking, sửa lịch tư vấn + bình luận sau dịch vụ
+            $vrTuVanVien->id => ['xem_booking', 'sua_booking', 'sua_lich_tu_van', 'binh_luan_booking'],
             // Nhân viên: thêm + xem booking (danh sách chỉ đọc)
             $vrNhanVien->id  => ['them_booking', 'xem_booking'],
-            // Quản trị vận hành: xem + thêm + duyệt (đặt phòng & tư vấn)
-            $vrVanHanh->id   => ['xem_booking', 'them_booking', 'duyet_booking', 'duyet_tu_van'],
-            // KTV, Bác sĩ, Bác sĩ tư vấn, Lễ tân: chỉ xem booking
-            $vrKtv->id       => ['xem_booking'],
-            $vrBacSi->id     => ['xem_booking'],
+            // Quản trị vận hành: xem + thêm + duyệt + cập nhật trạng thái khách + bình luận
+            $vrVanHanh->id   => ['xem_booking', 'them_booking', 'duyet_booking', 'duyet_tu_van',
+                                 'cap_nhat_trang_thai_khach', 'binh_luan_booking'],
+            // KTV, Bác sĩ: xem booking + bình luận sau dịch vụ
+            $vrKtv->id       => ['xem_booking', 'binh_luan_booking'],
+            $vrBacSi->id     => ['xem_booking', 'binh_luan_booking'],
             $vrBsTuVan->id   => ['xem_booking'],
         ];
-        // Lễ tân (không có biến sẵn) — lấy theo mã: xem + thêm booking
+        // Lễ tân: xem + thêm booking + cập nhật trạng thái khách + bình luận
         if ($vrLeTan = VaiTro::where('ma', 'le_tan')->first()) {
-            $quyenMacDinh[$vrLeTan->id] = ['xem_booking', 'them_booking'];
+            $quyenMacDinh[$vrLeTan->id] = ['xem_booking', 'them_booking', 'cap_nhat_trang_thai_khach', 'binh_luan_booking'];
         }
         foreach ($quyenMacDinh as $vaiTroId => $truongs) {
             foreach ($truongs as $truong) {

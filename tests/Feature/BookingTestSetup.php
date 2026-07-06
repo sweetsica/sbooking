@@ -130,6 +130,7 @@ trait BookingTestSetup
             'dich_vu_id', 'sale_id', 'ghi_chu', 'nguon',
             'sua_lich_tu_van', 'duyet_tu_van',
             'xuat_lich_dat_phong', 'xuat_lich_tu_van',
+            'cap_nhat_trang_thai_khach', 'binh_luan_booking',
         ]);
         $this->grantPerms($this->vrTuVanVien->id, ['them_booking', 'xem_booking', 'sua_lich_tu_van']);
         $this->grantPerms($this->vrNhanVien->id, ['them_booking', 'xem_booking']);
