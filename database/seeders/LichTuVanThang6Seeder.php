@@ -6,7 +6,7 @@ use App\Models\CoSo;
 use App\Models\KhachHang;
 use App\Models\LichHen;
 use App\Models\User;
-use App\Models\VaiTro;
+use App\Models\BacSi;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -49,18 +49,13 @@ class LichTuVanThang6Seeder extends Seeder
         LichHen::where('nguon', 'seed-tv-t6')->delete();
         KhachHang::where('email', 'like', 'kh_tv_t6_%@example.local')->delete();
 
-        $vrBsTuVan = VaiTro::where('ma', 'bac_si_tu_van')->first();
-        if (! $vrBsTuVan) {
-            $this->command?->warn('Chưa có vai trò bac_si_tu_van — bỏ qua seed lịch tư vấn.');
-            return;
-        }
-
         $stt = 0;
         $tongTheoTT = ['cho_duyet' => 0, 'da_duyet' => 0, 'tu_choi' => 0];
 
         foreach (CoSo::where('active', true)->orderBy('id')->get() as $coSo) {
-            $bacSis = User::where('vai_tro_id', $vrBsTuVan->id)
-                ->where(fn ($q) => $q->where('co_so_id', $coSo->id)->orWhere('is_tu_van', true))
+            // Bác sĩ tư vấn = DANH MỤC bac_si có nhan_tu_van.
+            $bacSis = BacSi::where('active', true)->where('nhan_tu_van', true)
+                ->where(fn ($q) => $q->where('co_so_id', $coSo->id)->orWhere('xuat_hien_moi_co_so', true))
                 ->with('caKhams')
                 ->orderBy('id')->get();
 
@@ -98,7 +93,7 @@ class LichTuVanThang6Seeder extends Seeder
                         LichHen::create([
                             'co_so_id'       => $coSo->id,
                             'khach_hang_id'  => $kh->id,
-                            'bac_si_user_id' => $bs->id,
+                            'bac_si_id'      => $bs->id,
                             'ca_kham_id'     => $ck->id,
                             'sale_id'        => $saleIds[array_rand($saleIds)],
                             'ngay_hen'       => $day->toDateString(),

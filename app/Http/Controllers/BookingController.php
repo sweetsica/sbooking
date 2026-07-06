@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
+use App\Models\BacSi;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\DichVu;
@@ -51,7 +52,7 @@ class BookingController extends Controller
     /** Store cho đặt lịch dịch vụ - ép loai_dat_lich + bỏ BS check. */
     public function storeDichVu(CoSo $co_so, Request $request)
     {
-        $request->merge(['loai_dat_lich' => 'dich_vu', 'bac_si_user_id' => null]);
+        $request->merge(['loai_dat_lich' => 'dich_vu', 'bac_si_id' => null]);
         return $this->store($co_so, $request);
     }
 
@@ -93,13 +94,13 @@ class BookingController extends Controller
             ->orderBy('ten')->get();
         $co_so->setRelation('menus', $menus);
 
-        $vrBacSiIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
         $vrKtv = VaiTro::where('ma', 'ktv')->first();
 
-        // Bác sĩ (gồm cả bác sĩ tư vấn): thuộc cơ sở hoặc có is_tu_van (global)
-        $bacSis = User::whereIn('vai_tro_id', $vrBacSiIds)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
-            ->orderBy('name')->get();
+        // Bác sĩ = DANH MỤC bac_si của cơ sở (hoặc xuất hiện mọi cơ sở).
+        // Bác sĩ được gán vào phòng ở Thiết lập → Phòng; form lọc theo phòng khi chọn.
+        $bacSis = BacSi::where('active', true)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
+            ->orderBy('ten')->get();
 
         // KTV thuộc cơ sở
         $ktvs = User::where('vai_tro_id', $vrKtv?->id)
@@ -254,7 +255,7 @@ class BookingController extends Controller
      *  - 'kham_ls' → BS.phut_kham_ls
      *  - 'khac' → dich_vu.thoi_gian_phut
      */
-    private function phutCanCuaBookingBS(?User $bs, ?DichVu $dv): int
+    private function phutCanCuaBookingBS(?BacSi $bs, ?DichVu $dv): int
     {
         if (! $dv) return 0;
         return match ($dv->thuoc_nhom) {
@@ -280,16 +281,16 @@ class BookingController extends Controller
      * Tổng phút BS đã chiếm trong khoảng [s, e] (phút trong ngày), ngày $ngay,
      * tính XUYÊN MỌI CƠ SỞ (vì BS chỉ có 1 cơ thể).
      */
-    private function bacSiPhutDaDung(int $bacSiId, string $ngay, int $s, int $e, ?int $exceptId = null, ?User $bs = null): int
+    private function bacSiPhutDaDung(int $bacSiId, string $ngay, int $s, int $e, ?int $exceptId = null, ?BacSi $bs = null): int
     {
         $bookings = Booking::with(['dichVu', 'khungGio'])
-            ->where('bac_si_user_id', $bacSiId)
+            ->where('bac_si_id', $bacSiId)
             ->whereDate('ngay_dat', $ngay)
             ->where('trang_thai', '!=', 'tu_choi')
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
             ->get();
 
-        $bs ??= User::find($bacSiId); // dùng lại nếu caller đã có (tránh N+1 trong vòng lặp)
+        $bs ??= BacSi::find($bacSiId); // dùng lại nếu caller đã có (tránh N+1 trong vòng lặp)
         $total = 0;
         foreach ($bookings as $b) {
             $r = $this->khoangGioBooking($b);
@@ -429,7 +430,7 @@ class BookingController extends Controller
         $dv = DichVu::find($dichVuId);
         if (! $dv) return null;
 
-        $bs = User::find($bacSiId);
+        $bs = BacSi::find($bacSiId);
         if ($bs && $dv->thuoc_nhom === 'tu_van' && ! $bs->nhan_tu_van) {
             return 'Bác sĩ này không nhận tư vấn. Vui lòng chọn bác sĩ khác.';
         }
@@ -480,7 +481,7 @@ class BookingController extends Controller
         $e = $toMin($kt) ?? ($s + 60); // thiếu giờ kết thúc → mặc định 1 tiếng
 
         $others = Booking::where('co_so_id', $co_so->id)
-            ->where('bac_si_user_id', $bacSiId)
+            ->where('bac_si_id', $bacSiId)
             ->whereDate('ngay_dat', $ngay)
             ->where('trang_thai', '!=', 'tu_choi')
             ->when($exceptId, fn ($q) => $q->where('id', '!=', $exceptId))
@@ -497,31 +498,10 @@ class BookingController extends Controller
             $oe = $toMin($okt ? substr($okt, 0, 5) : null) ?? ($os + 60);
 
             if ($s < $oe && $os < $e) { // hai khoảng giờ chồng nhau
-                $bs = User::find($bacSiId);
+                $bs = BacSi::find($bacSiId);
 
                 return 'Lưu ý: ' . ($bs?->ten_day_du ?? 'Bác sĩ') . ' đã có lịch lúc '
                     . substr($obd, 0, 5) . ' tại ' . ($o->phong?->ten ?? 'phòng khác')
-                    . ' trong ngày này (trùng giờ) — lịch vẫn được lưu.';
-            }
-        }
-
-        // Check chéo với lịch tư vấn (LichHen) của cùng bác sĩ
-        $tuVans = LichHen::where('co_so_id', $co_so->id)
-            ->where('bac_si_user_id', $bacSiId)
-            ->whereDate('ngay_hen', $ngay)
-            ->where('trang_thai', '!=', 'tu_choi')
-            ->with('caKham')
-            ->get();
-
-        foreach ($tuVans as $lh) {
-            $os = $toMin($lh->caKham?->gio_bat_dau ? substr($lh->caKham->gio_bat_dau, 0, 5) : null);
-            $oe = $toMin($lh->caKham?->gio_ket_thuc ? substr($lh->caKham->gio_ket_thuc, 0, 5) : null);
-            if ($os === null || $oe === null) continue;
-
-            if ($s < $oe && $os < $e) {
-                $bs = User::find($bacSiId);
-                return 'Lưu ý: ' . ($bs?->ten_day_du ?? 'Bác sĩ') . ' đã có lịch TƯ VẤN lúc '
-                    . substr($lh->caKham->gio_bat_dau, 0, 5)
                     . ' trong ngày này (trùng giờ) — lịch vẫn được lưu.';
             }
         }
@@ -617,11 +597,11 @@ class BookingController extends Controller
             return response()->json(['list' => []]);
         }
 
-        // Ứng viên = bác sĩ của phòng; nếu tư vấn → thêm bác sĩ tư vấn global (is_tu_van).
+        // Ứng viên = bác sĩ (danh mục) gán vào phòng; nếu tư vấn → thêm bác sĩ
+        // xuất hiện mọi cơ sở (danh mục dùng chung).
         $candidates = $phong->bacSis;
         if ($dv->thuoc_nhom === 'tu_van') {
-            $vrTuVan = VaiTro::where('ma', 'bac_si_tu_van')->pluck('id');
-            $global = User::whereIn('vai_tro_id', $vrTuVan)->where('is_tu_van', true)->get();
+            $global = BacSi::where('active', true)->where('xuat_hien_moi_co_so', true)->get();
             $candidates = $candidates->concat($global)->unique('id');
         }
 
@@ -630,7 +610,7 @@ class BookingController extends Controller
             'tu_van'  => (bool) $bs->nhan_tu_van,
             'kham_ls' => (bool) $bs->nhan_kham_ls,
             default   => true,
-        })->sortBy('name')->values();
+        })->sortBy('ten')->values();
 
         // Lịch trực hiệu lực: KHÔNG lọc ai — vẫn cho chọn mọi bác sĩ. Chỉ đánh dấu
         // người không khớp lịch để UI hiện cảnh báo (cờ 'truc' mỗi người + 'co_lich').
@@ -725,7 +705,7 @@ class BookingController extends Controller
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:\d{2}$/'],
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
-            'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
+            'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
             'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'nguon'         => ['nullable', 'string', 'max:100'],
@@ -768,10 +748,10 @@ class BookingController extends Controller
         }
 
         // Capacity bác sĩ theo phút (nhận cờ + thời lượng dịch vụ) - chỉ check khi có cả BS và dịch vụ
-        if (! empty($data['bac_si_user_id']) && ! empty($data['dich_vu_id'])) {
-            $err = $this->checkBacSiCapacity((int) $data['bac_si_user_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], null, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
+        if (! empty($data['bac_si_id']) && ! empty($data['dich_vu_id'])) {
+            $err = $this->checkBacSiCapacity((int) $data['bac_si_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], null, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
             if ($err) {
-                return back()->withInput()->withErrors(['bac_si_user_id' => $err]);
+                return back()->withInput()->withErrors(['bac_si_id' => $err]);
             }
         }
 
@@ -812,8 +792,8 @@ class BookingController extends Controller
         $gioKetThuc = ! empty($data['gio_ket_thuc']) ? $data['gio_ket_thuc'] . ':00' : null;
 
         // Cảnh báo trùng lịch bác sĩ (tính trước khi tạo để không tự khớp chính nó)
-        $canhBaoBacSi = ! empty($data['bac_si_user_id'])
-            ? $this->bacSiTrungLich($co_so, (int) $data['bac_si_user_id'], $data['ngay_dat'], (int) $data['khung_gio_id'], $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null)
+        $canhBaoBacSi = ! empty($data['bac_si_id'])
+            ? $this->bacSiTrungLich($co_so, (int) $data['bac_si_id'], $data['ngay_dat'], (int) $data['khung_gio_id'], $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null)
             : null;
 
         $booking = Booking::create([
@@ -823,7 +803,7 @@ class BookingController extends Controller
             'phong_id'      => $data['phong_id'],
             'khung_gio_id'  => $data['khung_gio_id'],
             'dich_vu_id'    => $data['dich_vu_id'] ?? null,
-            'bac_si_user_id' => $data['bac_si_user_id'] ?? null,
+            'bac_si_id' => $data['bac_si_id'] ?? null,
             'ktv_user_id'   => $data['ktv_user_id'] ?? null,
             'sale_id'       => $data['sale_id'] ?? null,
             'ngay_dat'      => $data['ngay_dat'],
@@ -884,7 +864,7 @@ class BookingController extends Controller
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:(00|30)$/'],
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
-            'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
+            'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
             'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'nguon'         => ['nullable', 'string', 'max:100'],
@@ -927,10 +907,10 @@ class BookingController extends Controller
         }
 
         // Capacity bác sĩ (loại trừ booking hiện tại) - chỉ check khi có cả BS và dịch vụ
-        if (! empty($data['bac_si_user_id']) && ! empty($data['dich_vu_id'])) {
-            $err = $this->checkBacSiCapacity((int) $data['bac_si_user_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], $booking->id, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
+        if (! empty($data['bac_si_id']) && ! empty($data['dich_vu_id'])) {
+            $err = $this->checkBacSiCapacity((int) $data['bac_si_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], $booking->id, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
             if ($err) {
-                return back()->withInput()->withErrors(['bac_si_user_id' => $err]);
+                return back()->withInput()->withErrors(['bac_si_id' => $err]);
             }
         }
 
@@ -972,7 +952,7 @@ class BookingController extends Controller
             'phong_id'        => $data['phong_id'],
             'khung_gio_id'    => $data['khung_gio_id'],
             'dich_vu_id'      => $data['dich_vu_id'],
-            'bac_si_user_id'  => $data['bac_si_user_id'] ?? null,
+            'bac_si_id'  => $data['bac_si_id'] ?? null,
             'ktv_user_id'     => $data['ktv_user_id'] ?? null,
             'sale_id'         => $data['sale_id'],
             'ngay_dat'        => $data['ngay_dat'],
@@ -999,8 +979,8 @@ class BookingController extends Controller
         }
 
         // Cảnh báo trùng lịch bác sĩ (bỏ qua chính booking đang sửa)
-        $canhBaoBacSi = $booking->bac_si_user_id
-            ? $this->bacSiTrungLich($co_so, (int) $booking->bac_si_user_id, (string) $booking->ngay_dat, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id)
+        $canhBaoBacSi = $booking->bac_si_id
+            ? $this->bacSiTrungLich($co_so, (int) $booking->bac_si_id, (string) $booking->ngay_dat, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id)
             : null;
 
         $this->notifyLich($booking, LichEvent::CAP_NHAT);
@@ -1049,12 +1029,12 @@ class BookingController extends Controller
                     return back()->with('error', 'Không duyệt được: KTV đã được đặt cho khung giờ này bởi đơn khác.');
                 }
             }
-            if ($booking->bac_si_user_id) {
-                $err = $this->checkBacSiCapacity((int) $booking->bac_si_user_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, (string) $booking->ngay_dat->toDateString(), $booking->id);
+            if ($booking->bac_si_id) {
+                $err = $this->checkBacSiCapacity((int) $booking->bac_si_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, (string) $booking->ngay_dat->toDateString(), $booking->id);
                 if ($err) {
                     return back()->with('error', 'Không duyệt được: '.$err);
                 }
-                $msg = $this->bacSiTrungLich($co_so, (int) $booking->bac_si_user_id, (string) $booking->ngay_dat->toDateString(), (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
+                $msg = $this->bacSiTrungLich($co_so, (int) $booking->bac_si_id, (string) $booking->ngay_dat->toDateString(), (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
                 if ($msg) $canhBao[] = $msg;
             }
         }

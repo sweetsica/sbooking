@@ -297,7 +297,7 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 </tr>
 <tr x-show="edit" x-cloak>
 <td colspan="{{ $colspan }}" class="px-4 py-4 bg-surface-container-low/50">
-@php $vals = []; foreach ($config['fields'] as $fn => $ff) { $vals[$fn] = data_get($r, $fn); } if ($key === 'phong') { $vals['gio_mo'] = $gmo; $vals['gio_dong'] = $gdong; } @endphp
+@php $vals = []; foreach ($config['fields'] as $fn => $ff) { $vals[$fn] = data_get($r, $fn); } if ($key === 'phong') { $vals['gio_mo'] = $gmo; $vals['gio_dong'] = $gdong; $vals['bac_si_ids'] = $r->bacSis->pluck('id')->all(); } @endphp
 <form method="POST" action="{{ $action }}/{{ $r->id }}" class="flex flex-wrap items-end gap-3">
 @csrf @method('PUT')
 @foreach ($config['fields'] as $fn => $ff)

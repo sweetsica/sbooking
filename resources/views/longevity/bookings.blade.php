@@ -191,7 +191,7 @@
 <select name="bac_si_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
 <option value="">Tất cả bác sĩ</option>
 @foreach ($bacSis as $bs)
-<option value="{{ $bs->id }}" @selected(($filters['bac_si_id'] ?? '')==$bs->id)>{{ trim(($bs->chuc_danh ? $bs->chuc_danh.' ' : '').$bs->name) }}</option>
+<option value="{{ $bs->id }}" @selected(($filters['bac_si_id'] ?? '')==$bs->id)>{{ $bs->ten_day_du }}</option>
 @endforeach
 </select>
 </div>

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BacSi;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\DichVu;
@@ -64,6 +65,11 @@ class SettingsController extends Controller
                 'trang_thai'    => ['label' => 'Trạng thái', 'type' => 'select', 'options' => ['hoat_dong' => 'Hoạt động', 'bao_tri' => 'Bảo trì'], 'rules' => ['required', Rule::in(['hoat_dong', 'bao_tri'])]],
                 'gio_mo'        => ['label' => 'Giờ mở cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
                 'gio_dong'      => ['label' => 'Giờ đóng cửa', 'type' => 'hour', 'rules' => ['required', 'regex:/^\d{2}:00$/'], 'virtual' => true],
+                'bac_si_ids'    => ['label' => 'Bác sĩ của phòng', 'type' => 'multiselect', 'virtual' => true,
+                    'options' => BacSi::where('active', true)
+                        ->where(fn ($q) => $q->where('co_so_id', $co_so?->id)->orWhere('xuat_hien_moi_co_so', true))
+                        ->orderBy('ten')->get()->mapWithKeys(fn ($b) => [$b->id => $b->ten_day_du])->all(),
+                    'rules' => ['nullable', 'array'], 'hint' => 'Bác sĩ được chọn sẽ hiện ở form đặt lịch phòng khám của phòng này'],
             ]),
             'vai-tro' => $catalog(VaiTro::class, [
                 'ten' => ['label' => 'Tên vai trò', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
@@ -125,7 +131,7 @@ class SettingsController extends Controller
         $config = $this->editableConfig($co_so)[$this->resolveSection($section)] ?? null;
 
         $rows = match ($section) {
-            'phong'      => $co_so->phongs()->with('khungGios')->get(),
+            'phong'      => $co_so->phongs()->with(['khungGios', 'bacSis'])->get(),
             'dich-vu'    => \App\Models\DichVu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
             'menu'       => \App\Models\Menu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
             'nguoi-dung' => User::with(['phongBan', 'vaiTro'])
@@ -206,7 +212,7 @@ class SettingsController extends Controller
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
                 ->when($tu, fn ($q) => $q->whereDate('ngay_dat', '>=', $tu))
                 ->when($den, fn ($q) => $q->whereDate('ngay_dat', '<=', $den))
-                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
+                ->when($bacSiId, fn ($q) => $q->where('bac_si_id', $bacSiId))
                 ->when($saleId, fn ($q) => $q->where('sale_id', $saleId))
                 ->when($ktvId, fn ($q) => $q->where('ktv_user_id', $ktvId))
                 ->orderByDesc('ngay_dat')->orderBy('id');
@@ -217,11 +223,11 @@ class SettingsController extends Controller
         $lichHens = collect();
         if ($loai !== 'booking') {
             // Lưu ý: lich_hen không có ktv_user_id → nếu lọc theo KTV thì lich_hen không match → trả về rỗng.
+            // Bộ lọc bác sĩ (danh mục) chỉ áp cho booking; lịch tư vấn dùng bác sĩ = tài khoản user (entity khác).
             $lq = LichHen::where('co_so_id', $co_so->id)
                 ->with(['khachHang', 'bacSiTuVan', 'caKham', 'sale'])
                 ->when($tu, fn ($q) => $q->whereDate('ngay_hen', '>=', $tu))
                 ->when($den, fn ($q) => $q->whereDate('ngay_hen', '<=', $den))
-                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
                 ->when($saleId, fn ($q) => $q->where('sale_id', $saleId))
                 ->orderByDesc('ngay_hen')->orderBy('id');
             $lichHens = $ktvId ? collect() : $lq->get();
@@ -249,10 +255,10 @@ class SettingsController extends Controller
         ];
 
         // ----- Options cho dropdown filter -----
-        $bacSiVaiTroIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
-        $bacSis = User::whereIn('vai_tro_id', $bacSiVaiTroIds)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
-            ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
+        // Bác sĩ = DANH MỤC bac_si (lọc booking theo bác sĩ đã gán vào phòng).
+        $bacSis = BacSi::where('active', true)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
+            ->orderBy('ten')->get(['id', 'ten', 'chuc_danh']);
 
         $vrKtv = VaiTro::where('ma', 'ktv')->first();
         $ktvs = $vrKtv ? User::where('vai_tro_id', $vrKtv->id)->where('co_so_id', $co_so->id)
@@ -362,6 +368,8 @@ class SettingsController extends Controller
 
         if ($section === 'phong') {
             $this->regenSlots($record, $data['gio_mo'], $data['gio_dong']);
+            // Gán bác sĩ (danh mục) vào phòng — hiện ở form đặt lịch phòng khám.
+            $record->bacSis()->sync($data['bac_si_ids'] ?? []);
         }
 
         return back()->with('ok', $record->wasRecentlyCreated ? 'Đã thêm mới.' : 'Đã cập nhật.');

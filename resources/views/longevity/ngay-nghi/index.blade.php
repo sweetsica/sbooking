@@ -110,7 +110,8 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
     [$lLabel, $lClass] = $loaiBadge[$nn->loai] ?? ['?', 'bg-surface-container-highest'];
     $tenDt = $nn->loai === 'co_so' ? '— (toàn cơ sở)'
         : ($nn->loai === 'phong' ? ($tenPhong[$nn->doi_tuong_id] ?? '#'.$nn->doi_tuong_id)
-        : ($tenUser[$nn->doi_tuong_id] ?? '#'.$nn->doi_tuong_id));
+        : ($nn->loai === 'bac_si' ? ($tenBacSi[$nn->doi_tuong_id] ?? '#'.$nn->doi_tuong_id)
+        : ($tenKtv[$nn->doi_tuong_id] ?? '#'.$nn->doi_tuong_id)));
 @endphp
 <tr class="hover:bg-surface-container-low/50 transition-colors">
 <td class="px-4 py-4"><span class="inline-flex px-2.5 py-1 rounded-full text-body-sm font-semibold {{ $lClass }}">{{ $lLabel }}</span></td>

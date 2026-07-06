@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\LichLamViecMauExport;
 use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
 use App\Imports\LichLamViecImport;
+use App\Models\BacSi;
 use App\Models\CoSo;
 use App\Models\LichLamViec;
 use App\Models\Phong;
@@ -275,29 +276,42 @@ class LichLamViecController extends Controller
         $daysInMonth = (int) date('t', strtotime($thang));
         $ym = substr($thang, 0, 7);
 
-        // Người hợp lệ trong cơ sở (gồm tư vấn toàn hệ thống)
-        $users = User::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
-            ->get(['id', 'name', 'username']);
-        $byUsername = [];
-        $byName = [];
-        $byId = [];
-        foreach ($users as $u) {
-            $byId[$u->id] = $u->name;
-            if ($u->username) $byUsername[mb_strtolower($u->username)] = [$u->id, $u->name];
-            $byName[mb_strtolower(trim($u->name))] = [$u->id, $u->name];
-        }
-        $phongs = Phong::where('co_so_id', $co_so->id)->pluck('ten', 'id');
-
-        $matchUser = function (string $raw) use ($overrides, $byUsername, $byName, $byId) {
-            $raw = trim($raw);
-            if (isset($overrides[$raw]) && isset($byId[$overrides[$raw]])) {
-                return [$overrides[$raw], $byId[$overrides[$raw]]];
+        // Bảng khớp theo sheet: bác sĩ = DANH MỤC bac_si; KTV = tài khoản user.
+        $buildMatcher = function (array $items, bool $hasUsername) use ($overrides) {
+            $byUsername = [];
+            $byName = [];
+            $byId = [];
+            foreach ($items as $it) {
+                $byId[$it['id']] = $it['ten'];
+                if ($hasUsername && ! empty($it['username'])) {
+                    $byUsername[mb_strtolower($it['username'])] = [$it['id'], $it['ten']];
+                }
+                $byName[mb_strtolower(trim($it['ten']))] = [$it['id'], $it['ten']];
             }
-            $key = mb_strtolower($raw);
-            if (isset($byUsername[$key])) return $byUsername[$key];
-            if (isset($byName[$key])) return $byName[$key];
-            return [null, null];
+            return function (string $raw) use ($overrides, $byUsername, $byName, $byId) {
+                $raw = trim($raw);
+                if (isset($overrides[$raw]) && isset($byId[$overrides[$raw]])) {
+                    return [$overrides[$raw], $byId[$overrides[$raw]]];
+                }
+                $key = mb_strtolower($raw);
+                if (isset($byUsername[$key])) return $byUsername[$key];
+                if (isset($byName[$key])) return $byName[$key];
+                return [null, null];
+            };
         };
+
+        $bacSiItems = BacSi::where('active', true)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
+            ->get()->map(fn ($b) => ['id' => $b->id, 'ten' => $b->ten_day_du])->all();
+        $ktvVaiTroIds = VaiTro::where('ma', 'ktv')->pluck('id');
+        $ktvItems = User::whereIn('vai_tro_id', $ktvVaiTroIds)->where('co_so_id', $co_so->id)
+            ->get(['id', 'name', 'username'])->map(fn ($u) => ['id' => $u->id, 'ten' => $u->name, 'username' => $u->username])->all();
+
+        $matchers = [
+            'bac_si' => $buildMatcher($bacSiItems, false),
+            'ktv'    => $buildMatcher($ktvItems, true),
+        ];
+        $phongs = Phong::where('co_so_id', $co_so->id)->pluck('ten', 'id');
 
         $sheets = ['bac_si' => [], 'ktv' => []];
         $unmatched = [];
@@ -307,6 +321,7 @@ class LichLamViecController extends Controller
         foreach (['bac_si', 'ktv'] as $loai) {
             $rows = $data[$loai] ?? [];
             if (empty($rows)) continue;
+            $matchUser = $matchers[$loai];
 
             // Cột ngày: từ index 3 trở đi, header là số 1..31
             $header = $rows[0] ?? [];
@@ -393,15 +408,14 @@ class LichLamViecController extends Controller
     /** Danh sách bác sĩ + KTV của cơ sở cho dropdown khớp lại. */
     private function dsNguoi(CoSo $co_so): array
     {
-        $bsIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
         $ktvIds = VaiTro::where('ma', 'ktv')->pluck('id');
-
         $fmt = fn ($u) => $u->name . ($u->username ? " ({$u->username})" : '');
 
         return [
-            'bac_si' => User::whereIn('vai_tro_id', $bsIds)
-                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
-                ->orderBy('name')->get()->mapWithKeys(fn ($u) => [$u->id => $fmt($u)])->all(),
+            // Bác sĩ = DANH MỤC bac_si (doi_tuong_id = id danh mục).
+            'bac_si' => BacSi::where('active', true)
+                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
+                ->orderBy('ten')->get()->mapWithKeys(fn ($b) => [$b->id => $b->ten_day_du])->all(),
             'ktv' => User::whereIn('vai_tro_id', $ktvIds)
                 ->where('co_so_id', $co_so->id)
                 ->orderBy('name')->get()->mapWithKeys(fn ($u) => [$u->id => $fmt($u)])->all(),

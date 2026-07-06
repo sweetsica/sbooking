@@ -28,7 +28,7 @@ class LichLamViecMauExport implements WithMultipleSheets
         return [
             $this->gridSheet('Bác sĩ', 'phong_kham'),
             $this->gridSheet('KTV', 'phong_dich_vu'),
-            $this->dsSheet('DS Bác sĩ', ['bac_si', 'bac_si_tu_van']),
+            $this->dsBacSiSheet('DS Bác sĩ'),
             $this->dsSheet('DS KTV', ['ktv']),
         ];
     }
@@ -46,6 +46,19 @@ class LichLamViecMauExport implements WithMultipleSheets
         }
 
         return new LichLamViecSheetExport($title, $headings, $rows);
+    }
+
+    /** DS Bác sĩ = danh mục bac_si (điền theo HỌ TÊN vào lưới). */
+    private function dsBacSiSheet(string $title): LichLamViecSheetExport
+    {
+        $rows = \App\Models\BacSi::where('active', true)
+            ->where(fn ($q) => $q->where('co_so_id', $this->coSo->id)->orWhere('xuat_hien_moi_co_so', true))
+            ->orderBy('ten')
+            ->get()
+            ->map(fn ($b) => [$b->ten_day_du])
+            ->all();
+
+        return new LichLamViecSheetExport($title, ['Họ tên'], $rows);
     }
 
     private function dsSheet(string $title, array $vaiTroMa): LichLamViecSheetExport

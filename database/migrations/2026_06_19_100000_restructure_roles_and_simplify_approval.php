@@ -36,42 +36,41 @@ return new class extends Migration
             $table->string('loai', 30)->default('kham')->change();
         });
 
-        // 5. Booking: bỏ 3 cấp duyệt, thêm KTV + checkboxes, đổi bac_si FK
+        // 5. Booking: bỏ 3 cấp duyệt, thêm KTV + checkboxes
+        // (GIỮ bac_si_id trỏ danh mục bac_si — bác sĩ gán vào phòng, không dùng tài khoản user)
         Schema::table('booking', function (Blueprint $table) {
-            $table->dropForeign(['bac_si_id']);
-            $table->dropColumn(['bac_si_id', 'xac_nhan_duyet_1', 'xac_nhan_duyet_2', 'xac_nhan_duyet_3']);
+            $table->dropColumn(['xac_nhan_duyet_1', 'xac_nhan_duyet_2', 'xac_nhan_duyet_3']);
         });
         Schema::table('booking', function (Blueprint $table) {
-            $table->foreignId('bac_si_user_id')->nullable()->after('dich_vu_id')->constrained('users')->nullOnDelete();
-            $table->foreignId('ktv_user_id')->nullable()->after('bac_si_user_id')->constrained('users')->nullOnDelete();
+            $table->foreignId('ktv_user_id')->nullable()->after('bac_si_id')->constrained('users')->nullOnDelete();
             $table->boolean('co_tu_van')->default(false)->after('ket_hop_medical');
             $table->boolean('co_kham_cls')->default(false)->after('co_tu_van');
             $table->boolean('da_duyet')->default(false)->after('trang_thai');
         });
 
-        // 5. CaKham: đổi FK từ bac_si_tu_van sang users
+        // 5. CaKham: đổi FK từ bac_si_tu_van sang danh mục bac_si
         Schema::table('ca_kham', function (Blueprint $table) {
             $table->dropForeign(['bac_si_tu_van_id']);
             $table->dropColumn('bac_si_tu_van_id');
         });
         Schema::table('ca_kham', function (Blueprint $table) {
-            $table->foreignId('user_id')->nullable()->after('id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('bac_si_id')->nullable()->after('id')->constrained('bac_si')->cascadeOnDelete();
         });
 
-        // 6. LichHen: bỏ 3 cấp duyệt, đổi bac_si_tu_van FK
+        // 6. LichHen: bỏ 3 cấp duyệt, đổi bac_si_tu_van FK sang danh mục bac_si
         Schema::table('lich_hen', function (Blueprint $table) {
             $table->dropForeign(['bac_si_tu_van_id']);
             $table->dropColumn(['bac_si_tu_van_id', 'xac_nhan_duyet_1', 'xac_nhan_duyet_2', 'xac_nhan_duyet_3']);
         });
         Schema::table('lich_hen', function (Blueprint $table) {
-            $table->foreignId('bac_si_user_id')->nullable()->after('khach_hang_id')->constrained('users')->nullOnDelete();
+            $table->foreignId('bac_si_id')->nullable()->after('khach_hang_id')->constrained('bac_si')->nullOnDelete();
         });
     }
 
     public function down(): void
     {
         Schema::table('lich_hen', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('bac_si_user_id');
+            $table->dropConstrainedForeignId('bac_si_id');
             $table->foreignId('bac_si_tu_van_id')->nullable()->after('khach_hang_id')->constrained('bac_si_tu_van')->nullOnDelete();
             $table->boolean('xac_nhan_duyet_1')->default(false);
             $table->boolean('xac_nhan_duyet_2')->default(false);
@@ -79,10 +78,8 @@ return new class extends Migration
         });
 
         Schema::table('booking', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('bac_si_user_id');
             $table->dropConstrainedForeignId('ktv_user_id');
             $table->dropColumn(['co_tu_van', 'co_kham_cls', 'da_duyet']);
-            $table->foreignId('bac_si_id')->nullable()->constrained('bac_si')->nullOnDelete();
             $table->boolean('xac_nhan_duyet_1')->default(false);
             $table->boolean('xac_nhan_duyet_2')->default(false);
             $table->boolean('xac_nhan_duyet_3')->default(false);
@@ -93,7 +90,7 @@ return new class extends Migration
         });
 
         Schema::table('ca_kham', function (Blueprint $table) {
-            $table->dropConstrainedForeignId('user_id');
+            $table->dropConstrainedForeignId('bac_si_id');
             $table->foreignId('bac_si_tu_van_id')->nullable()->after('id')->constrained('bac_si_tu_van')->cascadeOnDelete();
         });
 

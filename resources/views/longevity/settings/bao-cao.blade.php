@@ -37,7 +37,7 @@
 <select name="bac_si_id" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
 <option value="">— Tất cả —</option>
 @foreach ($opt['bacSis'] as $u)
-<option value="{{ $u->id }}" @selected(($f['bacSiId'] ?? '') == $u->id)>{{ trim(($u->chuc_danh ? $u->chuc_danh.' ' : '').$u->name) }}</option>
+<option value="{{ $u->id }}" @selected(($f['bacSiId'] ?? '') == $u->id)>{{ $u->ten_day_du }}</option>
 @endforeach
 </select>
 </div>
@@ -183,7 +183,7 @@ $cards = [
 <td class="px-3 py-2">{{ $lh->ngay_hen?->format('d/m/Y') }}</td>
 <td class="px-3 py-2 font-medium">{{ $lh->khachHang?->ho_ten }}</td>
 <td class="px-3 py-2 text-on-surface-variant">{{ $lh->khachHang?->so_dien_thoai }}</td>
-<td class="px-3 py-2">{{ $lh->bacSiTuVan?->name ?? '—' }}</td>
+<td class="px-3 py-2">{{ $lh->bacSiTuVan?->ten_day_du ?? '—' }}</td>
 <td class="px-3 py-2">{{ $lh->caKham?->nhan ?? '' }}</td>
 <td class="px-3 py-2">{{ $lh->sale?->name ?? '—' }}</td>
 <td class="px-3 py-2">

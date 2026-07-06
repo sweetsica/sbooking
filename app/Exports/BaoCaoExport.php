@@ -127,7 +127,7 @@ class BaoCaoLichHenSheet implements FromCollection, WithHeadings, WithTitle
             $lh->ngay_hen?->format('d/m/Y'),
             $lh->khachHang?->ho_ten,
             $lh->khachHang?->so_dien_thoai,
-            $lh->bacSiTuVan?->name,
+            $lh->bacSiTuVan?->ten_day_du,
             $lh->caKham?->nhan,
             $lh->sale?->name,
             $lh->nguon,

@@ -22,11 +22,11 @@ class LichHenFlowTest extends TestCase
 
         // BS tư vấn local (bacSi) cần caKhams; gán user_id cho caKham
         $this->caKham1 = CaKham::create([
-            'user_id' => $this->bacSi->id,
+            'bac_si_id' => $this->bsCaHai->id,
             'gio_bat_dau' => '09:00:00', 'gio_ket_thuc' => '09:30:00', 'thu_tu' => 0,
         ]);
         $this->caKham2 = CaKham::create([
-            'user_id' => $this->bacSi->id,
+            'bac_si_id' => $this->bsCaHai->id,
             'gio_bat_dau' => '09:30:00', 'gio_ket_thuc' => '10:00:00', 'thu_tu' => 1,
         ]);
     }
@@ -38,7 +38,7 @@ class LichHenFlowTest extends TestCase
             'so_dien_thoai'  => '0922222222',
             'email'          => null,
             'ngay_hen'       => now()->addDay()->toDateString(),
-            'bac_si_user_id' => $this->bacSi->id,
+            'bac_si_id' => $this->bsCaHai->id,
             'ca_kham_id'     => $this->caKham1->id,
             'sale_id'        => $this->sale->id,
             'nguon'          => 'Hotline',
@@ -55,7 +55,7 @@ class LichHenFlowTest extends TestCase
         return LichHen::create(array_merge([
             'co_so_id'       => $this->coSo->id,
             'khach_hang_id'  => $kh->id,
-            'bac_si_user_id' => $this->bacSi->id,
+            'bac_si_id' => $this->bsCaHai->id,
             'ca_kham_id'     => $this->caKham1->id,
             'sale_id'        => $this->sale->id,
             'ngay_hen'       => now()->addDay()->toDateString(),
@@ -68,7 +68,7 @@ class LichHenFlowTest extends TestCase
     {
         $this->actingAs($this->vanHanh)
             ->post("/{$this->coSo->slug}/dat-kham", [])
-            ->assertSessionHasErrors(['ho_ten', 'so_dien_thoai', 'bac_si_user_id', 'ca_kham_id', 'sale_id']);
+            ->assertSessionHasErrors(['ho_ten', 'so_dien_thoai', 'bac_si_id', 'ca_kham_id', 'sale_id']);
     }
 
     public function test_C1_3_ca_kham_da_co_lich_bi_chan(): void

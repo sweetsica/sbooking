@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BacSi;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\DichVu;
@@ -72,7 +73,7 @@ class LichDatMauSeeder extends Seeder
             'Khách không đủ điều kiện sức khỏe cho dịch vụ.',
         ];
 
-        $mkBooking = function (Phong $phong, KhungGio $kg, string $bd, string $kt, ?User $bs, ?DichVu $dv, ?int $ktvId, string $trangThai) use ($coSo, $ngay, $sale, $mkKhach, $lyDoTuChoi, &$stt) {
+        $mkBooking = function (Phong $phong, KhungGio $kg, string $bd, string $kt, ?BacSi $bs, ?DichVu $dv, ?int $ktvId, string $trangThai) use ($coSo, $ngay, $sale, $mkKhach, $lyDoTuChoi, &$stt) {
             $kh = $mkKhach();
             // Cờ màu cho timeline đặt lịch: tư vấn → xanh lá, khám LS → xanh dương.
             // (chờ duyệt vẫn hiển thị vàng theo trạng thái, không phụ thuộc cờ này)
@@ -85,7 +86,7 @@ class LichDatMauSeeder extends Seeder
                 'phong_id'       => $phong->id,
                 'khung_gio_id'   => $kg->id,
                 'dich_vu_id'     => $dv?->id,
-                'bac_si_user_id' => $bs?->id,
+                'bac_si_id'      => $bs?->id,
                 'ktv_user_id'    => $ktvId,
                 'sale_id'        => $sale?->id,
                 'ngay_dat'       => $ngay,
@@ -125,7 +126,13 @@ class LichDatMauSeeder extends Seeder
         foreach ($lichKhoi as [$tenPhong, $bsUsername, $dv, $tu, $den, $soCa, $phut]) {
             $phong = Phong::where('co_so_id', $coSo->id)->where('ten', $tenPhong)->first();
             if (! $phong || ! $dv) continue;
-            $bs = User::where('username', $bsUsername)->first();
+            // Bác sĩ = danh mục bac_si (map mã cũ → tên danh mục).
+            $tenBacSi = [
+                'ntd' => 'Nguyễn Tiến Dũng', 'lthd' => 'Lê Tuyên Hồng Dương',
+                'ttb' => 'Trương Thị Biên', 'ntn_bs' => 'Ngô Thị Ngà',
+                'bb_tm' => 'Bác Biên (Tim mạch)', 'bh_sa' => 'Bác Hồng',
+            ][$bsUsername] ?? null;
+            $bs = $tenBacSi ? BacSi::where('co_so_id', $coSo->id)->where('ten', $tenBacSi)->first() : null;
             if (! $bs) continue;
 
             $khungs = KhungGio::where('phong_id', $phong->id)->orderBy('thu_tu')->get();
@@ -159,7 +166,7 @@ class LichDatMauSeeder extends Seeder
         }
 
         // BS Tim mạch (Bác Biên) → 1 booking tư vấn tim mạch ở Phòng Nội 2, khung bắt đầu 9h
-        $bsTM = User::where('username', 'bb_tm')->first();
+        $bsTM = BacSi::where('co_so_id', $coSo->id)->where('ten', 'Bác Biên (Tim mạch)')->first();
         $phongNoi2 = Phong::where('co_so_id', $coSo->id)->where('ten', 'Phòng khám Nội 2')->first();
         if ($bsTM && $phongNoi2 && $dvTimMach) {
             $kg9 = KhungGio::where('phong_id', $phongNoi2->id)

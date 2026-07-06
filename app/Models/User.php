@@ -6,7 +6,6 @@ namespace App\Models;
 use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -59,30 +58,6 @@ class User extends Authenticatable
     public function getTenDayDuAttribute(): string
     {
         return trim(($this->chuc_danh ? $this->chuc_danh . ' ' : '') . $this->name);
-    }
-
-    public function caKhams(): HasMany
-    {
-        return $this->hasMany(CaKham::class, 'user_id');
-    }
-
-    public function taoCaKham(): void
-    {
-        $this->caKhams()->delete();
-
-        $start = strtotime($this->gio_bat_dau);
-        $end = strtotime($this->gio_ket_thuc);
-        $duration = (int) $this->thoi_gian_kham * 60;
-        $order = 0;
-
-        while ($start + $duration <= $end) {
-            $this->caKhams()->create([
-                'gio_bat_dau' => date('H:i:00', $start),
-                'gio_ket_thuc' => date('H:i:00', $start + $duration),
-                'thu_tu' => $order++,
-            ]);
-            $start += $duration;
-        }
     }
 
     /**

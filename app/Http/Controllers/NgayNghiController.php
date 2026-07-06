@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
+use App\Models\BacSi;
 use App\Models\CoSo;
 use App\Models\NgayNghi;
 use App\Models\Phong;
@@ -33,19 +34,23 @@ class NgayNghiController extends Controller
             ->orderByDesc('tu_ngay')
             ->get();
 
-        // Snapshot tên đối tượng (phòng / người) để hiển thị không cần n+1 truy vấn.
+        // Snapshot tên đối tượng để hiển thị không cần n+1 truy vấn.
+        // Bác sĩ = DANH MỤC bac_si; KTV = tài khoản user.
         $phongIds = $dsNghi->where('loai', 'phong')->pluck('doi_tuong_id')->filter()->unique();
-        $userIds  = $dsNghi->whereIn('loai', ['bac_si', 'ktv'])->pluck('doi_tuong_id')->filter()->unique();
+        $bacSiIds = $dsNghi->where('loai', 'bac_si')->pluck('doi_tuong_id')->filter()->unique();
+        $ktvIds   = $dsNghi->where('loai', 'ktv')->pluck('doi_tuong_id')->filter()->unique();
         $tenPhong = Phong::whereIn('id', $phongIds)->pluck('ten', 'id');
-        $tenUser  = User::whereIn('id', $userIds)->pluck('name', 'id');
+        $tenBacSi = BacSi::whereIn('id', $bacSiIds)->get()->mapWithKeys(fn ($b) => [$b->id => $b->ten_day_du]);
+        $tenKtv   = User::whereIn('id', $ktvIds)->pluck('name', 'id');
 
         return view('longevity.ngay-nghi.index', [
             'coSo'     => $co_so,
             'dsNghi'   => $dsNghi,
             'tenPhong' => $tenPhong,
-            'tenUser'  => $tenUser,
+            'tenBacSi' => $tenBacSi,
+            'tenKtv'   => $tenKtv,
             'phongs'   => $co_so->phongs()->orderBy('ten')->get(),
-            'bacSis'   => $this->dsNguoi($co_so, ['bac_si', 'bac_si_tu_van']),
+            'bacSis'   => $this->dsBacSi($co_so),
             'ktvs'     => $this->dsNguoi($co_so, ['ktv']),
         ]);
     }
@@ -103,23 +108,34 @@ class NgayNghiController extends Controller
 
         if ($loai === 'phong') {
             $ok = Phong::where('co_so_id', $co_so->id)->where('id', $id)->exists();
-        } else { // bac_si | ktv
-            $ok = User::where('id', $id)
-                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+        } elseif ($loai === 'bac_si') { // bác sĩ = danh mục bac_si
+            $ok = BacSi::where('id', $id)
+                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
                 ->exists();
+        } else { // ktv = tài khoản user
+            $ok = User::where('id', $id)->where('co_so_id', $co_so->id)->exists();
         }
         abort_unless($ok, 422, 'Đối tượng không hợp lệ cho cơ sở này.');
 
         return $id;
     }
 
-    /** Danh sách người (bác sĩ / KTV) của cơ sở cho dropdown. */
+    /** Danh sách bác sĩ (danh mục bac_si) của cơ sở cho dropdown. */
+    private function dsBacSi(CoSo $co_so)
+    {
+        return BacSi::where('active', true)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
+            ->orderBy('ten')
+            ->get()->map(fn ($b) => (object) ['id' => $b->id, 'name' => $b->ten_day_du]);
+    }
+
+    /** Danh sách người (KTV) của cơ sở cho dropdown. */
     private function dsNguoi(CoSo $co_so, array $vaiTroMa)
     {
         $ids = VaiTro::whereIn('ma', $vaiTroMa)->pluck('id');
 
         return User::whereIn('vai_tro_id', $ids)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->where('co_so_id', $co_so->id)
             ->orderBy('name')
             ->get(['id', 'name']);
     }

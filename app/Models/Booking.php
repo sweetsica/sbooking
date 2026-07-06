@@ -12,7 +12,7 @@ class Booking extends Model
 
     protected $fillable = [
         'co_so_id', 'loai_dat_lich', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
-        'bac_si_user_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
+        'bac_si_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
         'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
         'ghi_chu', 'trang_thai', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet',
     ];
@@ -52,7 +52,7 @@ class Booking extends Model
 
     public function bacSi(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'bac_si_user_id');
+        return $this->belongsTo(BacSi::class, 'bac_si_id');
     }
 
     public function ktv(): BelongsTo

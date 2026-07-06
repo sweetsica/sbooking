@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BacSi;
 use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\KhungGio;
@@ -126,30 +127,29 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
+        // ---- Admin hệ thống bổ sung (IT / MOD) — full quyền, mật khẩu = username ----
+        foreach ([
+            ['username' => 'baoit', 'name' => 'Bảo IT'],
+            ['username' => 'tumod', 'name' => 'Tú MOD'],
+        ] as $a) {
+            User::updateOrCreate(['username' => $a['username']], [
+                'name'         => $a['name'],
+                'email'        => $a['username'] . '@sweetsica.com',
+                'password'     => Hash::make($a['username']),
+                'co_so_id'     => null,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $vrAdmin->id,
+                'is_admin'     => true,
+            ]);
+        }
+
         // =============================================
         // CƠ SỞ 1 — 59 Ngô Thì Nhậm (8h - 18h)
         // =============================================
 
         // --- Bác sĩ + KTV theo phòng chức năng ---
 
-        // Phòng khám Ngoại — BS tư vấn 1: Nguyễn Tiến Dũng (30 phút/khách)
-        $bsTuVan1 = User::updateOrCreate(['username' => 'ntd'], [
-            'name'           => 'Nguyễn Tiến Dũng',
-            'email'          => 'ntd@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNgoai->id,
-            'vai_tro_id'     => $vrBsTuVan->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 30,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
+        // (Bác sĩ riêng lẻ đã bỏ — module bác sĩ dùng DANH MỤC bac_si, seed bên dưới.)
         User::updateOrCreate(['username' => 'ktv1'], [
             'name'         => 'KTV Phòng Ngoại',
             'email'        => 'ktv1@59ntn.local',
@@ -161,24 +161,6 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // Phòng chuyên gia — BS tư vấn 2: Lê Tuyên Hồng Dương (30 phút/khách)
-        $bsTuVan2 = User::updateOrCreate(['username' => 'lthd'], [
-            'name'           => 'Lê Tuyên Hồng Dương',
-            'email'          => 'lthd@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbChuyenGia->id,
-            'vai_tro_id'     => $vrBsTuVan->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 30,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
         User::updateOrCreate(['username' => 'ktv2'], [
             'name'         => 'KTV Phòng Chuyên gia',
             'email'        => 'ktv2@59ntn.local',
@@ -190,24 +172,6 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // Phòng khám Nội 1 — BS: Trương Thị Biên (12 khách/giờ → 5 phút/khách)
-        $bsTTB = User::updateOrCreate(['username' => 'ttb'], [
-            'name'           => 'Trương Thị Biên',
-            'email'          => 'ttb@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNoi1->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 5,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
         User::updateOrCreate(['username' => 'ktv3'], [
             'name'         => 'KTV Phòng Nội 1',
             'email'        => 'ktv3@59ntn.local',
@@ -219,39 +183,6 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // Phòng khám Nội 2 — BS: Ngô Thị Ngà (12 khách/giờ → 5 phút) + BS Bác Biên (Tim mạch, 30 phút/khách)
-        $bsNTN = User::updateOrCreate(['username' => 'ntn_bs'], [
-            'name'           => 'Ngô Thị Ngà',
-            'email'          => 'ntn_bs@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNoi2->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => false,
-            'nhan_kham_ls'   => true,
-            'phut_kham_ls'   => 5,
-            'thoi_gian_kham' => 5,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
-        $bsBBTM = User::updateOrCreate(['username' => 'bb_tm'], [
-            'name'           => 'Bác Biên (Tim mạch)',
-            'email'          => 'bb_tm@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbKhamNoi2->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'nhan_tu_van'    => true,
-            'phut_tu_van'    => 30,
-            'nhan_kham_ls'   => false,
-            'thoi_gian_kham' => 30,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
         User::updateOrCreate(['username' => 'ktv4'], [
             'name'         => 'KTV Phòng Nội 2',
             'email'        => 'ktv4@59ntn.local',
@@ -263,20 +194,6 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // Phòng siêu âm — BS: Bác Hồng (25 phút/khách)
-        $bsBH = User::updateOrCreate(['username' => 'bh_sa'], [
-            'name'           => 'Bác Hồng',
-            'email'          => 'bh_sa@59ntn.local',
-            'chuc_danh'      => 'BS.',
-            'password'       => $matKhau,
-            'co_so_id'       => $cs59ntn->id,
-            'phong_ban_id'   => $pbSieuAm->id,
-            'vai_tro_id'     => $vrBacSi->id,
-            'is_admin'       => false,
-            'thoi_gian_kham' => 25,
-            'gio_bat_dau'    => '08:00',
-            'gio_ket_thuc'   => '18:00',
-        ]);
         User::updateOrCreate(['username' => 'ktv5'], [
             'name'         => 'KTV Phòng Siêu âm',
             'email'        => 'ktv5@59ntn.local',
@@ -303,24 +220,49 @@ class LongevitySeeder extends Seeder
             'Phòng trị liệu YHCT T4' => ['kieu' => 'phong_dich_vu', 'so_slot' => 12, 'phut' => 60, 'ktv_username' => 'ktv5'],
         ]);
 
-        // Tạo ca khám cho tất cả bác sĩ (cả tư vấn lẫn thăm khám)
-        foreach ([$bsTuVan1, $bsTuVan2, $bsTTB, $bsNTN, $bsBBTM, $bsBH] as $bs) {
-            if ($bs->caKhams()->count() === 0) {
-                $bs->taoCaKham();
-            }
-        }
+        // DANH MỤC bác sĩ (bảng bac_si) — nguồn bác sĩ cho form đặt lịch phòng khám.
+        // Bác sĩ gán vào phòng qua pivot phong_bac_si (bac_si_id), cấu hình ở Thiết lập → Phòng.
+        $mkBacSi = fn (array $attr) => BacSi::updateOrCreate(
+            ['co_so_id' => $cs59ntn->id, 'ten' => $attr['ten']],
+            $attr + ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '18:00', 'active' => true]
+        );
+        $dmND  = $mkBacSi(['ten' => 'Nguyễn Tiến Dũng',    'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
+        $dmLHD = $mkBacSi(['ten' => 'Lê Tuyên Hồng Dương', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
+        $dmTTB = $mkBacSi(['ten' => 'Trương Thị Biên',     'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
+        $dmNTN = $mkBacSi(['ten' => 'Ngô Thị Ngà',         'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
+        $dmBB  = $mkBacSi(['ten' => 'Bác Biên (Tim mạch)', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
+        $dmBH  = $mkBacSi(['ten' => 'Bác Hồng',            'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 25]);
 
-        // Gán bác sĩ vào phòng (phong_bac_si) theo bảng cấu hình phòng khám 59 NTN.
+        // Gán bác sĩ (danh mục) vào phòng theo cấu hình phòng khám 59 NTN.
         $ganBacSiPhong = [
-            'Phòng khám Ngoại' => [$bsTuVan1->id],            // Nguyễn Tiến Dũng
-            'Phòng chuyên gia' => [$bsTuVan2->id],            // Lê Tuyên Hồng Dương
-            'Phòng khám Nội 1' => [$bsTTB->id],               // Trương Thị Biên
-            'Phòng khám Nội 2' => [$bsNTN->id, $bsBBTM->id],  // Ngô Thị Ngà + Bác Biên (Tim mạch)
-            'Phòng siêu âm'    => [$bsBH->id],                // Bác Hồng
+            'Phòng khám Ngoại' => [$dmND->id],            // Nguyễn Tiến Dũng
+            'Phòng chuyên gia' => [$dmLHD->id],           // Lê Tuyên Hồng Dương
+            'Phòng khám Nội 1' => [$dmTTB->id],           // Trương Thị Biên
+            'Phòng khám Nội 2' => [$dmNTN->id, $dmBB->id],// Ngô Thị Ngà + Bác Biên (Tim mạch)
+            'Phòng siêu âm'    => [$dmBH->id],            // Bác Hồng
         ];
         foreach ($ganBacSiPhong as $tenPhong => $bsIds) {
             $phong = Phong::where('co_so_id', $cs59ntn->id)->where('ten', $tenPhong)->first();
             $phong?->bacSis()->sync($bsIds);
+        }
+
+        // Sinh ca khám (tư vấn) cho các bác sĩ danh mục nhận tư vấn.
+        foreach ([$dmND, $dmLHD, $dmTTB, $dmBB] as $dm) {
+            $dm->taoCaKham();
+        }
+
+        // Mỗi cơ sở có 1 tài khoản BÁC SĨ DÙNG CHUNG (đăng nhập), độc lập với module bác sĩ–phòng.
+        foreach ([$cs59ntn, $cs207nvt] as $cs) {
+            User::updateOrCreate(['username' => 'bsi' . $cs->slug], [
+                'name'         => 'Bác sĩ ' . $cs->slug,
+                'email'        => 'bsi' . $cs->slug . '@local',
+                'chuc_danh'    => 'BS.',
+                'password'     => Hash::make('bacsi'),
+                'co_so_id'     => $cs->id,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $vrBacSi->id,
+                'is_admin'     => false,
+            ]);
         }
 
         // --- Tư vấn viên Hà Nội (cơ sở 59 NTN) ---

@@ -11,9 +11,9 @@ return new class extends Migration
         Schema::create('phong_bac_si', function (Blueprint $table) {
             $table->id();
             $table->foreignId('phong_id')->constrained('phong')->cascadeOnDelete();
-            $table->foreignId('bac_si_user_id')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('bac_si_id')->constrained('bac_si')->cascadeOnDelete();
             $table->timestamps();
-            $table->unique(['phong_id', 'bac_si_user_id']);
+            $table->unique(['phong_id', 'bac_si_id']);
         });
     }
 

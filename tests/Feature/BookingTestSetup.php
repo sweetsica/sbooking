@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\BacSi;
 use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\KhungGio;
@@ -28,15 +29,18 @@ trait BookingTestSetup
     protected DichVu $dichVu;
     protected DichVu $dichVuTuVan;
     protected DichVu $dichVuKhamLs;
-    protected User $bsCaHai;
-    protected User $bsChiTuVan;
-    protected User $bsChiKhamLs;
+    // Bác sĩ = DANH MỤC bac_si (gán vào phòng qua pivot phong_bac_si)
+    protected BacSi $bsCaHai;
+    protected BacSi $bsChiTuVan;
+    protected BacSi $bsChiKhamLs;
+    protected BacSi $bacSi;
+    protected BacSi $bacSiGlobal;
 
     protected User $admin;
     protected User $vanHanh;
     protected User $tuVanVien;
-    protected User $bacSi;
-    protected User $bacSiGlobal;
+    // Tài khoản user vai trò bác sĩ — dùng cho luồng LỊCH HẸN tư vấn + kiểm thử phân quyền.
+    protected User $bacSiUser;
     protected User $ktv;
     protected User $sale;
     protected User $noPerm;
@@ -122,7 +126,7 @@ trait BookingTestSetup
         $this->grantPerms($this->vrVanHanh->id, [
             'xem_booking', 'them_booking', 'sua_booking', 'duyet_booking',
             'ho_ten', 'so_dien_thoai', 'phong_id', 'khung_gio_id', 'ngay_dat',
-            'gio_thuc_hien', 'gio_ket_thuc', 'bac_si_user_id', 'ktv_user_id',
+            'gio_thuc_hien', 'gio_ket_thuc', 'bac_si_id', 'ktv_user_id',
             'dich_vu_id', 'sale_id', 'ghi_chu', 'nguon',
             'sua_lich_tu_van', 'duyet_tu_van',
             'xuat_lich_dat_phong', 'xuat_lich_tu_van',
@@ -138,15 +142,35 @@ trait BookingTestSetup
         ]);
         $this->vanHanh = $this->mkUser('Vận hành', 'vanhanh', $this->vrVanHanh->id);
         $this->tuVanVien = $this->mkUser('Tư vấn viên', 'tvvien', $this->vrTuVanVien->id);
-        $this->bacSi = $this->mkUser('BS Z', 'bsz', $this->vrBacSi->id);
-        $this->bsCaHai = $this->mkUser('BS Cả Hai', 'bscahai', $this->vrBacSi->id, ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
-        $this->bsChiTuVan = $this->mkUser('BS Chỉ Tư Vấn', 'bstv', $this->vrBacSi->id, ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
-        $this->bsChiKhamLs = $this->mkUser('BS Chỉ Khám LS', 'bskls', $this->vrBacSi->id, ['nhan_tu_van' => false, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
-        $this->bacSiGlobal = $this->mkUser('BS Global', 'bsglobal', $this->vrBacSiTuVan->id, ['is_tu_van' => true, 'co_so_id' => $this->coSo2->id]);
+        // Bác sĩ = danh mục bac_si; gán vào các phòng khám qua pivot phong_bac_si.
+        $this->bacSi = $this->mkBacSi('BS Z', ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
+        $this->bsCaHai = $this->mkBacSi('BS Cả Hai', ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
+        $this->bsChiTuVan = $this->mkBacSi('BS Chỉ Tư Vấn', ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
+        $this->bsChiKhamLs = $this->mkBacSi('BS Chỉ Khám LS', ['nhan_tu_van' => false, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
+        $this->bacSiGlobal = $this->mkBacSi('BS Global', ['xuat_hien_moi_co_so' => true, 'co_so_id' => $this->coSo2->id]);
+
+        // Gán tất cả bác sĩ trên vào các phòng khám của cơ sở 1 để form/API hiển thị.
+        $phongKhamIds = [$this->phongSlot2->id, $this->phongSlot1->id, $this->phongBig->id];
+        foreach ([$this->bacSi, $this->bsCaHai, $this->bsChiTuVan, $this->bsChiKhamLs] as $bs) {
+            $bs->phongs()->syncWithoutDetaching($phongKhamIds);
+        }
+
+        // Tài khoản user bác sĩ (cho lịch hẹn tư vấn + test phân quyền vai trò bác sĩ)
+        $this->bacSiUser = $this->mkUser('BS User', 'bsuser', $this->vrBacSi->id, ['nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
         $this->ktv = $this->mkUser('KTV X', 'ktvx', $this->vrKtv->id);
         $this->sale = $this->mkUser('Sale S', 'sales', $this->vrNhanVien->id);
         // noPerm có vai trò "Bác sĩ" nhưng KHÔNG được gán PhanQuyen sua_booking
         $this->noPerm = $this->mkUser('No Perm', 'noperm', $this->vrBacSi->id);
+    }
+
+    protected function mkBacSi(string $ten, array $extra = []): BacSi
+    {
+        return BacSi::create(array_merge([
+            'co_so_id' => $this->coSo->id,
+            'ten' => $ten,
+            'chuc_danh' => 'BS.',
+            'active' => true,
+        ], $extra));
     }
 
     protected function mkUser(string $name, string $username, ?int $vaiTroId, array $extra = []): User
@@ -183,7 +207,7 @@ trait BookingTestSetup
             'gio_ket_thuc'  => '10:00',
             'dich_vu_id'    => $this->dichVu->id,
             'sale_id'       => $this->sale->id,
-            'bac_si_user_id' => null,
+            'bac_si_id'     => null,
             'ktv_user_id'   => null,
             'so_lieu_trinh' => null,
             'nguon'         => 'Hotline',

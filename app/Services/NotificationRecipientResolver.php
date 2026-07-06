@@ -27,8 +27,9 @@ class NotificationRecipientResolver
 {
     public function forBooking(Booking $booking, string $event): Collection
     {
+        // Lưu ý: booking->bac_si_id trỏ DANH MỤC bac_si (không phải tài khoản user)
+        // nên bác sĩ không nằm trong pool nhận thông báo — chỉ KTV + Sale (là user thật).
         return $this->collect($booking, $event, [
-            'bac_si_user_id' => $booking->bac_si_user_id,
             'ktv_user_id'    => $booking->ktv_user_id,
             'sale_id'        => $booking->sale_id,
         ]);
@@ -36,8 +37,8 @@ class NotificationRecipientResolver
 
     public function forLichHen(LichHen $lichHen, string $event): Collection
     {
+        // Bác sĩ tư vấn = danh mục bac_si (không phải user) → không nằm trong pool nhận TB.
         return $this->collect($lichHen, $event, [
-            'bac_si_user_id' => $lichHen->bac_si_user_id,
             'sale_id'        => $lichHen->sale_id,
         ]);
     }

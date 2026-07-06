@@ -28,6 +28,18 @@
 </select>
 @elseif ($type === 'number')
 <input type="number" name="{{ $name }}" value="{{ $value }}" min="{{ $f['min'] ?? 1 }}" max="{{ $f['max'] ?? 99 }}" class="{{ $ic }}"/>
+@elseif ($type === 'multiselect')
+@php $sel = collect(is_array($value) ? $value : (array) $value)->map(fn ($v) => (string) $v); @endphp
+<div class="w-full flex flex-col gap-1 max-h-40 overflow-y-auto rounded-lg border border-outline bg-surface p-2">
+@forelse ($f['options'] as $ov => $ol)
+<label class="inline-flex items-center gap-2 cursor-pointer text-body-sm">
+<input type="checkbox" name="{{ $name }}[]" value="{{ $ov }}" @checked($sel->contains((string) $ov)) class="w-4 h-4 rounded border-outline text-secondary focus:ring-secondary"/>
+<span>{{ $ol }}</span>
+</label>
+@empty
+<span class="text-[11px] text-on-surface-variant/70">Chưa có bác sĩ nào trong danh mục.</span>
+@endforelse
+</div>
 @elseif ($type === 'password')
 <input type="password" name="{{ $name }}" value="" autocomplete="new-password" placeholder="{{ $f['placeholder'] ?? '••••••' }}" class="{{ $ic }}"/>
 @else

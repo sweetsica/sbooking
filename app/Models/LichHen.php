@@ -10,7 +10,7 @@ class LichHen extends Model
     protected $table = 'lich_hen';
 
     protected $fillable = [
-        'co_so_id', 'khach_hang_id', 'bac_si_user_id', 'ca_kham_id',
+        'co_so_id', 'khach_hang_id', 'bac_si_id', 'ca_kham_id',
         'sale_id', 'ngay_hen', 'nguon', 'ghi_chu', 'trang_thai',
     ];
 
@@ -28,9 +28,15 @@ class LichHen extends Model
         return $this->belongsTo(KhachHang::class, 'khach_hang_id');
     }
 
+    // Bác sĩ tư vấn = danh mục bac_si (có nhan_tu_van). Giữ tên bacSiTuVan cho tương thích view.
     public function bacSiTuVan(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'bac_si_user_id');
+        return $this->belongsTo(BacSi::class, 'bac_si_id');
+    }
+
+    public function bacSi(): BelongsTo
+    {
+        return $this->belongsTo(BacSi::class, 'bac_si_id');
     }
 
     public function caKham(): BelongsTo

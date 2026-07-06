@@ -34,6 +34,6 @@ class Phong extends Model
 
     public function bacSis(): BelongsToMany
     {
-        return $this->belongsToMany(User::class, 'phong_bac_si', 'phong_id', 'bac_si_user_id');
+        return $this->belongsToMany(BacSi::class, 'phong_bac_si', 'phong_id', 'bac_si_id');
     }
 }

@@ -2,6 +2,7 @@
 
 namespace Database\Seeders;
 
+use App\Models\BacSi;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\KhachHang;
@@ -67,8 +68,8 @@ class LichThang6Seeder extends Seeder
                 continue;
             }
 
-            $bacSis = User::whereIn('vai_tro_id', $vaiTroIds)
-                ->where(fn ($q) => $q->where('co_so_id', $coSo->id)->orWhere('is_tu_van', true))
+            $bacSis = BacSi::where('active', true)
+                ->where(fn ($q) => $q->where('co_so_id', $coSo->id)->orWhere('xuat_hien_moi_co_so', true))
                 ->pluck('id')->all();
 
             for ($day = $start->copy(); $day->lte($today); $day->addDay()) {
@@ -101,7 +102,7 @@ class LichThang6Seeder extends Seeder
                             'phong_id'       => $phong->id,
                             'khung_gio_id'   => $kg->id,
                             // ~85% có phân bác sĩ (nếu cơ sở có bác sĩ), còn lại để trống.
-                            'bac_si_user_id' => ($bacSis && rand(1, 100) <= 85) ? $bacSis[array_rand($bacSis)] : null,
+                            'bac_si_id'      => ($bacSis && rand(1, 100) <= 85) ? $bacSis[array_rand($bacSis)] : null,
                             'ngay_dat'       => $day->toDateString(),
                             'gio_thuc_hien'  => $kg->gio_bat_dau,
                             'gio_ket_thuc'   => $kg->gio_ket_thuc,

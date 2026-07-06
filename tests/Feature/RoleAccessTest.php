@@ -117,7 +117,7 @@ class RoleAccessTest extends TestCase
             'khach_hang_id' => KhachHang::create([
                 'co_so_id' => $this->coSo->id, 'ho_ten' => 'X', 'so_dien_thoai' => '0911',
             ])->id,
-            'bac_si_user_id' => $this->bacSi->id,
+            'bac_si_id' => $this->bacSi->id,
             'sale_id' => $this->sale->id,
             'ngay_hen' => now()->addDay()->toDateString(),
             'trang_thai' => 'cho_duyet',
@@ -169,7 +169,7 @@ class RoleAccessTest extends TestCase
             'khach_hang_id' => KhachHang::create([
                 'co_so_id' => $this->coSo->id, 'ho_ten' => 'X', 'so_dien_thoai' => '0911',
             ])->id,
-            'bac_si_user_id' => $this->bacSi->id,
+            'bac_si_id' => $this->bacSi->id,
             'sale_id' => $this->sale->id,
             'ngay_hen' => now()->addDay()->toDateString(),
             'trang_thai' => 'cho_duyet',
@@ -184,14 +184,14 @@ class RoleAccessTest extends TestCase
     public function test_D4_bac_si_tao_booking_403(): void
     {
         // bac_si không có them_booking (chỉ là noPerm wrapper)
-        $this->actingAs($this->bacSi)
+        $this->actingAs($this->bacSiUser)
             ->get("/{$this->coSo->slug}/tao-moi")
             ->assertForbidden();
     }
 
     public function test_D4_bac_si_thiet_lap_403(): void
     {
-        $this->actingAs($this->bacSi)
+        $this->actingAs($this->bacSiUser)
             ->get("/{$this->coSo->slug}/thiet-lap")
             ->assertForbidden();
     }
@@ -199,7 +199,7 @@ class RoleAccessTest extends TestCase
     public function test_D4_bac_si_duyet_403(): void
     {
         $bk = $this->makeBooking();
-        $this->actingAs($this->bacSi)
+        $this->actingAs($this->bacSiUser)
             ->patch("/{$this->coSo->slug}/duyet-dat-phong/{$bk->id}")
             ->assertForbidden();
     }
@@ -207,7 +207,7 @@ class RoleAccessTest extends TestCase
     public function test_D4_bac_si_xem_timeline_ok(): void
     {
         // /lich-hen chỉ cần auth
-        $this->actingAs($this->bacSi)
+        $this->actingAs($this->bacSiUser)
             ->get("/{$this->coSo->slug}/lich-hen")
             ->assertOk();
     }
