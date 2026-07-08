@@ -361,11 +361,25 @@
 @endif
 
 @if ($isDichVu)
-<!-- Section 3 (Đặt dịch vụ): chỉ KTV -->
+<!-- Section 3 (Đặt dịch vụ): Dịch vụ + KTV -->
 <div class="space-y-6 order-1">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
-<span class="material-symbols-outlined text-secondary">engineering</span>
-<h3 class="text-headline-md font-headline-md">Kỹ thuật viên</h3>
+<span class="material-symbols-outlined text-secondary">medical_services</span>
+<h3 class="text-headline-md font-headline-md">Dịch vụ</h3>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-on-surface-variant/60 text-[11px]">— không bắt buộc</span></label>
+<select id="dich_vu" name="dich_vu_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn dịch vụ --</option>
+@foreach ($dichVus as $dv)
+<option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
+@endforeach
+</select>
+</div>
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
+<input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
@@ -376,6 +390,7 @@
 @endforeach
 </select>
 <p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
+</div>
 </div>
 </div>
 @else

@@ -60,12 +60,14 @@ class NgayNghiController extends Controller
         $this->authorizeAccess();
 
         $data = $request->validate([
-            'loai'         => ['required', Rule::in(array_keys(NgayNghi::LOAI))],
-            'doi_tuong_id' => ['nullable', 'integer'],
-            'tu_ngay'      => ['required', 'date'],
-            'den_ngay'     => ['required', 'date', 'after_or_equal:tu_ngay'],
-            'ca'           => ['required', Rule::in(array_keys(NgayNghi::CA))],
-            'ly_do'        => ['nullable', 'string', 'max:255'],
+            'loai'             => ['required', Rule::in(array_keys(NgayNghi::LOAI))],
+            'doi_tuong_id'     => ['nullable', 'integer'],
+            'tu_ngay'          => ['required', 'date'],
+            'den_ngay'         => ['required', 'date', 'after_or_equal:tu_ngay'],
+            'ca'               => ['required', Rule::in(array_keys(NgayNghi::CA))],
+            'thu_trong_tuan'   => ['nullable', 'array'],
+            'thu_trong_tuan.*' => [Rule::in(array_keys(NgayNghi::THU))],
+            'ly_do'            => ['nullable', 'string', 'max:255'],
         ], [
             'den_ngay.after_or_equal' => 'Ngày kết thúc phải bằng hoặc sau ngày bắt đầu.',
         ]);
@@ -73,15 +75,19 @@ class NgayNghiController extends Controller
         // Đối tượng bắt buộc & phải thuộc cơ sở (trừ loại "cơ sở" — không cần đối tượng).
         $doiTuongId = $this->validateDoiTuong($co_so, $data['loai'], $data['doi_tuong_id'] ?? null);
 
+        // Chuẩn hóa danh sách thứ: sắp xếp tăng dần, bỏ trùng → CSV; rỗng = áp dụng mọi ngày.
+        $thu = collect($data['thu_trong_tuan'] ?? [])->map(fn ($t) => (int) $t)->unique()->sort()->values();
+
         NgayNghi::create([
-            'co_so_id'     => $co_so->id,
-            'loai'         => $data['loai'],
-            'doi_tuong_id' => $doiTuongId,
-            'tu_ngay'      => $data['tu_ngay'],
-            'den_ngay'     => $data['den_ngay'],
-            'ca'           => $data['ca'],
-            'ly_do'        => $data['ly_do'] ?? null,
-            'nguoi_tao_id' => auth()->id(),
+            'co_so_id'       => $co_so->id,
+            'loai'           => $data['loai'],
+            'doi_tuong_id'   => $doiTuongId,
+            'tu_ngay'        => $data['tu_ngay'],
+            'den_ngay'       => $data['den_ngay'],
+            'ca'             => $data['ca'],
+            'thu_trong_tuan' => $thu->isNotEmpty() ? $thu->implode(',') : null,
+            'ly_do'          => $data['ly_do'] ?? null,
+            'nguoi_tao_id'   => auth()->id(),
         ]);
 
         return back()->with('ok', 'Đã thêm ngày nghỉ.');

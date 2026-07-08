@@ -51,8 +51,15 @@ class BacSi extends Model
         if ($duration <= 0) {
             return;
         }
+        // Nghỉ trưa mặc định 12:00–13:30: ca chạm khoảng này bị bỏ, nhảy tới 13:30.
+        $nghiTruaBd = strtotime(date('Y-m-d', $start) . ' 12:00');
+        $nghiTruaKt = strtotime(date('Y-m-d', $start) . ' 13:30');
         $order = 0;
         while ($start + $duration <= $end) {
+            if ($start < $nghiTruaKt && ($start + $duration) > $nghiTruaBd) {
+                $start = $nghiTruaKt; // nhảy qua giờ nghỉ trưa
+                continue;
+            }
             $this->caKhams()->create([
                 'gio_bat_dau' => date('H:i:00', $start),
                 'gio_ket_thuc' => date('H:i:00', $start + $duration),

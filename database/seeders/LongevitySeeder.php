@@ -7,6 +7,7 @@ use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\KhungGio;
 use App\Models\Menu;
+use App\Models\NgayNghi;
 use App\Models\PhanQuyen;
 use App\Models\Phong;
 use App\Models\PhongBan;
@@ -215,11 +216,29 @@ class LongevitySeeder extends Seeder
             'Phòng siêu âm'   => 12,
         ]);
 
-        // --- Phòng dịch vụ 59 NTN (Xông T4: 10 slot × 30p, YHCT T4: 12 slot × 60p) ---
-        $this->seedPhong($cs59ntn, [
-            'Phòng Xông T4'          => ['kieu' => 'phong_dich_vu', 'so_slot' => 10, 'phut' => 30, 'ktv_username' => 'ktv4'],
-            'Phòng trị liệu YHCT T4' => ['kieu' => 'phong_dich_vu', 'so_slot' => 12, 'phut' => 60, 'ktv_username' => 'ktv5'],
-        ]);
+        // --- Phòng dịch vụ 59 NTN (kèm TẦNG trong tên phòng) ---
+        // Tầng 3: Thủ thuật (1 giường, 30p/lượt)
+        // Tầng 4: Metaboost 1-3 (3 ghế, 2 tiếng/ghế) + YHCT 1-3 (2 giường, 1 tiếng/giường)
+        // 'giuong' = số giường/ghế song song (so_slot_toi_da); số khung tính theo giờ 8h–18h.
+        $phongDichVu59 = [
+            'Phòng Thủ thuật (Tầng 3)'  => ['kieu' => 'phong_dich_vu', 'giuong' => 1, 'phut' => 30,  'ktv_username' => 'ktv4'],
+            'Phòng Metaboost 1 (Tầng 4)' => ['kieu' => 'phong_dich_vu', 'giuong' => 3, 'phut' => 120],
+            'Phòng Metaboost 2 (Tầng 4)' => ['kieu' => 'phong_dich_vu', 'giuong' => 3, 'phut' => 120],
+            'Phòng Metaboost 3 (Tầng 4)' => ['kieu' => 'phong_dich_vu', 'giuong' => 3, 'phut' => 120],
+            'Phòng YHCT 1 (Tầng 4)'      => ['kieu' => 'phong_dich_vu', 'giuong' => 2, 'phut' => 60, 'ktv_username' => 'ktv5'],
+            'Phòng YHCT 2 (Tầng 4)'      => ['kieu' => 'phong_dich_vu', 'giuong' => 2, 'phut' => 60],
+            'Phòng YHCT 3 (Tầng 4)'      => ['kieu' => 'phong_dich_vu', 'giuong' => 2, 'phut' => 60],
+        ];
+        // Dọn mọi phòng dịch vụ cũ của cơ sở KHÔNG nằm trong danh sách mới
+        // (Xông T4, trị liệu YHCT T4, và các tên chưa gắn tầng từ bản seed trước).
+        Phong::where('co_so_id', $cs59ntn->id)
+            ->where('kieu_phong', 'phong_dich_vu')
+            ->whereNotIn('ten', array_keys($phongDichVu59))
+            ->each(function ($p) {
+                $p->khungGios()->delete();
+                $p->delete();
+            });
+        $this->seedPhong($cs59ntn, $phongDichVu59);
 
         // DANH MỤC bác sĩ (bảng bac_si) — nguồn bác sĩ cho form đặt lịch phòng khám.
         // Bác sĩ gán vào phòng qua pivot phong_bac_si (bac_si_id), cấu hình ở Thiết lập → Phòng.
@@ -232,7 +251,8 @@ class LongevitySeeder extends Seeder
         $dmTTB = $mkBacSi(['ten' => 'Trương Thị Biên',     'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
         $dmNTN = $mkBacSi(['ten' => 'Ngô Thị Ngà',         'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
         $dmBB  = $mkBacSi(['ten' => 'Bác Biên (Tim mạch)', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
-        $dmBH  = $mkBacSi(['ten' => 'Bác Hồng',            'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 25]);
+        $dmBH  = $mkBacSi(['ten' => 'Bác Hồng',            'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 15]);
+        $dmBinh = $mkBacSi(['ten' => 'Bác Bình',           'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 25]);
 
         // Gán bác sĩ (danh mục) vào phòng theo cấu hình phòng khám 59 NTN.
         $ganBacSiPhong = [
@@ -240,7 +260,7 @@ class LongevitySeeder extends Seeder
             'Phòng chuyên gia' => [$dmLHD->id],           // Lê Tuyên Hồng Dương
             'Phòng khám Nội 1' => [$dmTTB->id],           // Trương Thị Biên
             'Phòng khám Nội 2' => [$dmNTN->id, $dmBB->id],// Ngô Thị Ngà + Bác Biên (Tim mạch)
-            'Phòng siêu âm'    => [$dmBH->id],            // Bác Hồng
+            'Phòng siêu âm'    => [$dmBH->id, $dmBinh->id],// Bác Hồng (15p) + Bác Bình (25p)
         ];
         foreach ($ganBacSiPhong as $tenPhong => $bsIds) {
             $phong = Phong::where('co_so_id', $cs59ntn->id)->where('ten', $tenPhong)->first();
@@ -251,6 +271,19 @@ class LongevitySeeder extends Seeder
         foreach ([$dmND, $dmLHD, $dmTTB, $dmBB] as $dm) {
             $dm->taoCaKham();
         }
+
+        // Bác Biên (Tim mạch) CHỈ làm việc thứ 6 → nghỉ các thứ còn lại (T2,T3,T4,T5,T7,CN),
+        // lặp hằng tuần (den_ngay để xa). Bác sĩ nghỉ = cảnh báo mềm khi đặt lịch.
+        NgayNghi::updateOrCreate(
+            ['co_so_id' => $cs59ntn->id, 'loai' => 'bac_si', 'doi_tuong_id' => $dmBB->id],
+            [
+                'tu_ngay'        => now()->toDateString(),
+                'den_ngay'       => '2099-12-31',
+                'ca'             => 'ca_ngay',
+                'thu_trong_tuan' => '1,2,3,4,6,7',
+                'ly_do'          => 'Chỉ làm việc thứ 6 hàng tuần',
+            ]
+        );
 
         // Mỗi cơ sở có 1 tài khoản BÁC SĨ DÙNG CHUNG (đăng nhập), độc lập với module bác sĩ–phòng.
         foreach ([$cs59ntn, $cs207nvt] as $cs) {
@@ -299,11 +332,42 @@ class LongevitySeeder extends Seeder
         // =============================================
         // CƠ SỞ 2 — 207 Nguyễn Văn Thủ, HCM (8h - 18h)
         // =============================================
+        // Xóa phòng cũ 'Phòng khám Nội' (đổi thành 'Phòng Tư vấn' theo danh sách mới).
+        Phong::where('co_so_id', $cs207nvt->id)
+            ->where('ten', 'Phòng khám Nội')
+            ->each(function ($p) {
+                $p->khungGios()->delete();
+                $p->delete();
+            });
         $this->seedPhong($cs207nvt, [
-            'Phòng khám Nội' => 1,
-            'Phòng siêu âm'  => ['so_slot' => 24, 'phut' => 25], // 25 phút/ca, 8h–18h = 24 ca
+            'Phòng siêu âm'  => ['giuong' => 1, 'phut' => 25], // 1 phòng, 25 phút/khách
+            'Phòng Tư vấn'   => 1,
             'Phòng YHCT'     => 1,
         ]);
+
+        // DANH MỤC bác sĩ cơ sở 2 (dữ liệu danh mục, KHÔNG phải tài khoản đăng nhập).
+        $mkBacSi207 = fn (array $attr) => BacSi::updateOrCreate(
+            ['co_so_id' => $cs207nvt->id, 'ten' => $attr['ten']],
+            $attr + ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '18:00', 'active' => true]
+        );
+        $bsHVD = $mkBacSi207(['ten' => 'Hoàng Văn Đông', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]); // Tư vấn Medical
+        $bsLHT = $mkBacSi207(['ten' => 'Lê Huy Thư',     'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]); // Da liễu
+        $bsDCD = $mkBacSi207(['ten' => 'Đặng Công Danh', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => false]);                     // YHCT
+
+        // Gán bác sĩ vào phòng cơ sở 2.
+        $ganBacSiPhong207 = [
+            'Phòng Tư vấn' => [$bsHVD->id, $bsLHT->id], // Hoàng Văn Đông + Lê Huy Thư
+            'Phòng YHCT'   => [$bsDCD->id],             // Đặng Công Danh
+        ];
+        foreach ($ganBacSiPhong207 as $tenPhong => $bsIds) {
+            $phong = Phong::where('co_so_id', $cs207nvt->id)->where('ten', $tenPhong)->first();
+            $phong?->bacSis()->sync($bsIds);
+        }
+
+        // Sinh ca khám (tư vấn) cho bác sĩ cơ sở 2 nhận tư vấn.
+        foreach ([$bsHVD, $bsLHT, $bsDCD] as $dm) {
+            $dm->taoCaKham();
+        }
 
         // --- Tư vấn viên HCM (cơ sở 207 NVT) ---
         $tvHCM = [
@@ -397,6 +461,50 @@ class LongevitySeeder extends Seeder
                 );
             }
         }
+
+        // ---- GÓI DỊCH VỤ (la_dich_vu=true) — RIÊNG cơ sở 1 (59 NTN) ----
+        // Mục độc lập, KHÔNG gắn với một phòng dịch vụ cụ thể (phòng chọn riêng khi đặt).
+        // Mặc định 30 phút/thuộc nhóm 'khac'; chỉnh lại sau ở Thiết lập → Dịch vụ nếu cần.
+        $goiDichVu59 = [
+            'Gói khám sức khỏe chuyên sâu Signature nam',
+            'Gói khám sức khỏe chuyên sâu Signature nữ',
+            'Gói khám sức khỏe định kỳ Diamond Nam',
+            'Gói khám sức khỏe định kỳ Diamond Nữ',
+            'Gói khám sức khỏe Excutive Health Check Nam (Doanh nghiệp)',
+            'Gói khám sức khỏe Excutive Health Check Nữ (Doanh nghiệp)',
+            'Gói khám sức khỏe tổng quát',
+            'Gói khám sức khỏe chuyên sâu về Cơ xương khớp',
+            'Gói khám sức khỏe chuyên sâu về Tim mạch & đột quỵ',
+            'Gói khám sức khỏe chuyên sâu về Gan',
+            'Gói khám sức khỏe chuyên sâu về Tiểu đường',
+            'Gói khám sức khỏe chuyên sâu về Tuyến giáp',
+            'Gói khám sức khỏe chuyên sâu về Rối loạn chuyển hóa',
+            'Gói khám VVIP Nữ',
+            'Gói khám VVIP Nam',
+            'Gói khám xét nghiệm và siêu âm tổng quát',
+            'Gene2 me Plus',
+            'Gene2 me',
+            'TruAge',
+            'Gene2 + Gene2 Plus + TruAge',
+            'Return TruAge',
+            'EAQ (1 vùng)',
+            'BJR (1 khớp)',
+            'HA 1%/khớp',
+            'HA 2%/khớp',
+            'PRP/khớp',
+            'Y học Phương Đông',
+            'DeepOxy & DetoxCell (xông)',
+            'DeepOxy & DetoxCell (tổng hợp)',
+            'STC Japan',
+            'NK',
+            'Recells',
+        ];
+        foreach ($goiDichVu59 as $ten) {
+            DichVu::updateOrCreate(
+                ['co_so_id' => $cs59ntn->id, 'ten' => $ten],
+                ['thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => true, 'active' => true]
+            );
+        }
     }
 
     private function seedPhong(CoSo $coSo, array $phongs): void
@@ -407,7 +515,8 @@ class LongevitySeeder extends Seeder
             $attrs = [
                 'loai' => 'kham',
                 'kieu_phong' => $cfg['kieu'] ?? 'phong_kham',
-                'so_slot_toi_da' => $cfg['so_slot'] ?? 1,
+                // 'giuong' = số giường/ghế song song; fallback 'so_slot' (kiểu cũ)
+                'so_slot_toi_da' => $cfg['giuong'] ?? $cfg['so_slot'] ?? 1,
                 'phut_moi_khach' => $cfg['phut'] ?? null,
                 'trang_thai' => 'hoat_dong',
             ];
@@ -424,23 +533,23 @@ class LongevitySeeder extends Seeder
             // phong_kham: 5 phút (12 khách/giờ); phong_dich_vu: 30 phút/khách
             $khungLen = $cfg['phut'] ?? ($phong->kieu_phong === 'phong_dich_vu' ? 30 : 5);
 
-            // Số khung: nếu cfg chỉ định so_slot + phut → dùng so_slot;
-            // còn lại tính theo giờ làm việc 8h–18h (600 phút)
-            $soKhung = (isset($cfg['phut']) && isset($cfg['so_slot']))
-                ? (int) $cfg['so_slot']
-                : intdiv(600, $khungLen);
-
-            // Xóa khung giờ cũ để seed lại đúng (tránh giữ data sai từ lần chạy trước)
+            // Sinh khung giờ theo 2 ca, chừa NGHỈ TRƯA 12:00–13:30 (mặc định):
+            //   Ca sáng  08:00–12:00, ca chiều 13:30–18:00.
+            // Mỗi ca nhồi khung theo $khungLen; khung lẻ vượt quá giờ đóng ca bị bỏ.
+            // Xóa khung giờ cũ để seed lại đúng (tránh giữ data sai từ lần chạy trước).
             $phong->khungGios()->delete();
-            for ($i = 0; $i < $soKhung; $i++) {
-                $startMin = 8 * 60 + $i * $khungLen;
-                $endMin   = $startMin + $khungLen;
-                KhungGio::create([
-                    'phong_id'     => $phong->id,
-                    'gio_bat_dau'  => sprintf('%02d:%02d:00', intdiv($startMin, 60), $startMin % 60),
-                    'gio_ket_thuc' => sprintf('%02d:%02d:00', intdiv($endMin, 60), $endMin % 60),
-                    'thu_tu'       => $i,
-                ]);
+            $cas = [[8 * 60, 12 * 60], [13 * 60 + 30, 18 * 60]];
+            $thuTu = 0;
+            foreach ($cas as [$caStart, $caEnd]) {
+                for ($startMin = $caStart; $startMin + $khungLen <= $caEnd; $startMin += $khungLen) {
+                    $endMin = $startMin + $khungLen;
+                    KhungGio::create([
+                        'phong_id'     => $phong->id,
+                        'gio_bat_dau'  => sprintf('%02d:%02d:00', intdiv($startMin, 60), $startMin % 60),
+                        'gio_ket_thuc' => sprintf('%02d:%02d:00', intdiv($endMin, 60), $endMin % 60),
+                        'thu_tu'       => $thuTu++,
+                    ]);
+                }
             }
         }
     }

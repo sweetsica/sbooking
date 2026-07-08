@@ -81,6 +81,16 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1.5">LÝ DO</label>
 <input type="text" name="ly_do" maxlength="255" placeholder="Tuỳ chọn (vd: nghỉ lễ 2/9)" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md bg-surface focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none"/>
 </div>
+<div class="sm:col-span-2 lg:col-span-3">
+<label class="text-label-caps font-label-caps text-on-surface-variant block mb-1.5">LẶP THEO THỨ <span class="normal-case font-normal text-on-surface-variant/70">(để trống = mọi ngày trong khoảng)</span></label>
+<div class="flex flex-wrap gap-2">
+@foreach (\App\Models\NgayNghi::THU as $k => $v)
+<label class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-outline-variant bg-surface cursor-pointer hover:bg-surface-container-low text-body-sm select-none has-[:checked]:bg-secondary-container/40 has-[:checked]:border-secondary">
+<input type="checkbox" name="thu_trong_tuan[]" value="{{ $k }}" class="rounded border-outline-variant text-secondary focus:ring-secondary/20"/> {{ $v }}
+</label>
+@endforeach
+</div>
+</div>
 <div class="sm:col-span-2 lg:col-span-3 flex justify-end">
 <button type="submit" class="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-lg bg-primary text-on-primary text-body-md font-semibold hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">save</span> Lưu ngày nghỉ
@@ -100,6 +110,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <th class="px-4 py-3">Từ ngày</th>
 <th class="px-4 py-3">Đến ngày</th>
 <th class="px-4 py-3">Ca</th>
+<th class="px-4 py-3">Lặp thứ</th>
 <th class="px-4 py-3">Lý do</th>
 <th class="px-4 py-3 text-right">Hành động</th>
 </tr>
@@ -119,6 +130,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <td class="px-4 py-4 font-time-slot text-on-surface">{{ $nn->tu_ngay->format('d/m/Y') }}</td>
 <td class="px-4 py-4 font-time-slot text-on-surface">{{ $nn->den_ngay->format('d/m/Y') }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant">{{ $nn->tenCa() }}</td>
+<td class="px-4 py-4 text-body-sm text-on-surface-variant">{{ $nn->tenThu() ?: 'Mọi ngày' }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant max-w-[220px] truncate" title="{{ $nn->ly_do }}">{{ $nn->ly_do ?: '—' }}</td>
 <td class="px-4 py-4">
 <div class="flex items-center justify-end">
@@ -129,7 +141,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </td>
 </tr>
 @empty
-<tr><td colspan="7" class="px-4 py-16 text-center text-on-surface-variant">
+<tr><td colspan="8" class="px-4 py-16 text-center text-on-surface-variant">
 <span class="material-symbols-outlined text-[48px] text-outline-variant block mb-2">event_busy</span>
 Chưa khai báo ngày nghỉ nào.
 </td></tr>

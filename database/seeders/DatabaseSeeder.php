@@ -15,10 +15,14 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
+        // Chỉ seed dữ liệu THẬT: cơ sở, phòng ban, users, phòng, bác sĩ, dịch vụ, lịch nghỉ.
         $this->call(LongevitySeeder::class);
-        $this->call(LichDatMauSeeder::class);
-        $this->call(LichThang6Seeder::class);
-        $this->call(LichTuVanThang6Seeder::class);
-        $this->call(LichLamViecMauSeeder::class);
+
+        // Các seeder lịch DEMO (booking mẫu, lịch làm việc mẫu) — đã TẮT.
+        // Bật lại khi cần demo:
+        // $this->call(LichDatMauSeeder::class);
+        // $this->call(LichThang6Seeder::class);
+        // $this->call(LichTuVanThang6Seeder::class);
+        // $this->call(LichLamViecMauSeeder::class);
     }
 }
