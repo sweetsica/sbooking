@@ -207,13 +207,15 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // --- Phòng khám 59 NTN: 5 phòng khám, 12 slot mỗi phòng ---
+        // --- Phòng khám 59 NTN: 5 phòng khám, mỗi phòng 1 ghế (tuần tự) ---
+        // 'giuong' = số phục vụ SONG SONG = 1 (1 bác sĩ/phòng). "12 khách/giờ"
+        // do khung 5 phút quyết định (12 khung/giờ), KHÔNG phải 12 giường song song.
         $this->seedPhong($cs59ntn, [
-            'Phòng khám Ngoại' => 12,
-            'Phòng chuyên gia' => 12,
-            'Phòng khám Nội 1' => 12,
-            'Phòng khám Nội 2' => 12,
-            'Phòng siêu âm'   => 12,
+            'Phòng khám Ngoại' => ['giuong' => 1, 'phut' => 5],
+            'Phòng chuyên gia' => ['giuong' => 1, 'phut' => 5],
+            'Phòng khám Nội 1' => ['giuong' => 1, 'phut' => 5],
+            'Phòng khám Nội 2' => ['giuong' => 1, 'phut' => 5],
+            'Phòng siêu âm'   => ['giuong' => 1, 'phut' => 5],
         ]);
 
         // --- Phòng dịch vụ 59 NTN (kèm TẦNG trong tên phòng) ---

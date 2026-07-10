@@ -53,6 +53,13 @@
     if ($vaiTroMa === 'nhan_vien') {
         $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'dich-vu'], true)));
     }
+
+    // Gộp các mục ít dùng vào menu xổ "Khác" để nhường chỗ ngang cho thanh chọn
+    // cơ sở (tránh 3 icon Tìm + Cơ sở + Thông báo đè nhau trên tablet/iPad).
+    $otherKeys  = ['bac-si', 'phong', 'lich-lam-viec', 'ngay-nghi'];
+    $otherItems = array_values(array_filter($items, fn ($it) => in_array($it['key'], $otherKeys, true)));
+    $items      = array_values(array_filter($items, fn ($it) => ! in_array($it['key'], $otherKeys, true)));
+    $otherActive = in_array($active, $otherKeys, true);
     // "Thiết lập" đã có icon bánh răng ở góc phải -> không lặp lại trong menu.
 @endphp
 <!-- Top Navigation Bar -->
@@ -74,6 +81,24 @@
 <span class="hidden lg:inline">{{ $it['label'] }}</span>
 </a>
 @endforeach
+@if (count($otherItems))
+<details class="relative shrink-0 group" id="menu-khac">
+<summary title="Khác" class="list-none cursor-pointer select-none px-1.5 sm:px-2.5 lg:px-3 py-2 text-body-md rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-colors [&::-webkit-details-marker]:hidden {{ $otherActive ? 'font-bold bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface' }}">
+<span class="material-symbols-outlined text-[20px]" @if($otherActive) style="font-variation-settings: 'FILL' 1;" @endif>more_horiz</span>
+<span class="hidden lg:inline">Khác</span>
+<span class="material-symbols-outlined text-[18px] group-open:rotate-180 transition-transform">expand_more</span>
+</summary>
+<div class="absolute left-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
+@foreach ($otherItems as $it)
+@php $on = $active === $it['key']; @endphp
+<a href="{{ $it['href'] }}" class="flex items-center gap-3 px-4 py-2.5 text-body-md transition-colors {{ $on ? 'font-bold bg-secondary-container text-on-secondary-container' : 'text-on-surface hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[20px] {{ $on ? '' : 'text-on-surface-variant' }}" @if($on) style="font-variation-settings: 'FILL' 1;" @endif>{{ $it['icon'] }}</span>
+{{ $it['label'] }}
+</a>
+@endforeach
+</div>
+</details>
+@endif
 </nav>
 <!-- Search and Actions -->
 <div class="ml-auto flex items-center gap-1 sm:gap-2 xl:gap-3 min-w-0">

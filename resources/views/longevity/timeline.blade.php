@@ -216,7 +216,7 @@
 <span class="text-label-caps text-on-surface-variant">GIỜ</span>
 </div>
 @foreach ($bedColumns as $bc)
-<div class="w-[150px] shrink-0 bg-surface-container-low border-b border-r border-outline-variant py-3 text-center font-bold text-body-sm {{ $bc['index'] === 1 ? '' : 'text-on-surface-variant' }}">Giường {{ $bc['index'] }}</div>
+<div class="w-[150px] shrink-0 bg-surface-container-low border-b border-r border-outline-variant py-3 text-center font-bold text-body-sm {{ $bc['index'] === 1 ? '' : 'text-on-surface-variant' }}">Slot {{ $bc['index'] }}</div>
 @endforeach
 </div>
 <!-- Body: cột giờ + các cột giường -->
@@ -316,7 +316,7 @@
 <div class="font-semibold">Quốc Anh</div>
 <div class="text-body-sm text-on-surface-variant">03267688...</div>
 </td>
-<td class="px-6 py-4 text-body-sm">VIP 1 (Giường 1)</td>
+<td class="px-6 py-4 text-body-sm">VIP 1 (Slot 1)</td>
 <td class="px-6 py-4 text-body-sm">AP (60 phút)</td>
 <td class="px-6 py-4 text-body-sm text-on-surface-variant">Trần Thị Thu Giang</td>
 <td class="px-6 py-4 text-body-sm">KTV Longevity VI</td>
@@ -332,7 +332,7 @@
 <div class="font-semibold">Test 1</div>
 <div class="text-body-sm text-on-surface-variant">03267688...</div>
 </td>
-<td class="px-6 py-4 text-body-sm">VIP 1 (Giường 2)</td>
+<td class="px-6 py-4 text-body-sm">VIP 1 (Slot 2)</td>
 <td class="px-6 py-4 text-body-sm">AP (60 phút)</td>
 <td class="px-6 py-4 text-body-sm text-on-surface-variant">Trần Thị Thu Giang</td>
 <td class="px-6 py-4 text-body-sm">KTV Longevity</td>
