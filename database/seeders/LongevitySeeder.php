@@ -369,6 +369,29 @@ class LongevitySeeder extends Seeder
             $dm->taoCaKham();
         }
 
+        // --- Phòng dịch vụ 207 NVT (kèm TẦNG trong tên phòng) ---
+        // Tầng 2: Thủ thuật (1 giường, 30p/lượt)
+        // Tầng 3: Metaboost 1-2 (3 ghế, 2 tiếng/ghế)
+        // Tầng 6: YHCT 1 (1 giường, 1 tiếng) + Da liễu 1-2 (1 giường, 2 tiếng)
+        // 'giuong' = số giường/ghế song song (so_slot_toi_da); số khung tính theo giờ 8h–18h.
+        $phongDichVu207 = [
+            'Phòng Thủ thuật (Tầng 2)'   => ['kieu' => 'phong_dich_vu', 'giuong' => 1, 'phut' => 30],
+            'Phòng Metaboost 1 (Tầng 3)' => ['kieu' => 'phong_dich_vu', 'giuong' => 3, 'phut' => 120],
+            'Phòng Metaboost 2 (Tầng 3)' => ['kieu' => 'phong_dich_vu', 'giuong' => 3, 'phut' => 120],
+            'Phòng YHCT 1 (Tầng 6)'      => ['kieu' => 'phong_dich_vu', 'giuong' => 1, 'phut' => 60],
+            'Phòng Da liễu 1 (Tầng 6)'   => ['kieu' => 'phong_dich_vu', 'giuong' => 1, 'phut' => 120],
+            'Phòng Da liễu 2 (Tầng 6)'   => ['kieu' => 'phong_dich_vu', 'giuong' => 1, 'phut' => 120],
+        ];
+        // Dọn mọi phòng dịch vụ cũ của cơ sở KHÔNG nằm trong danh sách mới.
+        Phong::where('co_so_id', $cs207nvt->id)
+            ->where('kieu_phong', 'phong_dich_vu')
+            ->whereNotIn('ten', array_keys($phongDichVu207))
+            ->each(function ($p) {
+                $p->khungGios()->delete();
+                $p->delete();
+            });
+        $this->seedPhong($cs207nvt, $phongDichVu207);
+
         // --- Tư vấn viên HCM (cơ sở 207 NVT) ---
         $tvHCM = [
             ['username' => 'tnkn', 'name' => 'Trần Nguyễn Kim Ngân',  'chuc_danh' => 'DM'],
