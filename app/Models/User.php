@@ -60,6 +60,31 @@ class User extends Authenticatable
         return trim(($this->chuc_danh ? $this->chuc_danh . ' ' : '') . $this->name);
     }
 
+    /** Cache quyền đã tra trong 1 request để tránh query lặp. */
+    private array $quyenCache = [];
+
+    /**
+     * User có quyền (trường phân quyền) $truong hay không — theo vai trò / phòng ban.
+     * Admin luôn true.
+     */
+    public function coQuyen(string $truong): bool
+    {
+        if ($this->is_admin) {
+            return true;
+        }
+        if (! $this->vai_tro_id && ! $this->phong_ban_id) {
+            return false;
+        }
+        if (array_key_exists($truong, $this->quyenCache)) {
+            return $this->quyenCache[$truong];
+        }
+
+        return $this->quyenCache[$truong] = PhanQuyen::where(function ($q) {
+            if ($this->phong_ban_id) $q->orWhere('phong_ban_id', $this->phong_ban_id);
+            if ($this->vai_tro_id) $q->orWhere('vai_tro_id', $this->vai_tro_id);
+        })->where('truong', $truong)->exists();
+    }
+
     /**
      * The attributes that should be hidden for serialization.
      *

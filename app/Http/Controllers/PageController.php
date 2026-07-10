@@ -283,6 +283,7 @@ class PageController extends Controller
         if ($view === 'thang') {
             $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room, $staffId, $staffCol) {
                 $q = Booking::where('co_so_id', $co_so->id)
+                    ->visibleTo(auth()->user()) // không có xem_booking → chỉ đếm booking mình tạo
                     ->giuCho() // đơn bị từ chối không chiếm chỗ
                     ->whereBetween('ngay_dat', [$from, $to]);
                 if ($room) $q->where('phong_id', $room->id);
@@ -313,6 +314,7 @@ class PageController extends Controller
         $bookings = collect();
         if ($room) {
             $bookings = Booking::where('co_so_id', $co_so->id)
+                ->visibleTo(auth()->user()) // không có xem_booking → chỉ hiện booking mình tạo
                 ->where('phong_id', $room->id)
                 ->giuCho() // đơn bị từ chối không chiếm chỗ trong lịch biểu
                 ->whereDate('ngay_dat', $date)
@@ -468,9 +470,15 @@ class PageController extends Controller
 
     public function bookings(CoSo $co_so, Request $request, bool $approvalMode = false)
     {
-        $this->authorizePerm($approvalMode ? 'duyet_booking' : 'xem_booking');
+        // Chế độ duyệt vẫn cần quyền duyệt (approver xem mọi đơn chờ duyệt).
+        // Chế độ xem thường: KHÔNG chặn cứng — có 'xem_booking' thì xem tất,
+        // không có thì chỉ thấy booking mình tạo (visibleTo).
+        if ($approvalMode) {
+            $this->authorizePerm('duyet_booking');
+        }
 
         $query = Booking::where('co_so_id', $co_so->id)
+            ->when(! $approvalMode, fn ($q) => $q->visibleTo(auth()->user()))
             ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
             ->latest('id');
 

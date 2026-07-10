@@ -30,6 +30,7 @@ class SearchController extends Controller
                 ->pluck('id');
 
             $bookings = Booking::where('co_so_id', $co_so->id)
+                ->visibleTo(auth()->user()) // không có xem_booking → chỉ tìm trong booking mình tạo
                 ->whereIn('khach_hang_id', $khIds)
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
                 ->latest('ngay_dat')->latest('id')->limit(50)->get();
@@ -49,6 +50,14 @@ class SearchController extends Controller
     public function showBooking(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
+
+        // Kiểm tra quyền xem theo đúng 3 mức (toàn bộ / phòng ban / mình tạo)
+        // bằng chính scope visibleTo để không lặp logic.
+        abort_unless(
+            Booking::whereKey($booking->id)->visibleTo(auth()->user())->exists(),
+            403,
+            'Bạn không có quyền xem booking này.'
+        );
 
         $booking->load(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale', 'menus',
             'binhLuans.nguoiDung.vaiTro']);

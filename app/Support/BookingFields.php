@@ -15,7 +15,9 @@ class BookingFields
     {
         return [
             // ----- Đặt phòng (booking) -----
-            'xem_booking'     => 'Xem booking',
+            // 3 mức xem (tăng dần). Không có mức nào → chỉ xem booking mình tạo.
+            'xem_booking_phong_ban' => 'Xem booking trong phòng ban (nhánh con)',
+            'xem_booking'     => 'Xem toàn bộ booking (cả cơ sở)',
             'them_booking'    => 'Thêm booking',
             'sua_booking'     => 'Sửa booking (cho phép sửa)',
             'xoa_booking'     => 'Xóa booking',
@@ -103,7 +105,7 @@ class BookingFields
         return [
             'Quyền đặt phòng' => [
                 'icon'   => 'edit_calendar',
-                'fields' => $pick(['xem_booking', 'them_booking', 'sua_booking', 'xoa_booking']),
+                'fields' => $pick(['xem_booking_phong_ban', 'xem_booking', 'them_booking', 'sua_booking', 'xoa_booking']),
                 'sub'    => [
                     // Trường con xuất hiện ngay dưới quyền cha 'sua_booking'
                     'sua_booking' => self::suaSubFields(),

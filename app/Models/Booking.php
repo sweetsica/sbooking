@@ -17,10 +17,12 @@ class Booking extends Model
         'bac_si_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
         'so_lieu_trinh', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
         'ghi_chu', 'trang_thai', 'trang_thai_khach', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet',
+        'nguoi_tao_id',
     ];
 
     protected $casts = [
         'ngay_dat' => 'date',
+        'nguoi_tao_id' => 'integer',
         'ket_hop_medical' => 'boolean',
         'co_tu_van' => 'boolean',
         'co_kham_cls' => 'boolean',
@@ -67,6 +69,11 @@ class Booking extends Model
         return $this->belongsTo(User::class, 'sale_id');
     }
 
+    public function nguoiTao(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'nguoi_tao_id');
+    }
+
     public function menus(): BelongsToMany
     {
         return $this->belongsToMany(Menu::class, 'booking_menu', 'booking_id', 'menu_id');
@@ -85,5 +92,32 @@ class Booking extends Model
     {
         return $q->where('trang_thai', '!=', 'tu_choi')
             ->where(fn ($qq) => $qq->whereNull('trang_thai_khach')->orWhere('trang_thai_khach', '!=', 'huy'));
+    }
+
+    /**
+     * Giới hạn booking theo quyền xem của $user (3 mức, tăng dần):
+     * - 'xem_booking'            → toàn bộ trong cơ sở (không giới hạn thêm).
+     * - 'xem_booking_phong_ban'  → booking do người CÙNG PHÒNG BAN tạo (gồm cả mình).
+     * - (không mức nào)          → chỉ booking do chính mình tạo (nguoi_tao_id = id).
+     * $user null → không thấy gì.
+     */
+    public function scopeVisibleTo(Builder $q, ?User $user): Builder
+    {
+        $table = $q->getModel()->getTable();
+
+        // Mức cao nhất: xem tất cả trong cơ sở.
+        if ($user && $user->coQuyen('xem_booking')) {
+            return $q;
+        }
+
+        // Mức nhánh con: người cùng phòng ban tạo. Cần có phong_ban_id mới xác định được nhánh.
+        if ($user && $user->phong_ban_id && $user->coQuyen('xem_booking_phong_ban')) {
+            return $q->whereIn($table . '.nguoi_tao_id', function ($sub) use ($user) {
+                $sub->select('id')->from('users')->where('phong_ban_id', $user->phong_ban_id);
+            });
+        }
+
+        // Mặc định: chỉ booking mình tạo.
+        return $q->where($table . '.nguoi_tao_id', $user?->id ?? 0);
     }
 }

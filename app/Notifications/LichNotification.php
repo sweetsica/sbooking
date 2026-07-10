@@ -94,7 +94,9 @@ class LichNotification extends Notification
                 $b->gio_thuc_hien ? substr($b->gio_thuc_hien, 0, 5) : null,
                 $b->gio_ket_thuc  ? substr($b->gio_ket_thuc, 0, 5)  : null,
             );
-            $link = $coSoSlug ? "/{$coSoSlug}/sua-dat-phong/{$b->id}" : '#';
+            // Trỏ về trang CHI TIẾT (chỉ đọc) — hiện đủ thông tin + lý do từ chối,
+            // và không đòi quyền 'sua_booking' (người chỉ có xem/duyệt vẫn mở được).
+            $link = $coSoSlug ? "/{$coSoSlug}/xem-dat-phong/{$b->id}" : '#';
         } else {
             /** @var LichHen $l */
             $l = $this->lich;

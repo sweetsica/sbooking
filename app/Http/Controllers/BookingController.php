@@ -806,6 +806,7 @@ class BookingController extends Controller
             'bac_si_id' => $data['bac_si_id'] ?? null,
             'ktv_user_id'   => $data['ktv_user_id'] ?? null,
             'sale_id'       => $data['sale_id'] ?? null,
+            'nguoi_tao_id'  => auth()->id(),
             'ngay_dat'      => $data['ngay_dat'],
             'gio_thuc_hien' => $gioBatDau,
             'gio_ket_thuc'  => $gioKetThuc,
