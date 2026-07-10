@@ -18,6 +18,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 
 class SettingsController extends Controller
 {
@@ -41,11 +42,17 @@ class SettingsController extends Controller
         // Phòng ban giờ RIÊNG từng cơ sở → dropdown chỉ lấy phòng ban của cơ sở đang xem.
         $phongBanOptions = PhongBan::when($co_so, fn ($q) => $q->where('co_so_id', $co_so->id))
             ->orderBy('ten')->pluck('ten', 'id')->all();
-        $vaiTroOptions = VaiTro::orderBy('ten')->pluck('ten', 'id')->all();
-        $coSoOptions = CoSo::orderBy('id')->pluck('ten', 'id')->all();
-        // "Toàn hệ thống" (co_so_id null) CHỈ super-admin (is_admin + không thuộc cơ sở nào)
-        // mới được chọn — tránh admin cơ sở tự nâng tài khoản thành toàn hệ thống.
+        // super-admin = is_admin + không thuộc cơ sở nào (toàn hệ thống).
         $superAdmin = ($u = auth()->user()) && $u->is_admin && is_null($u->co_so_id);
+        // Vai trò "Quản trị hệ thống" (ma='admin') → tự bật is_admin = full quyền.
+        // CHỈ super-admin mới được cấp vai trò này; người khác không thấy option
+        // để không tự tạo ra super-admin mới.
+        $vaiTroOptions = VaiTro::orderBy('ten')
+            ->when(! $superAdmin, fn ($q) => $q->where('ma', '!=', 'admin'))
+            ->pluck('ten', 'id')->all();
+        $coSoOptions = CoSo::orderBy('id')->pluck('ten', 'id')->all();
+        // "Toàn hệ thống" (co_so_id null) CHỈ super-admin mới được chọn — tránh admin
+        // cơ sở tự nâng tài khoản thành toàn hệ thống.
         $coSoBlank = $superAdmin ? ['' => '— Toàn hệ thống —'] : [];
 
         return [
@@ -411,6 +418,22 @@ class SettingsController extends Controller
         $vaiTroId = ($data['vai_tro_id'] ?? null) ?: null;
         $isAdminByRole = $vaiTroId && VaiTro::where('id', $vaiTroId)->where('ma', 'admin')->exists();
         $isAdmin = $request->boolean('is_admin') || $isAdminByRole;
+
+        // Chốt chặn: CHỈ super-admin (is_admin + toàn hệ thống) mới được đụng tới quyền
+        // Quản trị hệ thống. Người khác:
+        //  - Tạo mới / nâng lên admin  → chặn (tránh tự tạo super-admin).
+        //  - Sửa tài khoản admin sẵn có → giữ nguyên is_admin, không cho hạ nhầm.
+        $actor = $request->user();
+        $actorSuperAdmin = $actor && $actor->is_admin && is_null($actor->co_so_id);
+        if (! $actorSuperAdmin) {
+            if ($isAdmin && ! ($user && $user->is_admin)) {
+                throw ValidationException::withMessages([
+                    'vai_tro_id' => 'Chỉ Quản trị hệ thống (toàn hệ thống) mới được cấp quyền Quản trị hệ thống cho người dùng.',
+                ]);
+            }
+            // Không phải super-admin → không đổi được trạng thái quản trị: giữ nguyên giá trị cũ.
+            $isAdmin = (bool) ($user?->is_admin ?? false);
+        }
 
         $attrs = [
             'name'           => $data['name'],
