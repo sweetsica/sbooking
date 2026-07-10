@@ -159,10 +159,17 @@
 @if ($editable)
 {{-- Form thêm mới --}}
 <div x-data="{ open: {{ $errors->any() ? 'true' : 'false' }} }" class="mb-5">
+<div class="flex items-center gap-2 flex-wrap">
 <button @click="open = !open" class="px-4 py-2 bg-secondary-container text-on-secondary-container font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
 <span class="material-symbols-outlined text-[20px]" x-text="open ? 'close' : 'add'">add</span>
 <span x-text="open ? 'Đóng' : 'Thêm mới'">Thêm mới</span>
 </button>
+@if ($key === 'nguoi-dung')
+<a href="/{{ $coSo->slug }}/thiet-lap/nguoi-dung/xuat" class="px-4 py-2 bg-surface-container-high text-on-surface font-semibold rounded-lg flex items-center gap-2 hover:opacity-90" title="Xuất danh sách người dùng ra Excel (cột Mật khẩu để trống)">
+<span class="material-symbols-outlined text-[20px]">download</span> Xuất dữ liệu
+</a>
+@endif
+</div>
 @php $hasRequired = collect($config['fields'])->contains(fn ($ff) => ! empty($ff['required'])); @endphp
 <div x-show="open" x-cloak class="mt-3 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
 <form method="POST" action="{{ $action }}">

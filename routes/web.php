@@ -122,6 +122,7 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::middleware('admin')->prefix('thiet-lap')->name('settings.')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');
             Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('baocao.xuat');
+            Route::get('/nguoi-dung/xuat', [ExcelController::class, 'exportNguoiDung'])->name('nguoidung.xuat');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
             Route::post('/{section}', [SettingsController::class, 'store'])->name('store');
             Route::put('/{section}/{id}', [SettingsController::class, 'update'])->name('update');

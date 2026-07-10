@@ -160,14 +160,14 @@
 </div>
 <div class="hidden md:block text-left leading-tight min-w-0">
 <div class="text-body-sm font-semibold text-on-surface truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->name }}</div>
-<div class="text-[10px] uppercase tracking-wide text-on-surface-variant truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
+<div class="text-[10px] uppercase tracking-wide text-on-surface-variant truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->vaiTro?->ten ?? (auth()->user()->is_admin ? 'Quản trị viên' : 'Nhân viên') }}</div>
 </div>
 <span class="material-symbols-outlined text-[16px] sm:text-[18px] text-on-surface-variant group-open:rotate-180 transition-transform">expand_more</span>
 </summary>
 <div class="absolute right-0 mt-2 w-64 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
 <div class="md:hidden px-4 py-3 border-b border-outline-variant">
 <div class="text-body-md font-semibold text-on-surface leading-tight">{{ auth()->user()->name }}</div>
-<div class="text-[11px] uppercase tracking-wide text-on-surface-variant mt-0.5">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
+<div class="text-[11px] uppercase tracking-wide text-on-surface-variant mt-0.5">{{ auth()->user()->vaiTro?->ten ?? (auth()->user()->is_admin ? 'Quản trị viên' : 'Nhân viên') }}</div>
 </div>
 <a href="/doi-mat-khau" class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface hover:bg-surface-container-low transition-colors">
 <span class="material-symbols-outlined text-[20px] text-on-surface-variant">lock_reset</span> Đổi mật khẩu

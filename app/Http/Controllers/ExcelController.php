@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Exports\BaoCaoExport;
 use App\Exports\BookingExport;
 use App\Exports\LichHenExport;
+use App\Exports\NguoiDungExport;
 use App\Http\Controllers\SettingsController;
 use App\Imports\BookingImport;
 use App\Imports\LichHenImport;
@@ -50,6 +51,13 @@ class ExcelController extends Controller
         $data = $settings->buildBaoCao($co_so, $request);
         $name = 'bao-cao-' . $co_so->slug . '-' . now()->format('Ymd-His') . '.xlsx';
         return Excel::download(new BaoCaoExport($data), $name);
+    }
+
+    public function exportNguoiDung(CoSo $co_so)
+    {
+        // Route đã được gate qua middleware 'admin' (chỉ admin hệ thống) nên không cần check thêm.
+        $name = 'nguoi-dung-' . now()->format('Ymd-His') . '.xlsx';
+        return Excel::download(new NguoiDungExport(), $name);
     }
 
     public function importLichHen(CoSo $co_so, Request $request)

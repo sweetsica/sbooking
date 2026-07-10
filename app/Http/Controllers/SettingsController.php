@@ -86,14 +86,9 @@ class SettingsController extends Controller
                     'email'          => ['label' => 'Email', 'type' => 'text', 'rules' => [], 'placeholder' => 'Không bắt buộc'],
                     'phong_ban_id'   => ['label' => 'Phòng ban', 'type' => 'select', 'options' => ['' => '— Không —'] + $phongBanOptions, 'rules' => ['nullable', Rule::exists('phong_ban', 'id')]],
                     'vai_tro_id'     => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
-                    // Ẩn toggle "Quản trị (mọi cơ sở)": muốn cấp quyền admin thì chọn vai trò "Quản trị hệ thống" (tự bật is_admin).
-                    'is_tu_van'      => ['label' => 'Tư vấn (xuất hiện mọi cơ sở)', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
-                    'nhan_tu_van'    => ['label' => 'Tư vấn / Đọc kết quả', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
-                    'phut_tu_van'    => ['label' => 'Số phút thực hiện (tư vấn)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 30'],
-                    'nhan_kham_ls'   => ['label' => 'Thăm khám lâm sàng', 'type' => 'toggle', 'rules' => ['nullable', 'boolean']],
-                    'phut_kham_ls'   => ['label' => 'Số phút thực hiện (khám LS)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 5'],
-                    'gio_bat_dau'    => ['label' => 'Giờ bắt đầu', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
-                    'gio_ket_thuc'   => ['label' => 'Giờ kết thúc', 'type' => 'hour', 'rules' => ['nullable', 'string', 'max:5'], 'virtual' => true],
+                    // Các trường lịch tư vấn/khám (nhan_tu_van, phut_tu_van, nhan_kham_ls,
+                    // phut_kham_ls, gio_bat_dau/ket_thuc, is_tu_van) đã chuyển sang DANH MỤC
+                    // Bác sĩ (bảng bac_si) → ẩn khỏi form người dùng cho đỡ nhầm.
                 ],
             ],
             'co-so' => [
@@ -389,13 +384,6 @@ class SettingsController extends Controller
             'phong_ban_id'   => ['nullable', Rule::exists('phong_ban', 'id')],
             'vai_tro_id'     => ['nullable', Rule::exists('vai_tro', 'id')],
             'is_admin'       => ['nullable', 'boolean'],
-            'is_tu_van'      => ['nullable', 'boolean'],
-            'nhan_tu_van'    => ['nullable', 'boolean'],
-            'nhan_kham_ls'   => ['nullable', 'boolean'],
-            'phut_tu_van'    => ['nullable', 'integer', 'min:1', 'max:240'],
-            'phut_kham_ls'   => ['nullable', 'integer', 'min:1', 'max:240'],
-            'gio_bat_dau'    => ['nullable', 'string', 'max:5'],
-            'gio_ket_thuc'   => ['nullable', 'string', 'max:5'],
             'password'       => [$user ? 'nullable' : 'required', 'string', 'min:6'],
         ], [
             'username.required' => 'Vui lòng nhập tài khoản đăng nhập.',
@@ -421,13 +409,6 @@ class SettingsController extends Controller
             'phong_ban_id'   => ($data['phong_ban_id'] ?? null) ?: null,
             'vai_tro_id'     => $vaiTroId,
             'is_admin'       => $isAdmin,
-            'is_tu_van'      => $request->boolean('is_tu_van'),
-            'nhan_tu_van'    => $request->boolean('nhan_tu_van'),
-            'nhan_kham_ls'   => $request->boolean('nhan_kham_ls'),
-            'phut_tu_van'    => $request->integer('phut_tu_van') ?: 30,
-            'phut_kham_ls'   => $request->integer('phut_kham_ls') ?: 5,
-            'gio_bat_dau'    => ($data['gio_bat_dau'] ?? null) ?: null,
-            'gio_ket_thuc'   => ($data['gio_ket_thuc'] ?? null) ?: null,
             'co_so_id'       => $isAdmin ? null : $co_so->id,
         ];
         if (! empty($data['password'])) {
