@@ -56,8 +56,8 @@ class ExcelController extends Controller
     public function exportNguoiDung(CoSo $co_so)
     {
         // Route đã được gate qua middleware 'admin' (chỉ admin hệ thống) nên không cần check thêm.
-        $name = 'nguoi-dung-' . now()->format('Ymd-His') . '.xlsx';
-        return Excel::download(new NguoiDungExport(), $name);
+        $name = 'nguoi-dung-' . $co_so->slug . '-' . now()->format('Ymd-His') . '.xlsx';
+        return Excel::download(new NguoiDungExport($co_so), $name);
     }
 
     public function importLichHen(CoSo $co_so, Request $request)
