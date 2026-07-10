@@ -47,7 +47,8 @@ class ExcelController extends Controller
 
     public function exportBaoCao(CoSo $co_so, Request $request, SettingsController $settings)
     {
-        // Route đã được gate qua middleware 'admin' nên không cần check thêm.
+        // Route không còn admin-only: admin luôn qua, non-admin cần quyền xem_bao_cao.
+        $this->authorizeField('xem_bao_cao');
         $data = $settings->buildBaoCao($co_so, $request);
         $name = 'bao-cao-' . $co_so->slug . '-' . now()->format('Ymd-His') . '.xlsx';
         return Excel::download(new BaoCaoExport($data), $name);

@@ -13,6 +13,12 @@
         if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
     })->where('truong', 'duyet_booking')->exists();
 
+    // Quyền xem báo cáo (non-admin) → được vào Thiết lập nhưng chỉ thấy mục Báo cáo.
+    $canBaoCao = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
+        if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
+        if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
+    })->where('truong', 'xem_bao_cao')->exists();
+
     // Quyền vào Lịch làm việc (tạo/upload HOẶC duyệt).
     $canLichLamViec = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
         if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
@@ -147,9 +153,10 @@
 <a href="/thong-bao" class="p-3 text-center text-body-sm font-semibold text-secondary hover:bg-surface-container-low transition-colors border-t border-outline-variant">Xem tất cả</a>
 </div>
 </details>
-@if ($isAdmin)
-<a href="/{{ $coSo->slug }}/thiet-lap" class="p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full">
-<span class="material-symbols-outlined text-[22px] sm:text-[24px]">settings</span>
+@if ($isAdmin || $canBaoCao)
+<a href="/{{ $coSo->slug }}/thiet-lap" class="p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full"
+   title="{{ $isAdmin ? 'Thiết lập' : 'Báo cáo' }}">
+<span class="material-symbols-outlined text-[22px] sm:text-[24px]">{{ $isAdmin ? 'settings' : 'analytics' }}</span>
 </a>
 @endif
 @auth

@@ -130,14 +130,61 @@ class SettingsController extends Controller
         return $section;
     }
 
+    /**
+     * Các mục Thiết lập mà user hiện tại được ĐỌC.
+     * - Admin: toàn bộ.
+     * - Không phải admin: chỉ những mục gắn với quyền được cấp (hiện: Báo cáo ↔ xem_bao_cao).
+     *
+     * @return array<int,string> danh sách key của SECTIONS
+     */
+    private function allowedSections(): array
+    {
+        $user = auth()->user();
+        if ($user && $user->is_admin) {
+            return array_keys(self::SECTIONS);
+        }
+
+        // Mục Thiết lập ↔ quyền cần có (dành cho non-admin).
+        $sectionPerm = ['bao-cao' => 'xem_bao_cao'];
+
+        $allowed = [];
+        foreach ($sectionPerm as $sectionKey => $perm) {
+            if ($this->userHasPerm($perm)) {
+                $allowed[] = $sectionKey;
+            }
+        }
+
+        return $allowed;
+    }
+
+    /** Non-admin có quyền $truong (theo vai trò / phòng ban) hay không. */
+    private function userHasPerm(string $truong): bool
+    {
+        $user = auth()->user();
+        if (! $user || (! $user->vai_tro_id && ! $user->phong_ban_id)) {
+            return false;
+        }
+
+        return PhanQuyen::where(function ($q) use ($user) {
+            if ($user->phong_ban_id) $q->orWhere('phong_ban_id', $user->phong_ban_id);
+            if ($user->vai_tro_id) $q->orWhere('vai_tro_id', $user->vai_tro_id);
+        })->where('truong', $truong)->exists();
+    }
+
     public function index(CoSo $co_so)
     {
-        return view('longevity.settings.index', ['coSo' => $co_so, 'sections' => self::SECTIONS]);
+        $allowed = $this->allowedSections();
+        abort_if(empty($allowed), 403, 'Bạn không có quyền truy cập Thiết lập.');
+
+        $sections = array_intersect_key(self::SECTIONS, array_flip($allowed));
+
+        return view('longevity.settings.index', ['coSo' => $co_so, 'sections' => $sections]);
     }
 
     public function section(CoSo $co_so, string $section, Request $request)
     {
         abort_unless(isset(self::SECTIONS[$section]), 404);
+        abort_unless(in_array($section, $this->allowedSections(), true), 403, 'Bạn không có quyền truy cập mục này.');
         $config = $this->editableConfig($co_so)[$this->resolveSection($section)] ?? null;
 
         $rows = match ($section) {

@@ -61,6 +61,9 @@ class BookingFields
             // ----- Ngày nghỉ (đóng cửa / nghỉ) -----
             'quyen_ngay_nghi' => 'Quản lý ngày nghỉ (đóng cửa / nghỉ)',
 
+            // ----- Báo cáo -----
+            'xem_bao_cao' => 'Xem báo cáo (tổng hợp + xuất Excel)',
+
             // ----- Thông báo (in-app + email) -----
             'nhan_tb_tag_lich'      => 'Nhận TB khi được tag vào lịch',
             'nhan_tb_cap_nhat_lich' => 'Nhận TB khi lịch được cập nhật/duyệt',
@@ -134,6 +137,11 @@ class BookingFields
             'Quyền ngày nghỉ' => [
                 'icon'   => 'event_busy',
                 'fields' => $pick(['quyen_ngay_nghi']),
+                'sub'    => [],
+            ],
+            'Quyền báo cáo' => [
+                'icon'   => 'analytics',
+                'fields' => $pick(['xem_bao_cao']),
                 'sub'    => [],
             ],
             'Thông báo' => [

@@ -118,15 +118,22 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::get('/xuat-tu-van',  [ExcelController::class, 'exportLichHen'])->name('excel.exportLichHen');
         Route::post('/nhap-tu-van', [ExcelController::class, 'importLichHen'])->name('excel.importLichHen');
 
-        // ----- CHỈ ADMIN: Thiết lập -----
-        Route::middleware('admin')->prefix('thiet-lap')->name('settings.')->group(function () {
+        // ----- Thiết lập -----
+        // Admin xem/sửa mọi mục. Người có quyền "xem_bao_cao" chỉ vào được mục Báo cáo
+        // (SettingsController tự chặn các mục khác) — nên các route ĐỌC không gắn middleware admin.
+        Route::prefix('thiet-lap')->name('settings.')->group(function () {
+            // Đọc: admin (mọi mục) hoặc người có quyền xem_bao_cao (chỉ Báo cáo)
             Route::get('/', [SettingsController::class, 'index'])->name('index');
             Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('baocao.xuat');
-            Route::get('/nguoi-dung/xuat', [ExcelController::class, 'exportNguoiDung'])->name('nguoidung.xuat');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
-            Route::post('/{section}', [SettingsController::class, 'store'])->name('store');
-            Route::put('/{section}/{id}', [SettingsController::class, 'update'])->name('update');
-            Route::delete('/{section}/{id}', [SettingsController::class, 'destroy'])->name('destroy');
+
+            // Ghi + các mục quản trị khác: CHỈ ADMIN
+            Route::middleware('admin')->group(function () {
+                Route::get('/nguoi-dung/xuat', [ExcelController::class, 'exportNguoiDung'])->name('nguoidung.xuat');
+                Route::post('/{section}', [SettingsController::class, 'store'])->name('store');
+                Route::put('/{section}/{id}', [SettingsController::class, 'update'])->name('update');
+                Route::delete('/{section}/{id}', [SettingsController::class, 'destroy'])->name('destroy');
+            });
         });
     });
 });
