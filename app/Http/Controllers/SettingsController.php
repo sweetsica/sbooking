@@ -42,6 +42,11 @@ class SettingsController extends Controller
         $phongBanOptions = PhongBan::when($co_so, fn ($q) => $q->where('co_so_id', $co_so->id))
             ->orderBy('ten')->pluck('ten', 'id')->all();
         $vaiTroOptions = VaiTro::orderBy('ten')->pluck('ten', 'id')->all();
+        $coSoOptions = CoSo::orderBy('id')->pluck('ten', 'id')->all();
+        // "Toàn hệ thống" (co_so_id null) CHỈ super-admin (is_admin + không thuộc cơ sở nào)
+        // mới được chọn — tránh admin cơ sở tự nâng tài khoản thành toàn hệ thống.
+        $superAdmin = ($u = auth()->user()) && $u->is_admin && is_null($u->co_so_id);
+        $coSoBlank = $superAdmin ? ['' => '— Toàn hệ thống —'] : [];
 
         return [
             'dich-vu' => $catalog(DichVu::class, [
@@ -86,6 +91,9 @@ class SettingsController extends Controller
                     'email'          => ['label' => 'Email', 'type' => 'text', 'rules' => [], 'placeholder' => 'Không bắt buộc'],
                     'phong_ban_id'   => ['label' => 'Phòng ban', 'type' => 'select', 'options' => ['' => '— Không —'] + $phongBanOptions, 'rules' => ['nullable', Rule::exists('phong_ban', 'id')]],
                     'vai_tro_id'     => ['label' => 'Vai trò', 'type' => 'select', 'options' => ['' => '— Không —'] + $vaiTroOptions, 'rules' => ['nullable', Rule::exists('vai_tro', 'id')]],
+                    // Cơ sở của tài khoản: để "Toàn hệ thống" (trống) CHỈ dành cho super-admin,
+                    // các tài khoản còn lại gán đúng cơ sở → chỉ hiện ở cơ sở đó.
+                    'co_so_id'       => ['label' => 'Cơ sở', 'type' => 'select', 'options' => $coSoBlank + $coSoOptions, 'rules' => ['nullable', Rule::exists('co_so', 'id')]],
                     // Các trường lịch tư vấn/khám (nhan_tu_van, phut_tu_van, nhan_kham_ls,
                     // phut_kham_ls, gio_bat_dau/ket_thuc, is_tu_van) đã chuyển sang DANH MỤC
                     // Bác sĩ (bảng bac_si) → ẩn khỏi form người dùng cho đỡ nhầm.
@@ -134,8 +142,9 @@ class SettingsController extends Controller
                 ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->query('q').'%'))
                 ->when($request->filled('vai_tro_id'), fn ($q) => $q->where('vai_tro_id', $request->query('vai_tro_id')))
                 ->when($request->filled('chuc_danh'), fn ($q) => $q->where('chuc_danh', $request->query('chuc_danh')))
-                ->when($request->filled('is_tu_van'), fn ($q) => $q->where('is_tu_van', $request->query('is_tu_van') === '1'))
-                ->orderByDesc('is_admin')->orderBy('name')->get(),
+                ->when($request->filled('phong_ban_id'), fn ($q) => $q->where('phong_ban_id', $request->query('phong_ban_id')))
+                // User thuộc cơ sở hiện tại trước, tài khoản hệ thống (co_so_id null) xuống nhóm cuối.
+                ->orderByRaw('co_so_id IS NULL')->orderBy('name')->get(),
             'co-so'      => CoSo::orderBy('id')->get(),
             'phong-ban'  => PhongBan::where('co_so_id', $co_so->id)->orderBy('id')->get(),
             'vai-tro'    => VaiTro::orderBy('id')->get(),
@@ -155,7 +164,8 @@ class SettingsController extends Controller
                 'vaiTros' => VaiTro::orderBy('id')->get(),
                 'chucDanhs' => User::whereNotNull('chuc_danh')->where('chuc_danh', '!=', '')
                     ->distinct()->orderBy('chuc_danh')->pluck('chuc_danh'),
-                'current' => $request->only(['q', 'vai_tro_id', 'chuc_danh', 'is_tu_van']),
+                'phongBans' => PhongBan::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
+                'current' => $request->only(['q', 'vai_tro_id', 'chuc_danh', 'phong_ban_id']),
             ];
         }
 
@@ -383,6 +393,7 @@ class SettingsController extends Controller
             'email'          => ['nullable', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user?->id)],
             'phong_ban_id'   => ['nullable', Rule::exists('phong_ban', 'id')],
             'vai_tro_id'     => ['nullable', Rule::exists('vai_tro', 'id')],
+            'co_so_id'       => ['nullable', Rule::exists('co_so', 'id')],
             'is_admin'       => ['nullable', 'boolean'],
             'password'       => [$user ? 'nullable' : 'required', 'string', 'min:6'],
         ], [
@@ -409,7 +420,8 @@ class SettingsController extends Controller
             'phong_ban_id'   => ($data['phong_ban_id'] ?? null) ?: null,
             'vai_tro_id'     => $vaiTroId,
             'is_admin'       => $isAdmin,
-            'co_so_id'       => $isAdmin ? null : $co_so->id,
+            // Cơ sở lấy theo ô chọn; is_admin KHÔNG còn tự ép về toàn hệ thống nữa.
+            'co_so_id'       => $this->resolveCoSoId($request, $co_so, $user, $data['co_so_id'] ?? null),
         ];
         if (! empty($data['password'])) {
             $attrs['password'] = Hash::make($data['password']);
@@ -418,6 +430,31 @@ class SettingsController extends Controller
         $user ? $user->update($attrs) : User::create($attrs);
 
         return back()->with('ok', $user ? 'Đã cập nhật người dùng.' : 'Đã thêm người dùng.');
+    }
+
+    /**
+     * Quyết định co_so_id cho user, có chốt chặn quyền:
+     * - "Toàn hệ thống" (null) CHỈ super-admin (is_admin + co_so_id null) mới được đặt.
+     * - Admin cơ sở / người khác: không thể tạo tài khoản toàn hệ thống, cũng không thể
+     *   đổi cơ sở của một tài khoản toàn hệ thống sẵn có (giữ nguyên).
+     */
+    private function resolveCoSoId(Request $request, CoSo $co_so, ?User $user, $submitted): ?int
+    {
+        $submitted = ($submitted ?? null) ?: null; // '' -> null (toàn hệ thống)
+        $actor = $request->user();
+        $superAdmin = $actor && $actor->is_admin && is_null($actor->co_so_id);
+
+        if ($superAdmin) {
+            return $submitted; // super-admin toàn quyền, kể cả đặt null
+        }
+
+        // Không phải super-admin:
+        if ($user && is_null($user->co_so_id)) {
+            return null; // tài khoản toàn hệ thống sẵn có -> giữ nguyên, không cho cướp
+        }
+
+        // Không được để null; ép về cơ sở đã chọn hoặc cơ sở hiện tại.
+        return $submitted ?: ($user?->co_so_id ?? $co_so->id);
     }
 
     private function saveCoSo(Request $request, ?CoSo $cs)

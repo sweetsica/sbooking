@@ -18,7 +18,8 @@
         'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00',
         'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => 0,
         'phut_tu_van' => 30, 'phut_kham_ls' => 5,
-        'kieu_phong' => 'phong_kham', 'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => ''];
+        'kieu_phong' => 'phong_kham', 'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => '',
+        'co_so_id' => $coSo->id];
     $hasExtra = in_array($key, ['phong']);
     $colspan = count($cols) + ($hasExtra ? 1 : 0) + 1;
 @endphp
@@ -229,11 +230,12 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 </select>
 </div>
 <div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Trạng thái tư vấn</label>
-<select name="is_tu_van" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Phòng ban</label>
+<select name="phong_ban_id" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
 <option value="">— Tất cả —</option>
-<option value="1" @selected(($userFilters['current']['is_tu_van'] ?? '') === '1')>Bật</option>
-<option value="0" @selected(($userFilters['current']['is_tu_van'] ?? '') === '0')>Tắt</option>
+@foreach ($userFilters['phongBans'] as $pb)
+<option value="{{ $pb->id }}" @selected(($userFilters['current']['phong_ban_id'] ?? '') == $pb->id)>{{ $pb->ten }}</option>
+@endforeach
 </select>
 </div>
 </div>
@@ -267,7 +269,15 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 </thead>
 
 @if ($editable)
+@php $ndGroup = null; @endphp
 @forelse ($rows as $r)
+@if ($key === 'nguoi-dung')
+@php $g = is_null($r->co_so_id) ? 'he_thong' : 'co_so'; @endphp
+@if ($g !== $ndGroup)
+@php $ndGroup = $g; @endphp
+<tbody><tr class="bg-surface-container-low border-y border-outline-variant"><td colspan="{{ $colspan }}" class="px-4 py-2 text-label-caps font-label-caps uppercase text-on-surface-variant">{{ $g === 'he_thong' ? 'Tài khoản hệ thống (mọi cơ sở)' : 'Người dùng cơ sở — '.$coSo->ten }}</td></tr></tbody>
+@endif
+@endif
 @php
     $gmo = '08:00'; $gdong = '21:00';
     if ($key === 'phong') {
