@@ -47,8 +47,8 @@ class BookingFields
             'xuat_lich_tu_van'    => 'Xuất / Nhập lịch tư vấn (Excel)',
 
             // ----- Duyệt -----
-            'duyet_booking'   => 'Duyệt lịch đặt phòng',
-            'duyet_tu_van'    => 'Duyệt lịch tư vấn',
+            'duyet_booking'   => 'Duyệt lịch đặt phòng (khám + dịch vụ)',
+            'duyet_tu_van'    => 'Duyệt lịch hẹn bác sĩ (tư vấn / thăm khám)',
 
             // ----- Sau dịch vụ -----
             'cap_nhat_trang_thai_khach' => 'Cập nhật trạng thái khách (đã tới / trễ / hủy / đã xong)',

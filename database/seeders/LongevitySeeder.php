@@ -505,6 +505,15 @@ class LongevitySeeder extends Seeder
                 ['thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => true, 'active' => true]
             );
         }
+
+        // ---- GÓI DỊCH VỤ — RIÊNG cơ sở 2 (207 NVT) ----
+        // Cùng danh mục gói với cơ sở 1; bản riêng theo cơ sở nên chỉnh ở đây không ảnh hưởng cơ sở khác.
+        foreach ($goiDichVu59 as $ten) {
+            DichVu::updateOrCreate(
+                ['co_so_id' => $cs207nvt->id, 'ten' => $ten],
+                ['thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => true, 'active' => true]
+            );
+        }
     }
 
     private function seedPhong(CoSo $coSo, array $phongs): void
