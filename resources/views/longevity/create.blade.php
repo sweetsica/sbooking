@@ -515,17 +515,14 @@
             } catch (e) {}
         }
         const slots = data.slots || [];
-        khung.innerHTML = slots.length
-            ? slots.map(s => {
-                const lbl = `${s.bd} - ${s.kt}` + (s.full ? ' — đã đầy 🔒' : '');
-                return `<option value="${s.id}" data-bd="${s.bd}" data-kt="${s.kt}" ${s.full ? 'disabled' : ''}>${lbl}</option>`;
-            }).join('')
-            : '<option value="">(Phòng chưa cấu hình khung giờ)</option>';
+        khung.innerHTML = '<option value="">-- Chọn --</option>'
+            + (slots.length
+                ? slots.map(s => {
+                    const lbl = `${s.bd} - ${s.kt}` + (s.full ? ' — đã đầy 🔒' : '');
+                    return `<option value="${s.id}" data-bd="${s.bd}" data-kt="${s.kt}" ${s.full ? 'disabled' : ''}>${lbl}</option>`;
+                }).join('')
+                : '');
         if (oldKhung) { const o = khung.querySelector(`option[value="${oldKhung}"]`); if (o && !o.disabled) khung.value = oldKhung; }
-        if (khung.selectedOptions[0] && khung.selectedOptions[0].disabled) {
-            const avail = khung.querySelector('option:not([disabled])');
-            khung.value = avail ? avail.value : '';
-        }
         applyTimeLocks();
         updateEnd();
         loadBacSi();
@@ -534,31 +531,32 @@
     // Generate options cho gio_thuc_hien / gio_ket_thuc THEO khung giờ đã chọn (step 5 phút)
     function rebuildGioOptions() {
         const opt = khung.options[khung.selectedIndex];
-        if (!opt || !batDau || !ketThuc) return;
-        const bd = opt.getAttribute('data-bd') || '';
-        const kt = opt.getAttribute('data-kt') || '';
-        if (!bd || !kt) return;
+        if (!batDau || !ketThuc) return;
+        const bd = opt ? opt.getAttribute('data-bd') || '' : '';
+        const kt = opt ? opt.getAttribute('data-kt') || '' : '';
+
+        if (!bd || !kt || !khung.value) {
+            batDau.innerHTML = '<option value="">-- Chọn giờ --</option>';
+            ketThuc.innerHTML = '<option value="">-- Chọn giờ --</option>';
+            return;
+        }
 
         const toMin = t => parseInt(t.slice(0, 2)) * 60 + parseInt(t.slice(3, 5));
         const fmt = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
         const s = toMin(bd), e = toMin(kt);
 
-        // Giữ giá trị đang chọn (hoặc data-old) để khôi phục
         const bdOld = batDau.value || batDau.dataset.old || '';
         const ktOld = ketThuc.value || ketThuc.dataset.old || '';
 
-        // Bắt đầu: từ s đến e-5 (bao gồm s, không bao gồm e)
         let opts = '<option value="">-- Chọn giờ --</option>';
         for (let t = s; t < e; t += 5) {
             const v = fmt(t);
             opts += `<option value="${v}">${v}</option>`;
         }
         batDau.innerHTML = opts;
-        // Khôi phục nếu giá trị cũ vẫn fit khung
         if (bdOld && batDau.querySelector(`option[value="${bdOld}"]`)) batDau.value = bdOld;
         else batDau.value = bd;
 
-        // Kết thúc: từ s+5 đến e (bao gồm e)
         opts = '<option value="">-- Chọn giờ --</option>';
         for (let t = s + 5; t <= e; t += 5) {
             const v = fmt(t);
