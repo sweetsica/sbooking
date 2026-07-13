@@ -151,61 +151,35 @@ class LongevitySeeder extends Seeder
 
         // --- Bác sĩ + KTV theo phòng chức năng ---
 
-        // (Bác sĩ riêng lẻ đã bỏ — module bác sĩ dùng DANH MỤC bac_si, seed bên dưới.)
-        User::updateOrCreate(['username' => 'ktv1'], [
-            'name'         => 'KTV Phòng Ngoại',
-            'email'        => 'ktv1@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbKhamNgoai->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
-
-        User::updateOrCreate(['username' => 'ktv2'], [
-            'name'         => 'KTV Phòng Chuyên gia',
-            'email'        => 'ktv2@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbChuyenGia->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
-
-        User::updateOrCreate(['username' => 'ktv3'], [
-            'name'         => 'KTV Phòng Nội 1',
-            'email'        => 'ktv3@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbKhamNoi1->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
-
-        User::updateOrCreate(['username' => 'ktv4'], [
-            'name'         => 'KTV Phòng Nội 2',
-            'email'        => 'ktv4@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbKhamNoi2->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
-
-        User::updateOrCreate(['username' => 'ktv5'], [
-            'name'         => 'KTV Phòng Siêu âm',
-            'email'        => 'ktv5@59ntn.local',
-            'chuc_danh'    => 'KTV.',
-            'password'     => $matKhau,
-            'co_so_id'     => $cs59ntn->id,
-            'phong_ban_id' => $pbSieuAm->id,
-            'vai_tro_id'   => $vrKtv->id,
-            'is_admin'     => false,
-        ]);
+        // --- KTV & Điều dưỡng 59 NTN (theo kế hoạch nhân sự) ---
+        $ktvHN = [
+            ['username' => 'ktv_viet',    'name' => 'Đỗ Ngọc Việt',            'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_tu',      'name' => 'Nguyễn Thị Tú',           'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_hoa',     'name' => 'Nguyễn Văn Hoà',          'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_dong',    'name' => 'Đỗ Đức Đông',             'chuc_danh' => 'KTV.'],
+            ['username' => 'ddt_trang',   'name' => 'Nguyễn Mạnh Tráng',       'chuc_danh' => 'ĐDT.'],
+            ['username' => 'dd_thao',     'name' => 'Quản Thị Thảo',           'chuc_danh' => 'ĐD.'],
+            ['username' => 'dd_quynh',    'name' => 'Nguyễn Thị Diễm Quỳnh',   'chuc_danh' => 'ĐD.'],
+            ['username' => 'ddt_nhan',    'name' => 'Phạm Thị Thanh Nhàn',     'chuc_danh' => 'ĐDT.'],
+            ['username' => 'dd_mi',       'name' => 'Trần Trà Mi',             'chuc_danh' => 'ĐD.'],
+            ['username' => 'ktv_tthao',   'name' => 'Trịnh Thị Thảo',          'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_huong',   'name' => 'Đỗ Thu Hương',            'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_phuong',  'name' => 'Nguyễn Thị Minh Phương',  'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_bach',    'name' => 'Nguyễn Chí Bách',         'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_vi',      'name' => 'Nguyễn Thị Lan Vi',       'chuc_danh' => 'KTV.'],
+        ];
+        foreach ($ktvHN as $k) {
+            User::updateOrCreate(['username' => $k['username']], [
+                'name'         => $k['name'],
+                'email'        => $k['username'] . '@59ntn.local',
+                'chuc_danh'    => $k['chuc_danh'],
+                'password'     => $matKhau,
+                'co_so_id'     => $cs59ntn->id,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $vrKtv->id,
+                'is_admin'     => false,
+            ]);
+        }
 
         // --- Phòng khám 59 NTN: 5 phòng khám, mỗi phòng 1 ghế (tuần tự) ---
         // 'giuong' = số phục vụ SONG SONG = 1 (1 bác sĩ/phòng). "12 khách/giờ"
@@ -215,6 +189,7 @@ class LongevitySeeder extends Seeder
             'Phòng chuyên gia' => ['giuong' => 1, 'phut' => 5],
             'Phòng khám Nội 1' => ['giuong' => 1, 'phut' => 5],
             'Phòng khám Nội 2' => ['giuong' => 1, 'phut' => 5],
+            'Phòng khám YHCT'  => ['giuong' => 1, 'phut' => 5],
             'Phòng siêu âm'   => ['giuong' => 1, 'phut' => 5],
         ]);
 
@@ -244,6 +219,15 @@ class LongevitySeeder extends Seeder
 
         // DANH MỤC bác sĩ (bảng bac_si) — nguồn bác sĩ cho form đặt lịch phòng khám.
         // Bác sĩ gán vào phòng qua pivot phong_bac_si (bac_si_id), cấu hình ở Thiết lập → Phòng.
+        // Đổi tên bác sĩ cũ (tên tạm) → tên đầy đủ theo kế hoạch nhân sự.
+        foreach ([
+            'Bác Biên (Tim mạch)' => 'Vũ Điên Biên',
+            'Bác Hồng'            => 'Nguyễn Thị Thu Hồng',
+            'Bác Bình'            => 'Ngọc Bình',
+        ] as $tenCu => $tenMoi) {
+            BacSi::where('co_so_id', $cs59ntn->id)->where('ten', $tenCu)->update(['ten' => $tenMoi]);
+        }
+
         $mkBacSi = fn (array $attr) => BacSi::updateOrCreate(
             ['co_so_id' => $cs59ntn->id, 'ten' => $attr['ten']],
             $attr + ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '18:00', 'active' => true]
@@ -252,17 +236,19 @@ class LongevitySeeder extends Seeder
         $dmLHD = $mkBacSi(['ten' => 'Lê Tuyên Hồng Dương', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
         $dmTTB = $mkBacSi(['ten' => 'Trương Thị Biên',     'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
         $dmNTN = $mkBacSi(['ten' => 'Ngô Thị Ngà',         'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
-        $dmBB  = $mkBacSi(['ten' => 'Bác Biên (Tim mạch)', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
-        $dmBH  = $mkBacSi(['ten' => 'Bác Hồng',            'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 15]);
-        $dmBinh = $mkBacSi(['ten' => 'Bác Bình',           'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 25]);
+        $dmBB  = $mkBacSi(['ten' => 'Vũ Điên Biên',          'chuc_danh' => 'BS.', 'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
+        $dmBH  = $mkBacSi(['ten' => 'Nguyễn Thị Thu Hồng',  'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 15]);
+        $dmBinh = $mkBacSi(['ten' => 'Ngọc Bình',           'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 25]);
+        $dmTVQ = $mkBacSi(['ten' => 'Trần Văn Quang',       'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
 
         // Gán bác sĩ (danh mục) vào phòng theo cấu hình phòng khám 59 NTN.
         $ganBacSiPhong = [
-            'Phòng khám Ngoại' => [$dmND->id],            // Nguyễn Tiến Dũng
-            'Phòng chuyên gia' => [$dmLHD->id],           // Lê Tuyên Hồng Dương
-            'Phòng khám Nội 1' => [$dmTTB->id],           // Trương Thị Biên
-            'Phòng khám Nội 2' => [$dmNTN->id, $dmBB->id],// Ngô Thị Ngà + Bác Biên (Tim mạch)
-            'Phòng siêu âm'    => [$dmBH->id, $dmBinh->id],// Bác Hồng (15p) + Bác Bình (25p)
+            'Phòng khám Ngoại' => [$dmND->id],
+            'Phòng chuyên gia' => [$dmLHD->id, $dmBB->id],
+            'Phòng khám Nội 1' => [$dmTTB->id],
+            'Phòng khám Nội 2' => [$dmNTN->id],
+            'Phòng khám YHCT'  => [$dmTVQ->id],
+            'Phòng siêu âm'    => [$dmBH->id, $dmBinh->id],
         ];
         foreach ($ganBacSiPhong as $tenPhong => $bsIds) {
             $phong = Phong::where('co_so_id', $cs59ntn->id)->where('ten', $tenPhong)->first();
@@ -334,17 +320,11 @@ class LongevitySeeder extends Seeder
         // =============================================
         // CƠ SỞ 2 — 207 Nguyễn Văn Thủ, HCM (8h - 18h)
         // =============================================
-        // Xóa phòng cũ 'Phòng khám Nội' (đổi thành 'Phòng Tư vấn' theo danh sách mới).
-        Phong::where('co_so_id', $cs207nvt->id)
-            ->where('ten', 'Phòng khám Nội')
-            ->each(function ($p) {
-                $p->khungGios()->delete();
-                $p->delete();
-            });
         $this->seedPhong($cs207nvt, [
-            'Phòng siêu âm'  => ['giuong' => 1, 'phut' => 25], // 1 phòng, 25 phút/khách
-            'Phòng Tư vấn'   => 1,
-            'Phòng YHCT'     => 1,
+            'Phòng siêu âm'   => ['giuong' => 1, 'phut' => 25],
+            'Phòng Tư vấn'    => 1,
+            'Phòng YHCT'      => 1,
+            'Phòng khám Nội'  => ['giuong' => 1, 'phut' => 5],
         ]);
 
         // DANH MỤC bác sĩ cơ sở 2 (dữ liệu danh mục, KHÔNG phải tài khoản đăng nhập).
@@ -352,21 +332,23 @@ class LongevitySeeder extends Seeder
             ['co_so_id' => $cs207nvt->id, 'ten' => $attr['ten']],
             $attr + ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '18:00', 'active' => true]
         );
-        $bsHVD = $mkBacSi207(['ten' => 'Hoàng Văn Đông', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]); // Tư vấn Medical
-        $bsLHT = $mkBacSi207(['ten' => 'Lê Huy Thư',     'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]); // Da liễu
-        $bsDCD = $mkBacSi207(['ten' => 'Đặng Công Danh', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => false]);                     // YHCT
+        $bsHVD = $mkBacSi207(['ten' => 'Hoàng Văn Đông',  'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
+        $bsLHT = $mkBacSi207(['ten' => 'Lê Huy Thư',     'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
+        $bsDCD = $mkBacSi207(['ten' => 'Đặng Công Danh', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
+        $bsDDV = $mkBacSi207(['ten' => 'Dương Đức Việt',  'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
 
         // Gán bác sĩ vào phòng cơ sở 2.
         $ganBacSiPhong207 = [
-            'Phòng Tư vấn' => [$bsHVD->id, $bsLHT->id], // Hoàng Văn Đông + Lê Huy Thư
-            'Phòng YHCT'   => [$bsDCD->id],             // Đặng Công Danh
+            'Phòng Tư vấn'    => [$bsHVD->id, $bsLHT->id],
+            'Phòng YHCT'      => [$bsDCD->id],
+            'Phòng khám Nội'  => [$bsDDV->id],
         ];
         foreach ($ganBacSiPhong207 as $tenPhong => $bsIds) {
             $phong = Phong::where('co_so_id', $cs207nvt->id)->where('ten', $tenPhong)->first();
             $phong?->bacSis()->sync($bsIds);
         }
 
-        // Sinh ca khám (tư vấn) cho bác sĩ cơ sở 2 nhận tư vấn.
+        // Sinh ca khám (tư vấn) cho bác sĩ cơ sở 2 nhận tư vấn (chỉ BS có nhan_tu_van).
         foreach ([$bsHVD, $bsLHT, $bsDCD] as $dm) {
             $dm->taoCaKham();
         }
@@ -422,6 +404,31 @@ class LongevitySeeder extends Seeder
             ]);
         }
 
+        // --- KTV & Điều dưỡng HCM (cơ sở 207 NVT) ---
+        $ktvHCM = [
+            ['username' => 'ktv_kieu',   'name' => 'Đàm Thúy Kiều',          'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_gam',    'name' => 'Nguyễn Thị Hồng Gấm',    'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_huyen',  'name' => 'Trần Thị Tú Huyên',      'chuc_danh' => 'KTV.'],
+            ['username' => 'ktv_thuan',  'name' => 'Hoàng Hải Thuận',        'chuc_danh' => 'KTV.'],
+            ['username' => 'ddt_loan',   'name' => 'Nguyễn Thị Thu Loan',    'chuc_danh' => 'ĐDT.'],
+            ['username' => 'dd_tuan',    'name' => 'Hoàng Tam Tuấn',         'chuc_danh' => 'ĐD.'],
+            ['username' => 'dd_tien',    'name' => 'Nguyễn Thủy Tiên',       'chuc_danh' => 'ĐD.'],
+            ['username' => 'ktv_tan',    'name' => 'Nguyễn Thành Tân',       'chuc_danh' => 'KTV.'],
+            ['username' => 'dd_thanh',   'name' => 'Khưu Thị Phương Thanh',  'chuc_danh' => 'ĐD.'],
+        ];
+        foreach ($ktvHCM as $k) {
+            User::updateOrCreate(['username' => $k['username']], [
+                'name'         => $k['name'],
+                'email'        => $k['username'] . '@207nvt.local',
+                'chuc_danh'    => $k['chuc_danh'],
+                'password'     => $matKhau,
+                'co_so_id'     => $cs207nvt->id,
+                'phong_ban_id' => null,
+                'vai_tro_id'   => $vrKtv->id,
+                'is_admin'     => false,
+            ]);
+        }
+
         // =============================================
         // CƠ SỞ 3 — Lô 2+3 KĐT Trần Đăng Ninh (8h - 18h)
         // =============================================
@@ -447,7 +454,7 @@ class LongevitySeeder extends Seeder
         }
 
         // Xóa các tên dịch vụ cũ bị trùng nghĩa (idempotent: chạy lại nhiều lần OK)
-        DichVu::whereIn('ten', ['Tư vấn', 'Thăm khám lâm sàng (trừ tim mạch)', 'Massage'])->delete();
+        DichVu::whereIn('ten', ['Thăm khám lâm sàng (trừ tim mạch)', 'Massage'])->delete();
 
         $menus = ['Trà', 'Hoa quả', 'Bánh kẹo'];
 
@@ -461,6 +468,7 @@ class LongevitySeeder extends Seeder
             ['ten' => 'Lấy máu',               'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10, 'la_dich_vu' => false],
             ['ten' => 'Đọc kết quả Gene',      'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
             ['ten' => 'Tư vấn - đọc kết quả',  'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
+            ['ten' => 'Tư vấn',                'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30, 'la_dich_vu' => false],
             // 2 DỊCH VỤ (la_dich_vu=true) → hiện ở form đặt lịch dịch vụ
             ['ten' => 'Xông hơi',              'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30, 'la_dich_vu' => true],
             ['ten' => 'Trị liệu YHCT',         'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 60, 'la_dich_vu' => true],
