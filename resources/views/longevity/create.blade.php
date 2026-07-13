@@ -642,7 +642,7 @@
         let msg = '';
         if (opt && opt.value) {
             if (opt.dataset.nghi === '1') msg = `${nhan} đang nghỉ (ngày nghỉ) vào ngày/ca này.`;
-            else if (!coLich) msg = `${nhan} chưa đăng ký lịch làm việc.`;
+            else if (!coLich) msg = `${nhan} chưa có lịch làm việc hôm này, vẫn đặt book được nhưng admin cần chú ý.`;
             else if (opt.dataset.truc === '0') msg = `${nhan} không làm việc vào thời gian này.`;
         }
         if (msg) { if (msgEl) msgEl.textContent = msg; warnEl.classList.remove('hidden'); }
