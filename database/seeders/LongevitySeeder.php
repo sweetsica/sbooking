@@ -336,7 +336,7 @@ class LongevitySeeder extends Seeder
         $bsLHT = $mkBacSi207(['ten' => 'Lê Huy Thư',     'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5]);
         $bsDCD = $mkBacSi207(['ten' => 'Đặng Công Danh', 'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => false]);
         $bsDDV = $mkBacSi207(['ten' => 'Dương Đức Việt',  'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true, 'phut_kham_ls' => 5]);
-        $bsNDD = $mkBacSi207(['ten' => 'Ngô Duy Đức',    'chuc_danh' => 'BS.', 'nhan_tu_van' => false, 'nhan_kham_ls' => true, 'phut_kham_ls' => 25]);
+        $bsNDD = $mkBacSi207(['ten' => 'Ngô Duy Đức',    'chuc_danh' => 'BS.', 'nhan_tu_van' => true, 'phut_tu_van' => 30, 'nhan_kham_ls' => true, 'phut_kham_ls' => 25]);
 
         // Gán bác sĩ vào phòng cơ sở 2.
         $ganBacSiPhong207 = [
