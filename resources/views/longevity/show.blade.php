@@ -236,6 +236,14 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="ro">{{ $booking->bacSi?->ten_day_du ?? '—' }}</div>
 </div>
 <div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng lọ</label>
+<div class="ro">{{ $booking->so_luong_lo ?? '—' }}</div>
+</div>
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dung tích lọ</label>
+<div class="ro">{{ $booking->dung_tich_lo ?? '—' }}</div>
+</div>
+<div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">KTV</label>
 <div class="ro">{{ $booking->ktv?->ten_day_du ?? '—' }}</div>
 </div>

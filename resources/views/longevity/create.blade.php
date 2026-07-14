@@ -370,16 +370,33 @@
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-on-surface-variant/60 text-[11px]">— không bắt buộc</span></label>
-<select id="dich_vu" name="dich_vu_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<div class="relative" data-searchable-select>
+<select id="dich_vu" name="dich_vu_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" data-ss-placeholder="-- Chọn dịch vụ --">
 <option value="">-- Chọn dịch vụ --</option>
 @foreach ($dichVus as $dv)
 <option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
 @endforeach
 </select>
 </div>
+</div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
 <input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng lọ</label>
+<input name="so_luong_lo" value="{{ old('so_luong_lo', $bk?->so_luong_lo) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1" type="number" min="1"/>
+</div>
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dung tích lọ</label>
+<select name="dung_tich_lo" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
+@foreach (['8M','10M','16M','20M','450M','1 LT','2 LT'] as $dt)
+<option value="{{ $dt }}" @selected(old('dung_tich_lo', $bk?->dung_tich_lo)===$dt)>{{ $dt }}</option>
+@endforeach
+</select>
+</div>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
@@ -403,15 +420,32 @@
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-error">*</span></label>
-<select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<div class="relative" data-searchable-select>
+<select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" data-ss-placeholder="-- Chọn dịch vụ --">
 @foreach ($dichVus as $dv)
 <option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
 @endforeach
 </select>
 </div>
+</div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
 <input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
+</div>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng lọ</label>
+<input name="so_luong_lo" value="{{ old('so_luong_lo', $bk?->so_luong_lo) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1" type="number" min="1"/>
+</div>
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dung tích lọ</label>
+<select name="dung_tich_lo" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
+@foreach (['8M','10M','16M','20M','450M','1 LT','2 LT'] as $dt)
+<option value="{{ $dt }}" @selected(old('dung_tich_lo', $bk?->dung_tich_lo)===$dt)>{{ $dt }}</option>
+@endforeach
+</select>
+</div>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV)</label>
@@ -762,6 +796,110 @@
     });
 
     if (window.lucide) lucide.createIcons();
+
+    // Custom searchable dropdown: ẩn native select, build dropdown có ô tìm kiếm bên trong
+    document.querySelectorAll('[data-searchable-select]').forEach(wrap => {
+        const sel = wrap.querySelector('select');
+        if (!sel) return;
+        const placeholder = sel.dataset.ssPlaceholder || '-- Chọn --';
+
+        sel.style.display = 'none';
+
+        // Build UI
+        const trigger = document.createElement('button');
+        trigger.type = 'button';
+        trigger.className = 'w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md text-left flex items-center justify-between';
+        const triggerLabel = document.createElement('span');
+        triggerLabel.className = 'truncate';
+        const triggerArrow = document.createElement('span');
+        triggerArrow.className = 'material-symbols-outlined text-[18px] text-on-surface-variant ml-2 shrink-0';
+        triggerArrow.textContent = 'expand_more';
+        trigger.append(triggerLabel, triggerArrow);
+
+        const dropdown = document.createElement('div');
+        dropdown.className = 'absolute z-50 left-0 right-0 mt-1 bg-surface-container-lowest border border-outline rounded-lg shadow-lg hidden';
+
+        const searchWrap = document.createElement('div');
+        searchWrap.className = 'border-b border-outline-variant p-2';
+        const searchInput = document.createElement('input');
+        searchInput.type = 'text';
+        searchInput.placeholder = 'Tìm dịch vụ...';
+        searchInput.autocomplete = 'off';
+        searchInput.className = 'w-full px-3 py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm form-input-focus';
+        searchWrap.appendChild(searchInput);
+
+        const listWrap = document.createElement('div');
+        listWrap.className = 'overflow-y-auto';
+        listWrap.style.maxHeight = '220px';
+
+        dropdown.append(searchWrap, listWrap);
+        wrap.append(trigger, dropdown);
+
+        let items = [];
+
+        function buildItems() {
+            listWrap.innerHTML = '';
+            items = [];
+            [...sel.options].forEach(o => {
+                if (!o.value) return;
+                const item = document.createElement('div');
+                item.className = 'px-4 py-2 text-body-md cursor-pointer hover:bg-surface-container-high transition-colors';
+                item.textContent = o.textContent;
+                item.dataset.value = o.value;
+                item.addEventListener('click', () => {
+                    sel.value = o.value;
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
+                    close();
+                });
+                listWrap.appendChild(item);
+                items.push({ el: item, option: o, text: o.textContent.toLowerCase() });
+            });
+        }
+        buildItems();
+
+        function syncLabel() {
+            const cur = sel.options[sel.selectedIndex];
+            triggerLabel.textContent = (cur && cur.value) ? cur.textContent : placeholder;
+            triggerLabel.classList.toggle('text-on-surface-variant', !cur || !cur.value);
+            items.forEach(i => {
+                i.el.classList.toggle('bg-secondary-container/30', i.option.value === sel.value);
+                i.el.classList.toggle('font-semibold', i.option.value === sel.value);
+            });
+        }
+        syncLabel();
+
+        let isOpen = false;
+        function open() {
+            dropdown.classList.remove('hidden');
+            isOpen = true;
+            searchInput.value = '';
+            filterItems('');
+            setTimeout(() => searchInput.focus(), 0);
+            const selected = listWrap.querySelector('.font-semibold');
+            if (selected) selected.scrollIntoView({ block: 'nearest' });
+        }
+        function close() {
+            dropdown.classList.add('hidden');
+            isOpen = false;
+        }
+        function filterItems(q) {
+            items.forEach(i => {
+                const hidden = i.option.hidden || (i.option.disabled && !i.option.selected);
+                const match = !q || i.text.includes(q);
+                i.el.style.display = (hidden || !match) ? 'none' : '';
+            });
+        }
+
+        trigger.addEventListener('click', () => { isOpen ? close() : open(); });
+        searchInput.addEventListener('input', () => filterItems(searchInput.value.toLowerCase().trim()));
+        searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
+        document.addEventListener('click', e => { if (isOpen && !wrap.contains(e.target)) close(); });
+
+        // Đồng bộ khi select thay đổi từ bên ngoài (lọc nhóm loại chính)
+        const obs = new MutationObserver(() => { buildItems(); syncLabel(); });
+        obs.observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden','disabled'] });
+        sel.addEventListener('change', syncLabel);
+    });
 })();
 </script>
 
@@ -775,7 +913,7 @@
     form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
         const n = el.getAttribute('name');
         // Bỏ qua các field không thuộc danh mục phân quyền (csrf, menu_ids[]).
-        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','bac_si_id','ktv_user_id','ghi_chu'];
+        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','so_luong_lo','dung_tich_lo','ket_hop_medical','bac_si_id','ktv_user_id','ghi_chu'];
         if (! trackable.includes(n)) return;
         if (! allowed.includes(n)) {
             el.disabled = true;

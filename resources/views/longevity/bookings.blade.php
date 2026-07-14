@@ -275,6 +275,8 @@
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">SALE</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">LIỆU PHÁP</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">SỐ LIỆU TRÌNH</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">SỐ LƯỢNG LỌ</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">DUNG TÍCH LỌ</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">KẾT HỢP MEDICAL?</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">BÁC SĨ</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">KTV</th>
@@ -301,6 +303,8 @@
 <td class="px-4 py-4 text-body-sm">{{ $b->sale?->name ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm">{{ $b->dichVu?->ten ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm text-center">{{ $b->so_lieu_trinh ?? '—' }}</td>
+<td class="px-4 py-4 text-body-sm text-center">{{ $b->so_luong_lo ?? '—' }}</td>
+<td class="px-4 py-4 text-body-sm text-center">{{ $b->dung_tich_lo ?? '—' }}</td>
 <td class="px-4 py-4 text-center">
 @if ($b->ket_hop_medical)
 <span class="material-symbols-outlined text-on-tertiary-container text-[20px]">check_circle</span>
