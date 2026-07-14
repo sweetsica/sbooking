@@ -500,7 +500,7 @@ class LongevitySeeder extends Seeder
         // ---- GÓI DỊCH VỤ (la_dich_vu=true) — RIÊNG cơ sở 1 (59 NTN) ----
         // Mục độc lập, KHÔNG gắn với một phòng dịch vụ cụ thể (phòng chọn riêng khi đặt).
         // Mặc định 30 phút/thuộc nhóm 'khac'; chỉnh lại sau ở Thiết lập → Dịch vụ nếu cần.
-        $goiDichVu59 = [
+        $goiDichVu = [
             'Gói khám sức khỏe chuyên sâu Signature nam',
             'Gói khám sức khỏe chuyên sâu Signature nữ',
             'Gói khám sức khỏe định kỳ Diamond Nam',
@@ -522,32 +522,34 @@ class LongevitySeeder extends Seeder
             'TruAge',
             'Gene2 + Gene2 Plus + TruAge',
             'Return TruAge',
+            'Thủy châm (1 vùng)',
             'EAQ (1 vùng)',
             'BJR (1 khớp)',
+            'BJR (1 vùng)',
             'HA 1%/khớp',
             'HA 2%/khớp',
             'PRP/khớp',
             'Y học Phương Đông',
+            'Y học Phương Đông (Ghế YHCT tầng 4)',
             'DeepOxy & DetoxCell (xông)',
             'DeepOxy & DetoxCell (tổng hợp)',
             'STC Japan',
             'NK',
             'Recells',
+            'Metaboost',
+            'MesoF',
+            'Thải độc (ILR)',
+            'Miễn dịch (MAT)',
         ];
-        foreach ($goiDichVu59 as $ten) {
-            DichVu::updateOrCreate(
-                ['co_so_id' => $cs59ntn->id, 'ten' => $ten],
-                ['thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => true, 'active' => true]
-            );
-        }
 
-        // ---- GÓI DỊCH VỤ — RIÊNG cơ sở 2 (207 NVT) ----
-        // Cùng danh mục gói với cơ sở 1; bản riêng theo cơ sở nên chỉnh ở đây không ảnh hưởng cơ sở khác.
-        foreach ($goiDichVu59 as $ten) {
-            DichVu::updateOrCreate(
-                ['co_so_id' => $cs207nvt->id, 'ten' => $ten],
-                ['thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => true, 'active' => true]
-            );
+        // Seed gói dịch vụ cho TẤT CẢ cơ sở
+        foreach ($dsCoSo as $cs) {
+            foreach ($goiDichVu as $ten) {
+                DichVu::updateOrCreate(
+                    ['co_so_id' => $cs->id, 'ten' => $ten],
+                    ['thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => true, 'active' => true]
+                );
+            }
         }
     }
 
