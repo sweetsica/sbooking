@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\CoSo;
 use App\Models\DichVu;
 use Illuminate\Database\Migrations\Migration;
 
@@ -17,7 +18,7 @@ return new class extends Migration
             'Y học Phương Đông (Ghế YHCT tầng 4)',
         ];
 
-        foreach ([1, 2] as $coSoId) {
+        foreach (CoSo::pluck('id') as $coSoId) {
             foreach ($newServices as $ten) {
                 DichVu::firstOrCreate(
                     ['co_so_id' => $coSoId, 'ten' => $ten],
