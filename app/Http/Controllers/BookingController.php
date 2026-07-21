@@ -26,7 +26,7 @@ use Illuminate\Validation\Rule;
 class BookingController extends Controller
 {
     use AuthorizesByPhanQuyen;
-    public function create(CoSo $co_so)
+    public function create(CoSo $co_so, Request $request)
     {
         $this->authorizePerm('them_booking');
 
@@ -34,11 +34,13 @@ class BookingController extends Controller
             'bk' => null,
             'allowedFields' => null,
             'loaiDatLich' => 'phong_kham',
+            'prefill' => $this->prefillFromQuery($request),
+            'returnUrl' => $this->safeReturnUrl($request->query('return_url')),
         ]);
     }
 
     /** Form đặt lịch dịch vụ - chỉ Phòng + KTV + Dịch vụ (không có BS). */
-    public function createDichVu(CoSo $co_so)
+    public function createDichVu(CoSo $co_so, Request $request)
     {
         $this->authorizePerm('them_booking');
 
@@ -46,7 +48,44 @@ class BookingController extends Controller
             'bk' => null,
             'allowedFields' => null,
             'loaiDatLich' => 'dich_vu',
+            'prefill' => $this->prefillFromQuery($request),
+            'returnUrl' => $this->safeReturnUrl($request->query('return_url')),
         ]);
+    }
+
+    /** Lấy prefill khách hàng từ query (SCRM gửi sang khi mở form). */
+    private function prefillFromQuery(Request $request): array
+    {
+        return [
+            'ho_ten'        => trim((string) $request->query('ho_ten', '')),
+            'so_dien_thoai' => trim((string) $request->query('so_dien_thoai', '')),
+            'email'         => trim((string) $request->query('email', '')),
+        ];
+    }
+
+    /**
+     * Chỉ chấp nhận return_url có host nằm trong whitelist services.scrm.callback_hosts.
+     * Trả về URL đã chuẩn hoá hoặc null.
+     */
+    private function safeReturnUrl(?string $url): ?string
+    {
+        if (! $url) return null;
+
+        $parts = parse_url($url);
+        if (! $parts || empty($parts['scheme']) || empty($parts['host'])) return null;
+        if (! in_array($parts['scheme'], ['http', 'https'], true)) return null;
+
+        // Ưu tiên setting DB (admin sửa qua UI Thiết lập › Kết nối SCRM), fallback env.
+        $dbList = \App\Models\AppSetting::get('scrm_callback_hosts');
+        $hosts = $dbList
+            ? array_values(array_filter(array_map('trim', preg_split('/[\r\n,]+/', $dbList))))
+            : (array) config('services.scrm.callback_hosts', []);
+        $hostPort = $parts['host'] . (isset($parts['port']) ? ':' . $parts['port'] : '');
+        if (! in_array($parts['host'], $hosts, true) && ! in_array($hostPort, $hosts, true)) {
+            return null;
+        }
+
+        return $url;
     }
 
     /** Store cho đặt lịch dịch vụ - ép loai_dat_lich + bỏ BS check. */
@@ -828,6 +867,17 @@ class BookingController extends Controller
         }
 
         $this->notifyLich($booking, LichEvent::TAO_MOI);
+
+        // Nếu SCRM (hoặc client bên ngoài) mở form kèm return_url whitelist → redirect callback với mã booking.
+        $return = $this->safeReturnUrl($request->input('return_url'));
+        if ($return) {
+            $booking->refresh(); // đảm bảo có ma_booking (sinh ở event created)
+            $sep = str_contains($return, '?') ? '&' : '?';
+            return redirect()->away($return . $sep . http_build_query([
+                'booking_ma' => $booking->ma_booking,
+                'booking_id' => $booking->id,
+            ]));
+        }
 
         return redirect("/{$co_so->slug}/danh-sach")
             ->with('ok', 'Đã tạo lịch hẹn cho ' . $kh->ho_ten . '.')

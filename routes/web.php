@@ -130,6 +130,8 @@ Route::prefix('{co_so:slug}')->group(function () {
             // Ghi + các mục quản trị khác: CHỈ ADMIN
             Route::middleware('admin')->group(function () {
                 Route::get('/nguoi-dung/xuat', [ExcelController::class, 'exportNguoiDung'])->name('nguoidung.xuat');
+                Route::get('/ket-noi/scrm', [\App\Http\Controllers\ScrmConnectionController::class, 'edit'])->name('scrm-connection.edit');
+                Route::post('/ket-noi/scrm', [\App\Http\Controllers\ScrmConnectionController::class, 'update'])->name('scrm-connection.update');
                 Route::post('/{section}', [SettingsController::class, 'store'])->name('store');
                 Route::put('/{section}/{id}', [SettingsController::class, 'update'])->name('update');
                 Route::delete('/{section}/{id}', [SettingsController::class, 'destroy'])->name('destroy');

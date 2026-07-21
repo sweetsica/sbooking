@@ -35,4 +35,10 @@ return [
         ],
     ],
 
+    'scrm' => [
+        'api_token' => env('SCRM_API_TOKEN'),
+        // Whitelist host cho callback return_url (comma-separated env). Chống open-redirect.
+        'callback_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('SCRM_CALLBACK_HOSTS', ''))))),
+    ],
+
 ];

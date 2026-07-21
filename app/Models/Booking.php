@@ -13,6 +13,7 @@ class Booking extends Model
     protected $table = 'booking';
 
     protected $fillable = [
+        'ma_booking',
         'co_so_id', 'loai_dat_lich', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
         'bac_si_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
         'so_lieu_trinh', 'so_luong_lo', 'dung_tich_lo', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
@@ -28,6 +29,17 @@ class Booking extends Model
         'co_kham_cls' => 'boolean',
         'da_duyet' => 'boolean',
     ];
+
+    protected static function booted(): void
+    {
+        // Tự sinh ma_booking sau khi tạo (cần id). Format: BKG-yymmdd-{id 6 số}.
+        static::created(function (self $b): void {
+            if (! $b->ma_booking) {
+                $b->ma_booking = sprintf('BKG-%s-%06d', ($b->created_at ?? now())->format('ymd'), $b->id);
+                $b->saveQuietly();
+            }
+        });
+    }
 
     public function coSo(): BelongsTo
     {

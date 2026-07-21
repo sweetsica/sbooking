@@ -203,17 +203,20 @@
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Họ tên KH <span class="text-error">*</span></label>
-<input name="ho_ten" value="{{ old('ho_ten', $bk?->khachHang?->ho_ten) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập họ và tên..." type="text"/>
+<input name="ho_ten" value="{{ old('ho_ten', $bk?->khachHang?->ho_ten ?? ($prefill['ho_ten'] ?? '')) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập họ và tên..." type="text"/>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số điện thoại <span class="text-error">*</span></label>
-<input id="sdt" name="so_dien_thoai" value="{{ old('so_dien_thoai', $bk?->khachHang?->so_dien_thoai) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot" placeholder="0xxx xxx xxx" type="tel"/>
+<input id="sdt" name="so_dien_thoai" value="{{ old('so_dien_thoai', $bk?->khachHang?->so_dien_thoai ?? ($prefill['so_dien_thoai'] ?? '')) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot" placeholder="0xxx xxx xxx" type="tel"/>
 <p id="sdt-msg" class="hidden mt-1 text-body-sm text-secondary font-medium"></p>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Địa chỉ Email</label>
-<input name="email" value="{{ old('email', $bk?->khachHang?->email) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="email (tuỳ chọn)" type="email"/>
+<input name="email" value="{{ old('email', $bk?->khachHang?->email ?? ($prefill['email'] ?? '')) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="email (tuỳ chọn)" type="email"/>
+@if(!empty($returnUrl ?? null))
+    <input type="hidden" name="return_url" value="{{ $returnUrl }}"/>
+@endif
 </div>
 </div>
 </div>

@@ -23,5 +23,19 @@
 </div>
 </a>
 @endforeach
+@if (auth()->user()?->is_admin)
+    <a href="{{ route('settings.scrm-connection.edit', $coSo) }}"
+       class="group bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:shadow-lg hover:border-secondary/40 transition-all">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-secondary-container/40 text-on-secondary-container flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                <span class="material-symbols-outlined">cable</span>
+            </div>
+            <div>
+                <h3 class="text-headline-md font-headline-md mb-1">Kết nối SCRM</h3>
+                <p class="text-body-sm text-on-surface-variant">Whitelist host được phép nhận callback sau khi đặt lịch (chống open-redirect).</p>
+            </div>
+        </div>
+    </a>
+@endif
 </div>
 @endsection

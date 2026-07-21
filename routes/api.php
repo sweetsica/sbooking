@@ -1,12 +1,18 @@
 <?php
 
 use App\Http\Controllers\Api\AuthApiController;
+use App\Http\Controllers\Api\BookingApiController;
 use App\Http\Controllers\Api\NotificationApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 // Auth — public
 Route::post('/auth/login', [AuthApiController::class, 'login']);
+
+// Server-to-server cho Lara-SCRM (bearer token cố định qua env SCRM_API_TOKEN).
+Route::middleware('scrm.token')->group(function () {
+    Route::get('/bookings', [BookingApiController::class, 'index']);
+});
 
 // Protected
 Route::middleware('auth:sanctum')->group(function () {
