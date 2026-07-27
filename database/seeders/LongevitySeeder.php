@@ -21,7 +21,7 @@ class LongevitySeeder extends Seeder
     public function run(): void
     {
         $matKhau = Hash::make('59@ntn');
-        $matKhau207 = Hash::make('207nvt');
+        $matKhau207 = Hash::make('59@ntn');
 
         // ---- Vai trò ----
         $vrNhanVien  = VaiTro::firstOrCreate(['ma' => 'nhan_vien'],     ['ten' => 'Nhân viên']);
@@ -138,7 +138,7 @@ class LongevitySeeder extends Seeder
             User::updateOrCreate(['username' => $a['username']], [
                 'name'         => $a['name'],
                 'email'        => $a['username'] . '@sweetsica.com',
-                'password'     => Hash::make($a['username']),
+                'password'     => Hash::make('59@ntn'),
                 'co_so_id'     => null,
                 'phong_ban_id' => null,
                 'vai_tro_id'   => $vrAdmin->id,
@@ -280,7 +280,7 @@ class LongevitySeeder extends Seeder
                 'name'         => 'Bác sĩ ' . $cs->slug,
                 'email'        => 'bsi' . $cs->slug . '@local',
                 'chuc_danh'    => 'BS.',
-                'password'     => Hash::make('bacsi'),
+                'password'     => Hash::make('59@ntn'),
                 'co_so_id'     => $cs->id,
                 'phong_ban_id' => null,
                 'vai_tro_id'   => $vrBacSi->id,
