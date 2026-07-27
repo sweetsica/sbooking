@@ -40,6 +40,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/thong-bao/{id}/read',             [ThongBaoController::class, 'markRead'])->name('thongbao.markRead');
     Route::delete('/thong-bao/hide-all',            [ThongBaoController::class, 'hideAll'])->name('thongbao.hideAll');
     Route::delete('/thong-bao/{id}',                [ThongBaoController::class, 'hide'])->name('thongbao.hide');
+
+    // Xuất danh sách nhân sự toàn hệ thống (mỗi cơ sở 1 sheet). Gate admin trong controller.
+    Route::get('/nhan-su-toan-he-thong/xuat', [\App\Http\Controllers\NhanSuAllController::class, 'export'])
+        ->name('nhansu.all.export');
 });
 
 Route::prefix('{co_so:slug}')->group(function () {

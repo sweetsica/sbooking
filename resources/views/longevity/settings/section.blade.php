@@ -166,8 +166,11 @@
 <span x-text="open ? 'Đóng' : 'Thêm mới'">Thêm mới</span>
 </button>
 @if ($key === 'nguoi-dung')
-<a href="/{{ $coSo->slug }}/thiet-lap/nguoi-dung/xuat" class="px-4 py-2 bg-surface-container-high text-on-surface font-semibold rounded-lg flex items-center gap-2 hover:opacity-90" title="Xuất danh sách người dùng ra Excel (cột Mật khẩu để trống)">
-<span class="material-symbols-outlined text-[20px]">download</span> Xuất dữ liệu
+<a href="/{{ $coSo->slug }}/thiet-lap/nguoi-dung/xuat" class="px-4 py-2 bg-surface-container-high text-on-surface font-semibold rounded-lg flex items-center gap-2 hover:opacity-90" title="Xuất danh sách người dùng của cơ sở này (cột Mật khẩu để trống)">
+<span class="material-symbols-outlined text-[20px]">download</span> Xuất cơ sở này
+</a>
+<a href="{{ route('nhansu.all.export') }}" class="px-4 py-2 bg-primary-container text-on-primary-container font-semibold rounded-lg flex items-center gap-2 hover:opacity-90" title="Xuất danh sách nhân sự toàn hệ thống — mỗi cơ sở 1 sheet, có cột Mật khẩu mặc định">
+<span class="material-symbols-outlined text-[20px]">download</span> Xuất toàn hệ thống
 </a>
 @endif
 </div>
