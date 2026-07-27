@@ -23,4 +23,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/notifications/unread-count',    [NotificationApiController::class, 'unreadCount']);
     Route::post('/notifications/read-all',       [NotificationApiController::class, 'markAllRead']);
     Route::post('/notifications/{id}/read',      [NotificationApiController::class, 'markRead']);
+    Route::delete('/notifications',              [NotificationApiController::class, 'hideAll']);
+    Route::delete('/notifications/{id}',         [NotificationApiController::class, 'hide']);
 });

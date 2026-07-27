@@ -24,6 +24,18 @@
 </a>
 @endforeach
 @if (auth()->user()?->is_admin)
+    <a href="{{ route('settings.notification-log', $coSo) }}"
+       class="group bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:shadow-lg hover:border-secondary/40 transition-all">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-secondary-container/40 text-on-secondary-container flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+                <span class="material-symbols-outlined">history</span>
+            </div>
+            <div>
+                <h3 class="text-headline-md font-headline-md mb-1">Nhật ký thông báo</h3>
+                <p class="text-body-sm text-on-surface-variant">Toàn bộ thông báo đã gửi cho người dùng — kể cả những cái họ đã ẩn.</p>
+            </div>
+        </div>
+    </a>
     <a href="{{ route('settings.scrm-connection.edit', $coSo) }}"
        class="group bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:shadow-lg hover:border-secondary/40 transition-all">
         <div class="flex items-start gap-4">

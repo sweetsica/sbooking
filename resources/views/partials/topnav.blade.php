@@ -135,7 +135,7 @@
 <span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
 </div>
 @endif
-@php $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
+@php $unreadCount = auth()->check() ? auth()->user()->notifications()->whereNull('hidden_at')->whereNull('read_at')->count() : 0; @endphp
 <div class="flex items-center gap-0.5 sm:gap-2 border-l border-outline-variant pl-1 sm:pl-2 xl:pl-4 shrink-0">
 <details class="relative shrink-0" id="thongbao-details">
 <summary title="Thông báo" class="list-none cursor-pointer select-none p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full flex relative [&::-webkit-details-marker]:hidden">
@@ -145,7 +145,10 @@
 <div class="absolute right-0 mt-2 w-[320px] sm:w-[360px] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 max-h-[70vh] overflow-hidden flex flex-col">
 <div class="p-3 border-b border-outline-variant flex items-center justify-between gap-2">
 <h3 class="font-headline-md text-on-surface">Thông báo</h3>
-<button type="button" data-thongbao-mark-all class="text-body-sm text-secondary hover:underline">Đánh dấu tất cả đã đọc</button>
+<div class="flex items-center gap-3">
+<button type="button" data-thongbao-mark-all class="text-body-sm text-secondary hover:underline">Đánh dấu đã đọc</button>
+<button type="button" data-thongbao-hide-all class="text-body-sm text-error hover:underline">Xóa tất cả</button>
+</div>
 </div>
 <div data-thongbao-list class="overflow-y-auto divide-y divide-outline-variant/60 max-h-[50vh]">
 <div class="p-6 text-center text-on-surface-variant text-body-sm">Đang tải…</div>
@@ -237,29 +240,48 @@
         list.innerHTML = items.map(n => {
             const [icon, color, bg] = iconFor(n.event);
             const unread = ! n.read_at;
+            const id = escapeHtml(n.id);
             return `
-            <a href="${escapeHtml(n.link || '#')}" data-id="${escapeHtml(n.id)}" class="block p-3 hover:bg-surface-container-low transition-colors ${unread ? 'bg-secondary-container/10' : ''}">
-                <div class="flex items-start gap-3">
-                    <div class="w-9 h-9 rounded-full ${bg} flex items-center justify-center shrink-0">
-                        <span class="material-symbols-outlined text-[20px] ${color}">${icon}</span>
+            <div data-item="${id}" class="relative group ${unread ? 'bg-secondary-container/10' : ''}">
+                <a href="${escapeHtml(n.link || '#')}" data-id="${id}" class="block p-3 pr-10 hover:bg-surface-container-low transition-colors">
+                    <div class="flex items-start gap-3">
+                        <div class="w-9 h-9 rounded-full ${bg} flex items-center justify-center shrink-0">
+                            <span class="material-symbols-outlined text-[20px] ${color}">${icon}</span>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="text-body-sm font-semibold text-on-surface truncate">${escapeHtml(n.tieu_de)}</div>
+                            <div class="text-body-sm text-on-surface-variant line-clamp-2">${escapeHtml(n.noi_dung)}</div>
+                            <div class="text-[11px] text-on-surface-variant/70 mt-0.5">${escapeHtml(n.created_human)}</div>
+                        </div>
+                        ${unread ? '<span class="shrink-0 w-2 h-2 rounded-full bg-secondary mt-2"></span>' : ''}
                     </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="text-body-sm font-semibold text-on-surface truncate">${escapeHtml(n.tieu_de)}</div>
-                        <div class="text-body-sm text-on-surface-variant line-clamp-2">${escapeHtml(n.noi_dung)}</div>
-                        <div class="text-[11px] text-on-surface-variant/70 mt-0.5">${escapeHtml(n.created_human)}</div>
-                    </div>
-                    ${unread ? '<span class="shrink-0 w-2 h-2 rounded-full bg-secondary mt-2"></span>' : ''}
-                </div>
-            </a>`;
+                </a>
+                <button type="button" data-hide="${id}" title="Xóa" class="absolute top-2 right-2 w-6 h-6 rounded-full text-on-surface-variant hover:bg-error/10 hover:text-error flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <span class="material-symbols-outlined text-[16px]">close</span>
+                </button>
+            </div>`;
         }).join('');
 
-        // Click → mark read
+        // Click item link → mark read
         list.querySelectorAll('a[data-id]').forEach(el => {
             el.addEventListener('click', () => {
                 fetch(`/thong-bao/${el.dataset.id}/read`, {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrf },
                 }).catch(() => {});
+            });
+        });
+
+        // X từng item
+        list.querySelectorAll('button[data-hide]').forEach(btn => {
+            btn.addEventListener('click', e => {
+                e.preventDefault();
+                e.stopPropagation();
+                const id = btn.dataset.hide;
+                fetch(`/thong-bao/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': csrf },
+                }).then(r => { if (r.ok) { list.querySelector(`[data-item="${id}"]`)?.remove(); load(); } }).catch(() => {});
             });
         });
     }
@@ -276,6 +298,15 @@
     markAllBtn?.addEventListener('click', () => {
         fetch(`/thong-bao/mark-all-read`, {
             method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrf },
+        }).then(() => load()).catch(() => {});
+    });
+
+    const hideAllBtn = details.querySelector('[data-thongbao-hide-all]');
+    hideAllBtn?.addEventListener('click', () => {
+        if (! confirm('Xóa tất cả thông báo? (Admin vẫn xem được trong nhật ký)')) return;
+        fetch(`/thong-bao/hide-all`, {
+            method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': csrf },
         }).then(() => load()).catch(() => {});
     });

@@ -7,6 +7,17 @@ use Illuminate\Http\Request;
 
 class NotificationApiController extends Controller
 {
+    /** Notifications còn hiện (hidden_at IS NULL). */
+    protected function visibleQuery($user)
+    {
+        return $user->notifications()->whereNull('hidden_at');
+    }
+
+    protected function visibleUnreadCount($user): int
+    {
+        return (int) $user->notifications()->whereNull('hidden_at')->whereNull('read_at')->count();
+    }
+
     /**
      * GET /api/notifications?per_page=20&page=1&only=unread
      */
@@ -14,9 +25,10 @@ class NotificationApiController extends Controller
     {
         $user = $request->user();
         $perPage = min((int) $request->query('per_page', 20), 100);
-        $query = $request->query('only') === 'unread'
-            ? $user->unreadNotifications()
-            : $user->notifications();
+        $query = $this->visibleQuery($user);
+        if ($request->query('only') === 'unread') {
+            $query->whereNull('read_at');
+        }
 
         $items = $query->paginate($perPage);
 
@@ -27,7 +39,7 @@ class NotificationApiController extends Controller
                 'last_page'    => $items->lastPage(),
                 'per_page'     => $items->perPage(),
                 'total'        => $items->total(),
-                'unread_count' => $user->unreadNotifications()->count(),
+                'unread_count' => $this->visibleUnreadCount($user),
             ],
         ]);
     }
@@ -38,7 +50,7 @@ class NotificationApiController extends Controller
     public function unreadCount(Request $request)
     {
         return response()->json([
-            'unread_count' => $request->user()->unreadNotifications()->count(),
+            'unread_count' => $this->visibleUnreadCount($request->user()),
         ]);
     }
 
@@ -59,6 +71,28 @@ class NotificationApiController extends Controller
     public function markAllRead(Request $request)
     {
         $request->user()->unreadNotifications->markAsRead();
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * DELETE /api/notifications/{id} — ẩn khỏi UI (admin log vẫn thấy).
+     */
+    public function hide(Request $request, string $id)
+    {
+        $n = $request->user()->notifications()->where('id', $id)->first();
+        abort_unless($n, 404);
+        if (! $n->hidden_at) {
+            $n->forceFill(['hidden_at' => now()])->save();
+        }
+        return response()->json(['ok' => true]);
+    }
+
+    /**
+     * DELETE /api/notifications — ẩn toàn bộ notifications của user.
+     */
+    public function hideAll(Request $request)
+    {
+        $request->user()->notifications()->whereNull('hidden_at')->update(['hidden_at' => now()]);
         return response()->json(['ok' => true]);
     }
 

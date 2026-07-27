@@ -910,6 +910,16 @@ class BookingController extends Controller
         abort_unless($booking->co_so_id === $co_so->id, 404);
         $this->authorizePerm('sua_booking');
 
+        // Snapshot trước khi update để diff → push edit sang CRM nếu có thay đổi lịch/phòng/dịch vụ.
+        $beforeSnapshot = [
+            'ngay_dat'     => (string) $booking->ngay_dat,
+            'gio_thuc_hien' => (string) $booking->gio_thuc_hien,
+            'gio_ket_thuc' => (string) $booking->gio_ket_thuc,
+            'phong_id'     => $booking->phong_id,
+            'bac_si_id'    => $booking->bac_si_id,
+            'dich_vu_id'   => $booking->dich_vu_id,
+        ];
+
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
             'so_dien_thoai' => ['required', 'string', 'max:30'],
@@ -1045,6 +1055,26 @@ class BookingController extends Controller
             : null;
 
         $this->notifyLich($booking, LichEvent::CAP_NHAT);
+
+        // Push edit sang CRM nếu có thay đổi liên quan tới lịch/phòng/dịch vụ.
+        $fresh = $booking->fresh();
+        $diffs = [];
+        $labelMap = [
+            'ngay_dat'      => 'ngày',
+            'gio_thuc_hien' => 'giờ bắt đầu',
+            'gio_ket_thuc'  => 'giờ kết thúc',
+            'phong_id'      => 'phòng',
+            'bac_si_id'     => 'bác sĩ',
+            'dich_vu_id'    => 'dịch vụ',
+        ];
+        foreach ($labelMap as $col => $label) {
+            $b = (string) ($beforeSnapshot[$col] ?? '');
+            $a = (string) ($fresh->{$col} ?? '');
+            if ($b !== $a) $diffs[] = "đổi $label: " . ($b === '' ? '—' : $b) . ' → ' . ($a === '' ? '—' : $a);
+        }
+        if ($diffs !== []) {
+            \App\Services\CrmPushService::pushEdit($fresh, auth()->id(), implode('; ', $diffs));
+        }
 
         return redirect("/{$co_so->slug}/danh-sach")
             ->with('ok', 'Đã cập nhật lịch hẹn của ' . $kh->ho_ten . '.')

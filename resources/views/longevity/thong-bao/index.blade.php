@@ -16,19 +16,23 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 @include('partials.topnav', ['active' => ''])
 
 <main class="pt-24 pb-32 sm:pb-12 px-container-margin max-w-3xl mx-auto">
-<div class="flex items-center justify-between mb-6">
+<div class="flex items-center justify-between mb-6 gap-3 flex-wrap">
 <div>
 <h2 class="font-headline-lg text-headline-lg text-primary mb-1">Thông báo</h2>
-<p class="text-on-surface-variant text-body-sm">{{ $items->total() }} thông báo · {{ auth()->user()->unreadNotifications()->count() }} chưa đọc</p>
+<p class="text-on-surface-variant text-body-sm">{{ $items->total() }} thông báo · {{ $unreadCount ?? auth()->user()->unreadNotifications()->count() }} chưa đọc</p>
 </div>
-@if (auth()->user()->unreadNotifications()->count() > 0)
-<form method="POST" action="/thong-bao/mark-all-read">
-@csrf
-<button class="px-4 py-2 text-body-sm font-semibold bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center gap-2 whitespace-nowrap" type="submit">
+<div class="flex items-center gap-2 flex-wrap">
+@if (($unreadCount ?? auth()->user()->unreadNotifications()->count()) > 0)
+<button type="button" data-tb-mark-all class="px-4 py-2 text-body-sm font-semibold bg-surface-container-lowest border border-outline-variant rounded-lg text-on-surface-variant hover:bg-surface-container-low transition-colors flex items-center gap-2 whitespace-nowrap">
 <span class="material-symbols-outlined text-[18px]">done_all</span> Đánh dấu tất cả đã đọc
 </button>
-</form>
 @endif
+@if ($items->total() > 0)
+<button type="button" data-tb-hide-all class="px-4 py-2 text-body-sm font-semibold bg-surface-container-lowest border border-outline-variant rounded-lg text-error hover:bg-error/10 transition-colors flex items-center gap-2 whitespace-nowrap">
+<span class="material-symbols-outlined text-[18px]">delete_sweep</span> Xóa tất cả
+</button>
+@endif
+</div>
 </div>
 
 @if ($items->isEmpty())
@@ -52,7 +56,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
     ];
     [$icon, $iconColor, $iconBg] = $iconMap[$event] ?? ['notifications', 'text-on-surface-variant', 'bg-surface-container-low'];
 @endphp
-<li class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-start gap-3 {{ $isRead ? '' : 'border-l-4 border-l-secondary' }}">
+<li data-tb-item="{{ $n->id }}" class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-start gap-3 {{ $isRead ? '' : 'border-l-4 border-l-secondary' }}">
 <div class="w-10 h-10 rounded-full {{ $iconBg }} flex items-center justify-center shrink-0">
 <span class="material-symbols-outlined text-[22px] {{ $iconColor }}">{{ $icon }}</span>
 </div>
@@ -71,9 +75,14 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <p class="text-[11px] text-on-surface-variant/70 mt-1">Bởi: {{ $n->data['actor'] }}</p>
 @endif
 </div>
+<div class="flex flex-col items-center gap-2 shrink-0">
 @if (! $isRead)
-<button data-mark="1" data-id="{{ $n->id }}" class="shrink-0 w-2 h-2 rounded-full bg-secondary" title="Chưa đọc"></button>
+<button data-mark="1" data-id="{{ $n->id }}" class="w-2 h-2 rounded-full bg-secondary" title="Chưa đọc"></button>
 @endif
+<button type="button" data-tb-hide="{{ $n->id }}" class="w-7 h-7 rounded-full text-on-surface-variant hover:bg-error/10 hover:text-error transition-colors flex items-center justify-center" title="Xóa thông báo này">
+<span class="material-symbols-outlined text-[18px]">close</span>
+</button>
+</div>
 </li>
 @endforeach
 </ul>
@@ -83,15 +92,43 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </main>
 
 <script>
-// Click vào item → mark read trước khi follow link
-document.querySelectorAll('[data-mark="1"][data-id]').forEach(el => {
-    el.addEventListener('click', e => {
-        const id = el.dataset.id;
-        fetch(`/thong-bao/${id}/read`, {
-            method: 'POST',
-            headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '' },
-        }).catch(() => {});
+(function () {
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content
+        || '{{ csrf_token() }}';
+    const headers = { 'X-CSRF-TOKEN': csrf, Accept: 'application/json' };
+
+    // Click title/link → mark read
+    document.querySelectorAll('[data-mark="1"][data-id]').forEach(el => {
+        el.addEventListener('click', () => {
+            fetch(`/thong-bao/${el.dataset.id}/read`, { method: 'POST', headers }).catch(() => {});
+        });
     });
-});
+
+    // X từng item
+    document.querySelectorAll('[data-tb-hide]').forEach(btn => {
+        btn.addEventListener('click', e => {
+            e.preventDefault();
+            const id = btn.dataset.tbHide;
+            fetch(`/thong-bao/${id}`, { method: 'DELETE', headers })
+                .then(r => { if (r.ok) document.querySelector(`[data-tb-item="${id}"]`)?.remove(); })
+                .catch(() => {});
+        });
+    });
+
+    // Xóa tất cả
+    document.querySelector('[data-tb-hide-all]')?.addEventListener('click', () => {
+        if (! confirm('Xóa tất cả thông báo? (Admin vẫn xem được trong nhật ký)')) return;
+        fetch('/thong-bao/hide-all', { method: 'DELETE', headers })
+            .then(r => { if (r.ok) location.reload(); })
+            .catch(() => {});
+    });
+
+    // Đánh dấu tất cả đã đọc
+    document.querySelector('[data-tb-mark-all]')?.addEventListener('click', () => {
+        fetch('/thong-bao/mark-all-read', { method: 'POST', headers })
+            .then(r => { if (r.ok) location.reload(); })
+            .catch(() => {});
+    });
+})();
 </script>
 </body></html>

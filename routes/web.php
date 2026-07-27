@@ -38,6 +38,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/thong-bao/summary',                [ThongBaoController::class, 'summary'])->name('thongbao.summary');
     Route::post('/thong-bao/mark-all-read',         [ThongBaoController::class, 'markAllRead'])->name('thongbao.markAllRead');
     Route::post('/thong-bao/{id}/read',             [ThongBaoController::class, 'markRead'])->name('thongbao.markRead');
+    Route::delete('/thong-bao/hide-all',            [ThongBaoController::class, 'hideAll'])->name('thongbao.hideAll');
+    Route::delete('/thong-bao/{id}',                [ThongBaoController::class, 'hide'])->name('thongbao.hide');
 });
 
 Route::prefix('{co_so:slug}')->group(function () {
@@ -125,6 +127,8 @@ Route::prefix('{co_so:slug}')->group(function () {
             // Đọc: admin (mọi mục) hoặc người có quyền xem_bao_cao (chỉ Báo cáo)
             Route::get('/', [SettingsController::class, 'index'])->name('index');
             Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('baocao.xuat');
+            // Trang riêng: phải đăng ký TRƯỚC catch-all /{section} bên dưới
+            Route::middleware('admin')->get('/nhat-ky-thong-bao', [\App\Http\Controllers\NotificationLogController::class, 'index'])->name('notification-log');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
 
             // Ghi + các mục quản trị khác: CHỈ ADMIN
