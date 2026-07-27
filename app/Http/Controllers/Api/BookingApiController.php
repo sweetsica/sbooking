@@ -24,6 +24,7 @@ class BookingApiController extends Controller
         $data = $request->validate([
             'co_so_id'         => ['sometimes', 'integer'],
             'khach_hang_id'    => ['sometimes', 'integer'],
+            'so_dien_thoai'    => ['sometimes', 'string', 'max:20'],
             'trang_thai'       => ['sometimes', 'string'],
             'trang_thai_khach' => ['sometimes', 'string'],
             'nguon'            => ['sometimes', 'string'],
@@ -40,7 +41,7 @@ class BookingApiController extends Controller
                 'phong:id,ten',
                 'khungGio:id,gio_bat_dau,gio_ket_thuc',
                 'dichVu:id,ten',
-                'bacSi:id,ho_ten',
+                'bacSi:id,ten',
                 'ktv:id,name',
                 'sale:id,name',
                 'nguoiTao:id,name',
@@ -50,6 +51,10 @@ class BookingApiController extends Controller
             if (isset($data[$f])) {
                 $q->where($f, $data[$f]);
             }
+        }
+
+        if (isset($data['so_dien_thoai'])) {
+            $q->whereHas('khachHang', fn ($kh) => $kh->where('so_dien_thoai', $data['so_dien_thoai']));
         }
 
         if (isset($data['tu_ngay'])) {

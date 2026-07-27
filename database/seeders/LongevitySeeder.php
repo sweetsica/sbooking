@@ -68,7 +68,7 @@ class LongevitySeeder extends Seeder
             'ten'     => 'Cơ sở 2 - 207 Nguyễn Văn Thủ',
             'dia_chi' => '207 Nguyễn Văn Thủ, HCM',
         ]);
-        $cslo23tdn = CoSo::firstOrCreate(['slug' => 'lo23tdn'], [
+        $cslo23tdn = CoSo::firstOrCreate(['slug' => '23tdn'], [
             'ten'     => 'Cơ sở 3 - Lô 2+3 KĐT Trần Đăng Ninh',
             'dia_chi' => 'Lô 2+3 KĐT Trần Đăng Ninh',
         ]);

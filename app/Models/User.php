@@ -26,6 +26,7 @@ class User extends Authenticatable
         'username',
         'email',
         'password',
+        'api_token',
         'co_so_id',
         'phong_ban_id',
         'vai_tro_id',

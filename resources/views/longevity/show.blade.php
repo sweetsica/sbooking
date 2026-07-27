@@ -84,8 +84,15 @@ body { background-color: #f7f9fb; }
 {{-- Phần 1: nút trạng thái --}}
 @if ($canTrangThai)
 <div class="px-5 py-4 flex flex-wrap gap-2 border-b border-outline-variant">
+@php
+    $hasCrmLink = ! empty($booking->crm_khach_ma);
+    $confirmSuffix = $hasCrmLink
+        ? ' Trạng thái này sẽ được đẩy sang CRM khách hàng ' . $booking->crm_khach_ma . '.'
+        : '';
+@endphp
 @foreach (['da_toi' => ['Khách đã tới', 'how_to_reg'], 'toi_tre' => ['Khách tới trễ', 'schedule'], 'huy' => ['Khách hủy', 'person_off']] as $val => $meta)
-<form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $booking->id }}">
+<form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $booking->id }}"
+      onsubmit="return confirm('Xác nhận đổi trạng thái sang: {{ $meta[0] }}?{{ $confirmSuffix }}');">
 @csrf @method('PATCH')
 <input type="hidden" name="trang_thai_khach" value="{{ $val }}"/>
 <button type="submit" class="h-[38px] px-4 rounded-lg font-semibold text-body-sm flex items-center gap-1.5 border transition-colors {{ $ttk === $val ? ($val === 'huy' ? 'bg-red-600 text-white border-red-600' : 'bg-secondary text-on-secondary border-secondary') : 'border-outline text-on-surface-variant hover:bg-surface-container-high' }}">
@@ -93,7 +100,8 @@ body { background-color: #f7f9fb; }
 </button>
 </form>
 @endforeach
-<form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $booking->id }}">
+<form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $booking->id }}"
+      onsubmit="return confirm('Xác nhận: {{ $done ? 'Bỏ trạng thái Đã xong' : 'Đánh dấu Đã xong' }}?{{ $confirmSuffix }}');">
 @csrf @method('PATCH')
 <button type="submit" class="h-[38px] px-4 rounded-lg font-semibold text-body-sm flex items-center gap-1.5 border transition-colors {{ $done ? 'bg-primary text-on-primary border-primary' : 'border-outline text-on-surface-variant hover:bg-surface-container-high' }}">
 <span class="material-symbols-outlined text-[18px]">task_alt</span> {{ $done ? 'Đã xong ✓' : 'Đã xong' }}

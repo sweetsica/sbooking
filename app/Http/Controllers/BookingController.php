@@ -60,6 +60,7 @@ class BookingController extends Controller
             'ho_ten'        => trim((string) $request->query('ho_ten', '')),
             'so_dien_thoai' => trim((string) $request->query('so_dien_thoai', '')),
             'email'         => trim((string) $request->query('email', '')),
+            'khach_ma'      => trim((string) $request->query('khach_ma', '')),
         ];
     }
 
@@ -148,7 +149,7 @@ class BookingController extends Controller
 
         // Nhân viên Sale: chỉ lấy các vai trò mang tính chất sale/lễ tân/nhân viên
         // (tránh lẫn bác sĩ / KTV / admin vào dropdown sale)
-        $saleVaiTroIds = VaiTro::whereIn('ma', ['tu_van_vien', 'le_tan', 'nhan_vien'])->pluck('id');
+        $saleVaiTroIds = VaiTro::whereIn('ma', ['tu_van_vien', 'le_tan', 'nhan_vien', 'dn_full_flow'])->pluck('id');
         $sales = User::where('co_so_id', $co_so->id)
             ->whereIn('vai_tro_id', $saleVaiTroIds)
             ->where('is_admin', false)
@@ -860,6 +861,7 @@ class BookingController extends Controller
             'co_kham_cls'   => $request->boolean('co_kham_cls'),
             'ghi_chu'       => $data['ghi_chu'] ?? null,
             'trang_thai'    => 'cho_duyet',
+            'crm_khach_ma'  => trim((string) $request->input('khach_ma', '')) ?: null,
         ]);
 
         if (! empty($data['menu_ids'])) {
@@ -1176,9 +1178,12 @@ class BookingController extends Controller
         }
         $booking->save();
 
-        $ten = $booking->khachHang?->ho_ten ?? 'khách';
+        $push = \App\Services\CrmPushService::pushStatus($booking, auth()->id());
 
-        return back()->with('ok', ($done ? 'Đã hoàn thành' : 'Đã chuyển lại "Đã duyệt"') . ' lịch hẹn của ' . $ten . '.');
+        $ten = $booking->khachHang?->ho_ten ?? 'khách';
+        $msg = ($done ? 'Đã hoàn thành' : 'Đã chuyển lại "Đã duyệt"') . ' lịch hẹn của ' . $ten . '. ' . $push['msg'];
+
+        return back()->with($push['ok'] ? 'ok' : 'warn', $msg);
     }
 
     /** Cập nhật trạng thái khách: đã tới / tới trễ / hủy (hoặc bỏ chọn). Khách hủy → trả slot. */
@@ -1196,13 +1201,16 @@ class BookingController extends Controller
         $booking->trang_thai_khach = ($booking->trang_thai_khach === $moi) ? null : $moi;
         $booking->save();
 
+        $push = \App\Services\CrmPushService::pushStatus($booking, auth()->id());
+
         $nhan = ['da_toi' => 'Khách đã tới', 'toi_tre' => 'Khách tới trễ', 'huy' => 'Khách hủy'];
         $msg = $booking->trang_thai_khach
             ? 'Đã cập nhật: ' . ($nhan[$booking->trang_thai_khach] ?? $booking->trang_thai_khach)
                 . ($booking->trang_thai_khach === 'huy' ? ' — khung giờ đã được trả về kho.' : '.')
             : 'Đã bỏ trạng thái khách.';
+        $msg .= ' ' . $push['msg'];
 
-        return back()->with('ok', $msg);
+        return back()->with($push['ok'] ? 'ok' : 'warn', $msg);
     }
 
     /** Thêm bình luận "sau dịch vụ" (nhiều vai trò được phép). */
@@ -1222,7 +1230,9 @@ class BookingController extends Controller
             'noi_dung' => $data['noi_dung'],
         ]);
 
-        return back()->with('ok', 'Đã gửi bình luận.');
+        $push = \App\Services\CrmPushService::pushComment($booking, auth()->id(), $data['noi_dung']);
+
+        return back()->with($push['ok'] ? 'ok' : 'warn', 'Đã gửi bình luận. ' . $push['msg']);
     }
 
     /** Xóa bình luận — chỉ Admin hệ thống. */

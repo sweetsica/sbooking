@@ -514,7 +514,7 @@ class PageController extends Controller
             ->orderBy('ten')->get(['id', 'ten', 'chuc_danh']);
 
         // Sale để filter: nhân viên phụ trách đơn (tư vấn viên / lễ tân / nhân viên)
-        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'le_tan', 'nhan_vien'])->pluck('id');
+        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'le_tan', 'nhan_vien', 'dn_full_flow'])->pluck('id');
         $sales = \App\Models\User::whereIn('vai_tro_id', $vrSaleIds)
             ->where('co_so_id', $co_so->id)
             ->where('is_admin', false)

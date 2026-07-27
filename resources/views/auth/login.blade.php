@@ -50,12 +50,12 @@ tailwind.config = {
 <form method="POST" action="/login" class="space-y-4">
 @csrf
 <div>
-<label class="block text-sm font-semibold text-on-surface-variant mb-1.5">Tài khoản</label>
+<label class="block text-sm font-semibold text-on-surface-variant mb-1.5">Tài khoản hoặc Email</label>
 <div class="relative">
 <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant text-[20px]">person</span>
 <input name="username" value="{{ old('username') }}" required autofocus autocomplete="username"
        class="ipt w-full pl-10 pr-4 py-2.5 bg-surface border border-outline rounded-lg text-body transition-all"
-       placeholder="vd: tttg"/>
+       placeholder="vd: tttg hoặc name@longevity.com.vn"/>
 </div>
 </div>
 <div>

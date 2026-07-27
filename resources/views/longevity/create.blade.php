@@ -217,6 +217,9 @@
 @if(!empty($returnUrl ?? null))
     <input type="hidden" name="return_url" value="{{ $returnUrl }}"/>
 @endif
+@if(!empty($prefill['khach_ma'] ?? null))
+    <input type="hidden" name="khach_ma" value="{{ $prefill['khach_ma'] }}"/>
+@endif
 </div>
 </div>
 </div>

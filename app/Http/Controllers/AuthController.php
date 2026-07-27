@@ -20,13 +20,17 @@ class AuthController extends Controller
 
     public function login(Request $request)
     {
-        $cred = $request->validate([
+        $data = $request->validate([
             'username' => ['required', 'string'],
             'password' => ['required', 'string'],
         ], [
             'username.required' => 'Vui lòng nhập tài khoản.',
             'password.required' => 'Vui lòng nhập mật khẩu.',
         ]);
+
+        // Cho phép đăng nhập bằng username HOẶC email: chọn field theo dấu @.
+        $field = str_contains($data['username'], '@') ? 'email' : 'username';
+        $cred = [$field => $data['username'], 'password' => $data['password']];
 
         if (! Auth::attempt($cred, $request->boolean('remember'))) {
             return back()
