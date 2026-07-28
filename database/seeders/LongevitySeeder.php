@@ -18,6 +18,25 @@ use Illuminate\Support\Facades\Hash;
 
 class LongevitySeeder extends Seeder
 {
+    /**
+     * Upsert user match qua username; nếu username không tìm thấy (đã bị rename sang
+     * format vị trí bên CRM — hn.cms01, hcm.sale03...) thì fallback qua NAME.
+     * Không đụng cột username/email nếu user đã tồn tại (giữ nguyên format vị trí).
+     */
+    private function upsertUser(string $username, string $email, array $data): User
+    {
+        $existing = User::firstWhere('username', $username)
+            ?? User::firstWhere('name', $data['name'] ?? null);
+
+        if ($existing) {
+            // Giữ nguyên username + email đã có (đã có thể là format vị trí).
+            $existing->fill(collect($data)->except(['username', 'email'])->all())->save();
+            return $existing;
+        }
+
+        return User::create($data + ['username' => $username, 'email' => $email]);
+    }
+
     public function run(): void
     {
         $matKhau = Hash::make('59@ntn');
@@ -110,9 +129,8 @@ class LongevitySeeder extends Seeder
         $pbTuVan207  = $pb[$cs207nvt->id]['tu_van'];
 
         // ---- Admin Hệ thống (IT) — tài khoản đặc biệt, không thuộc phòng ban / cơ sở nào, full quyền ----
-        User::updateOrCreate(['username' => 'admin'], [
+        $this->upsertUser('admin', 'admin@sweetsica.com', [
             'name'         => 'Admin Hệ thống',
-            'email'        => 'admin@sweetsica.com',
             'password'     => Hash::make('59ntn'),
             'co_so_id'     => null,
             'phong_ban_id' => null,
@@ -120,9 +138,8 @@ class LongevitySeeder extends Seeder
             'is_admin'     => true,
         ]);
 
-        User::updateOrCreate(['username' => 'adminvh'], [
+        $this->upsertUser('adminvh', 'adminvh@sweetsica.com', [
             'name'         => 'Admin Vận hành',
-            'email'        => 'adminvh@sweetsica.com',
             'password'     => Hash::make('59@ntn'),
             'co_so_id'     => null,
             'phong_ban_id' => null,
@@ -135,9 +152,8 @@ class LongevitySeeder extends Seeder
             ['username' => 'baoit', 'name' => 'Bảo IT'],
             ['username' => 'tumod', 'name' => 'Tú MOD'],
         ] as $a) {
-            User::updateOrCreate(['username' => $a['username']], [
+            $this->upsertUser($a['username'], $a['username'] . '@sweetsica.com', [
                 'name'         => $a['name'],
-                'email'        => $a['username'] . '@sweetsica.com',
                 'password'     => Hash::make('59@ntn'),
                 'co_so_id'     => null,
                 'phong_ban_id' => null,
@@ -170,9 +186,8 @@ class LongevitySeeder extends Seeder
             ['username' => 'ktv_vi',      'name' => 'Nguyễn Thị Lan Vi',       'chuc_danh' => 'KTV.'],
         ];
         foreach ($ktvHN as $k) {
-            User::updateOrCreate(['username' => $k['username']], [
+            $this->upsertUser($k['username'], $k['username'] . '@59ntn.local', [
                 'name'         => $k['name'],
-                'email'        => $k['username'] . '@59ntn.local',
                 'chuc_danh'    => $k['chuc_danh'],
                 'password'     => $matKhau,
                 'co_so_id'     => $cs59ntn->id,
@@ -276,9 +291,8 @@ class LongevitySeeder extends Seeder
 
         // Mỗi cơ sở có 1 tài khoản BÁC SĨ DÙNG CHUNG (đăng nhập), độc lập với module bác sĩ–phòng.
         foreach ([$cs59ntn, $cs207nvt] as $cs) {
-            User::updateOrCreate(['username' => 'bsi' . $cs->slug], [
+            $this->upsertUser('bsi' . $cs->slug, 'bsi' . $cs->slug . '@local', [
                 'name'         => 'Bác sĩ ' . $cs->slug,
-                'email'        => 'bsi' . $cs->slug . '@local',
                 'chuc_danh'    => 'BS.',
                 'password'     => Hash::make('59@ntn'),
                 'co_so_id'     => $cs->id,
@@ -306,9 +320,8 @@ class LongevitySeeder extends Seeder
             ['username' => 'nma',  'name' => 'Nguyễn Mai Anh',      'chuc_danh' => 'HC'],
         ];
         foreach ($tvHN as $tv) {
-            User::updateOrCreate(['username' => $tv['username']], [
+            $this->upsertUser($tv['username'], $tv['username'] . '@59ntn.local', [
                 'name'         => $tv['name'],
-                'email'        => $tv['username'] . '@59ntn.local',
                 'chuc_danh'    => $tv['chuc_danh'],
                 'password'     => $matKhau,
                 'co_so_id'     => $cs59ntn->id,
@@ -395,9 +408,8 @@ class LongevitySeeder extends Seeder
             ['username' => 'hbtl', 'name' => 'Huỳnh Bùi Thanh Lan',   'chuc_danh' => 'CM'],
         ];
         foreach ($tvHCM as $tv) {
-            User::updateOrCreate(['username' => $tv['username']], [
+            $this->upsertUser($tv['username'], $tv['username'] . '@207nvt.local', [
                 'name'         => $tv['name'],
-                'email'        => $tv['username'] . '@207nvt.local',
                 'chuc_danh'    => $tv['chuc_danh'],
                 'password'     => $matKhau207,
                 'co_so_id'     => $cs207nvt->id,
@@ -420,9 +432,8 @@ class LongevitySeeder extends Seeder
             ['username' => 'dd_thanh',   'name' => 'Khưu Thị Phương Thanh',  'chuc_danh' => 'ĐD.'],
         ];
         foreach ($ktvHCM as $k) {
-            User::updateOrCreate(['username' => $k['username']], [
+            $this->upsertUser($k['username'], $k['username'] . '@207nvt.local', [
                 'name'         => $k['name'],
-                'email'        => $k['username'] . '@207nvt.local',
                 'chuc_danh'    => $k['chuc_danh'],
                 'password'     => $matKhau207,
                 'co_so_id'     => $cs207nvt->id,
