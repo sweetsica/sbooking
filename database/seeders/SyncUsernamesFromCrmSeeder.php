@@ -68,6 +68,14 @@ class SyncUsernamesFromCrmSeeder extends Seeder
         'Nguyễn Trà My'             => 'hn.sale12',
         'Nguyễn Mai Anh'            => 'hn.sale13',
         'Nguyễn Hoành Đức'          => 'hn.tl01',
+        'Lê Thị Phương Tự'          => 'hn.tlkd01',
+
+        // Vận hành & Giám sát (Observer)
+        'Huyền' => 'vh.obs01',
+        'Hằng'  => 'vh.obs02',
+        'Ly'    => 'vh.obs03',
+        'An'    => 'vh.obs04',
+        'Tuyết' => 'vh.obs05',
     ];
 
     public function run(): void
