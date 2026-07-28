@@ -24,7 +24,7 @@ use Illuminate\Database\Seeder;
  *   BS tư vấn = vai_tro 'bac_si_tu_van' (thuộc cơ sở hoặc is_tu_van),
  *   ghép theo ca_kham_id + ngay_hen, tối đa 1 lịch (khác tu_choi) / ca / ngày.
  *
- * Có thể chạy lại nhiều lần: dữ liệu cũ (nguon = 'seed-tv-t6') bị xóa trước.
+ * Có thể chạy lại nhiều lần: dữ liệu cũ (ghi_chu chứa marker '[seed-tv-t6]') bị xóa trước.
  *
  * Chạy:  php artisan db:seed --class=LichTuVanThang6Seeder
  */
@@ -38,7 +38,11 @@ class LichTuVanThang6Seeder extends Seeder
         'Đặt nhầm cơ sở / sai bác sĩ.',
     ];
 
-    private array $nguons = ['Fanpage', 'Hotline', 'Website', 'Khách quen', 'Giới thiệu'];
+    private array $nguons = [
+        'MKT — Marketing', 'MKT BR — Marketing BR', 'BDM',
+        'BOD — Ban lãnh đạo giới thiệu', 'SA — Sale Appointment',
+        'BA — Booking Appointment', 'WI — Walk-in',
+    ];
 
     public function run(): void
     {
@@ -46,7 +50,9 @@ class LichTuVanThang6Seeder extends Seeder
         $end   = Carbon::create(2026, 6, 30);
 
         // Dọn dữ liệu seed cũ để chạy lại sạch.
-        LichHen::where('nguon', 'seed-tv-t6')->delete();
+        LichHen::where('ghi_chu', 'like', '[seed-tv-t6]%')
+            ->orWhere('nguon', 'seed-tv-t6') // tương thích data seed cũ.
+            ->delete();
         KhachHang::where('email', 'like', 'kh_tv_t6_%@example.local')->delete();
 
         $stt = 0;
@@ -97,8 +103,9 @@ class LichTuVanThang6Seeder extends Seeder
                             'ca_kham_id'     => $ck->id,
                             'sale_id'        => $saleIds[array_rand($saleIds)],
                             'ngay_hen'       => $day->toDateString(),
-                            'nguon'          => 'seed-tv-t6',
-                            'ghi_chu'        => rand(0, 3) === 0 ? 'Khách hẹn qua ' . $this->nguons[array_rand($this->nguons)] . '.' : null,
+                            'nguon'          => $this->nguons[array_rand($this->nguons)],
+                            // Marker "[seed-tv-t6]" trong ghi_chu để cleanup idempotent.
+                            'ghi_chu'        => '[seed-tv-t6]' . (rand(0, 3) === 0 ? ' Khách hẹn qua ' . $this->nguons[array_rand($this->nguons)] . '.' : ''),
                             'trang_thai'     => $trangThai,
                         ]);
 

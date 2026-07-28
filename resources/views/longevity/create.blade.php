@@ -157,7 +157,7 @@
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn</label>
 <select name="nguon" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-@foreach (['Fanpage Facebook','Website','Hotline','Khách giới thiệu','Trực tiếp (Walk-in)'] as $ng)
+@foreach (['MKT — Marketing','MKT BR — Marketing BR','BDM','BOD — Ban lãnh đạo giới thiệu','SA — Sale Appointment','BA — Booking Appointment','WI — Walk-in'] as $ng)
 <option @selected(old('nguon', $bk?->nguon)===$ng)>{{ $ng }}</option>
 @endforeach
 </select>

@@ -486,8 +486,13 @@ class LichHenController extends Controller
             'coSo' => $co_so,
             'lichHens' => $lichHens,
             'bacSis' => $bacSis,
-            'nguons' => LichHen::where('co_so_id', $co_so->id)
-                ->whereNotNull('nguon')->distinct()->pluck('nguon'),
+            'nguons' => collect([
+                    'MKT — Marketing', 'MKT BR — Marketing BR', 'BDM',
+                    'BOD — Ban lãnh đạo giới thiệu', 'SA — Sale Appointment',
+                    'BA — Booking Appointment', 'WI — Walk-in',
+                ])->merge(LichHen::where('co_so_id', $co_so->id)
+                    ->whereNotNull('nguon')->distinct()->pluck('nguon'))
+                ->unique()->values(),
             'filters' => $request->only(['ngay_tu', 'ngay_den', 'bac_si_id', 'nguon', 'trang_thai']),
         ]);
     }

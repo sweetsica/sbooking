@@ -526,8 +526,13 @@ class PageController extends Controller
             'phongs' => $co_so->phongs()->get(),
             'bacSis' => $bacSis,
             'sales' => $sales,
-            'nguons' => Booking::where('co_so_id', $co_so->id)
-                ->whereNotNull('nguon')->distinct()->pluck('nguon'),
+            'nguons' => collect([
+                    'MKT — Marketing', 'MKT BR — Marketing BR', 'BDM',
+                    'BOD — Ban lãnh đạo giới thiệu', 'SA — Sale Appointment',
+                    'BA — Booking Appointment', 'WI — Walk-in',
+                ])->merge(Booking::where('co_so_id', $co_so->id)
+                    ->whereNotNull('nguon')->distinct()->pluck('nguon'))
+                ->unique()->values(),
             'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
             'approvalMode' => $approvalMode,
         ]);

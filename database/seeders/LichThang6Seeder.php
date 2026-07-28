@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
  *   - da_xong   (đã hoàn thành — chỉ cho ngày đã qua)
  *   - tu_choi   (từ chối, kèm "Lý do từ chối")
  *
- * Có thể chạy lại nhiều lần: dữ liệu cũ (nguon = 'seed-t6') sẽ bị xóa trước.
+ * Có thể chạy lại nhiều lần: dữ liệu cũ (ghi_chu chứa marker '[seed-t6]') sẽ bị xóa trước.
  *
  * Chạy:  php artisan db:seed --class=LichThang6Seeder
  */
@@ -38,7 +38,11 @@ class LichThang6Seeder extends Seeder
         'Đặt nhầm cơ sở / sai dịch vụ.',
     ];
 
-    private array $nguons = ['Fanpage', 'Hotline', 'Website', 'Khách quen', 'Giới thiệu'];
+    private array $nguons = [
+        'MKT — Marketing', 'MKT BR — Marketing BR', 'BDM',
+        'BOD — Ban lãnh đạo giới thiệu', 'SA — Sale Appointment',
+        'BA — Booking Appointment', 'WI — Walk-in',
+    ];
 
     public function run(): void
     {
@@ -46,7 +50,9 @@ class LichThang6Seeder extends Seeder
         $today = Carbon::today();
 
         // Dọn dữ liệu seed cũ để chạy lại sạch sẽ.
-        $oldIds = Booking::where('nguon', 'seed-t6')->pluck('id');
+        $oldIds = Booking::where('ghi_chu', 'like', '[seed-t6]%')
+            ->orWhere('nguon', 'seed-t6') // tương thích data seed cũ trước khi đổi marker.
+            ->pluck('id');
         if ($oldIds->isNotEmpty()) {
             DB::table('booking_menu')->whereIn('booking_id', $oldIds)->delete();
             Booking::whereIn('id', $oldIds)->delete();
@@ -106,11 +112,12 @@ class LichThang6Seeder extends Seeder
                             'ngay_dat'       => $day->toDateString(),
                             'gio_thuc_hien'  => $kg->gio_bat_dau,
                             'gio_ket_thuc'   => $kg->gio_ket_thuc,
-                            'nguon'          => 'seed-t6',
+                            'nguon'          => $this->nguons[array_rand($this->nguons)],
                             'so_lieu_trinh'  => rand(1, 8) . '/10',
                             'co_tu_van'      => $coTuVan,
                             'co_kham_cls'    => $coKhamCls,
-                            'ghi_chu'        => rand(0, 2) === 0 ? 'Khách ưu tiên, gọi trước 30 phút.' : null,
+                            // Marker "[seed-t6]" trong ghi_chu để cleanup idempotent.
+                            'ghi_chu'        => '[seed-t6] ' . (rand(0, 2) === 0 ? 'Khách ưu tiên, gọi trước 30 phút.' : ''),
                             'trang_thai'     => $trangThai,
                             'da_duyet'       => in_array($trangThai, ['da_duyet', 'da_xong'], true),
                             'ly_do_tu_choi'  => $trangThai === 'tu_choi'

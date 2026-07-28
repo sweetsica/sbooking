@@ -30,9 +30,11 @@ class LichDatMauSeeder extends Seeder
         $ngay = Carbon::today()->toDateString();
 
         // Reset booking cũ của ngày này để chạy lại sạch
+        // (marker mới nằm trong ghi_chu '[seed-datmau]', fallback nguon='seed' cho data seed cũ).
         Booking::where('co_so_id', $coSo->id)
             ->whereDate('ngay_dat', $ngay)
-            ->where('nguon', 'seed')
+            ->where(fn ($q) => $q->where('ghi_chu', 'like', '[seed-datmau]%')
+                ->orWhere('nguon', 'seed'))
             ->delete();
 
         // Dọn khách mẫu cũ không còn booking nào (tránh tích lũy rác qua mỗi lần seed)
@@ -92,11 +94,17 @@ class LichDatMauSeeder extends Seeder
                 'ngay_dat'       => $ngay,
                 'gio_thuc_hien'  => $bd . ':00',
                 'gio_ket_thuc'   => $kt . ':00',
-                'nguon'          => 'seed',
+                'nguon'          => (function () {
+                    $ns = ['MKT — Marketing', 'MKT BR — Marketing BR', 'BDM',
+                           'BOD — Ban lãnh đạo giới thiệu', 'SA — Sale Appointment',
+                           'BA — Booking Appointment', 'WI — Walk-in'];
+                    return $ns[array_rand($ns)];
+                })(),
                 'co_tu_van'      => $coTuVan,
                 'co_kham_cls'    => $coKhamLs,
                 'trang_thai'     => $trangThai,
                 'da_duyet'       => $trangThai === 'da_duyet' || $trangThai === 'da_xong',
+                'ghi_chu'        => '[seed-datmau]',
                 'ly_do_tu_choi'  => $trangThai === 'tu_choi' ? $lyDoTuChoi[$stt % count($lyDoTuChoi)] : null,
             ]);
         };
