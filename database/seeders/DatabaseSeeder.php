@@ -18,6 +18,9 @@ class DatabaseSeeder extends Seeder
         // Chỉ seed dữ liệu THẬT: cơ sở, phòng ban, users, phòng, bác sĩ, dịch vụ, lịch nghỉ.
         $this->call(LongevitySeeder::class);
 
+        // Đồng bộ username sbooking với format vị trí bên CRM (<cơ_sở>.<chức_vụ>NN) — match qua name.
+        $this->call(SyncUsernamesFromCrmSeeder::class);
+
         // Các seeder lịch DEMO (booking mẫu, lịch làm việc mẫu) — đã TẮT.
         // Bật lại khi cần demo:
         // $this->call(LichDatMauSeeder::class);
