@@ -101,11 +101,15 @@ class BookingController extends Controller
         abort_unless($booking->co_so_id === $co_so->id, 404);
         $this->authorizePerm('sua_booking');
 
-        $booking->load(['khachHang', 'menus']);
+        $booking->load(['khachHang', 'menus', 'binhLuans.nguoiDung.vaiTro']);
 
         return view('longevity.create', $this->formData($co_so) + [
             'bk' => $booking,
             'allowedFields' => $this->allowedFieldKeys(),
+            // Phase C1.b rev8 2026-08-01: gate block "Trạng thái lịch hẹn" trong form edit (share với show).
+            'canTrangThai' => $this->hasPerm('cap_nhat_trang_thai_khach'),
+            'canBinhLuan' => $this->hasPerm('binh_luan_booking'),
+            'isAdmin' => (bool) auth()->user()?->is_admin,
         ]);
     }
 
@@ -1091,11 +1095,16 @@ class BookingController extends Controller
         // Gửi thông báo TRƯỚC khi xoá để còn ref các quan hệ
         $this->notifyLich($booking, LichEvent::HUY);
 
+        // Phase C1.b rev12 2026-08-02: async — snapshot data + push sau response.
+        \App\Services\CrmPushService::pushDeleteAsync($booking, auth()->id());
+
         $booking->menus()->detach();
         $booking->delete();
 
+        $extra = '';
+
         return redirect("/{$co_so->slug}/danh-sach")
-            ->with('ok', 'Đã xóa lịch hẹn của ' . $ten . '.');
+            ->with('ok', 'Đã xóa lịch hẹn của ' . $ten . '.' . $extra);
     }
 
     /** Duyệt / bỏ duyệt lịch đặt phòng (chỉ admin). */
@@ -1141,8 +1150,13 @@ class BookingController extends Controller
             $this->notifyLich($booking, LichEvent::DUYET);
         }
 
+        // Phase C1.b 2026-08-01: push trạng thái duyệt/bỏ duyệt về CRM để BookingLog.sync_status cập nhật.
+        \App\Services\CrmPushService::pushStatusAsync($booking, auth()->id());
+        $push = ['ok' => true, 'msg' => ''];
+        $extra = $push['ok'] ? '' : ' (chưa đẩy được CRM: ' . $push['msg'] . ')';
+
         return back()
-            ->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch hẹn của ' . $ten . '.')
+            ->with('ok', ($approve ? 'Đã duyệt' : 'Đã bỏ duyệt') . ' lịch hẹn của ' . $ten . '.' . $extra)
             ->with('warning', implode(' ', $canhBao) ?: null);
     }
 
@@ -1167,7 +1181,12 @@ class BookingController extends Controller
 
         $this->notifyLich($booking, LichEvent::TU_CHOI);
 
-        return back()->with('ok', 'Đã từ chối lịch hẹn của ' . $ten . '.');
+        // Phase C1.b 2026-08-01: push trạng thái từ chối về CRM.
+        \App\Services\CrmPushService::pushStatusAsync($booking, auth()->id());
+        $push = ['ok' => true, 'msg' => ''];
+        $extra = $push['ok'] ? '' : ' (chưa đẩy được CRM: ' . $push['msg'] . ')';
+
+        return back()->with('ok', 'Đã từ chối lịch hẹn của ' . $ten . '.' . $extra);
     }
 
     /** Ghi nhận phản hồi từ khách (chỉ khi lịch hẹn đã xong). */
@@ -1208,7 +1227,8 @@ class BookingController extends Controller
         }
         $booking->save();
 
-        $push = \App\Services\CrmPushService::pushStatus($booking, auth()->id());
+        \App\Services\CrmPushService::pushStatusAsync($booking, auth()->id());
+        $push = ['ok' => true, 'msg' => ''];
 
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
         $msg = ($done ? 'Đã hoàn thành' : 'Đã chuyển lại "Đã duyệt"') . ' lịch hẹn của ' . $ten . '. ' . $push['msg'];
@@ -1231,7 +1251,8 @@ class BookingController extends Controller
         $booking->trang_thai_khach = ($booking->trang_thai_khach === $moi) ? null : $moi;
         $booking->save();
 
-        $push = \App\Services\CrmPushService::pushStatus($booking, auth()->id());
+        \App\Services\CrmPushService::pushStatusAsync($booking, auth()->id());
+        $push = ['ok' => true, 'msg' => ''];
 
         $nhan = ['da_toi' => 'Khách đã tới', 'toi_tre' => 'Khách tới trễ', 'huy' => 'Khách hủy'];
         $msg = $booking->trang_thai_khach

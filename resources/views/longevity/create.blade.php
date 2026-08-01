@@ -141,6 +141,11 @@
 </div>
 @endif
 
+{{-- Phase C1.b rev8 2026-08-01: block "Trạng thái lịch hẹn" — dùng chung với trang show. --}}
+@if ($editing)
+@include('longevity.partials.trang-thai-lich-hen', ['booking' => $bk])
+@endif
+
 <!-- Main Form Card -->
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden mb-12">
 @php $isDichVu = ($loaiDatLich ?? 'phong_kham') === 'dich_vu'; @endphp
@@ -524,6 +529,7 @@
 </button>
 </div>
 </form>
+
 </div>
 </div>
 </main>

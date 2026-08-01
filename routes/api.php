@@ -3,6 +3,7 @@
 use App\Http\Controllers\Api\AuthApiController;
 use App\Http\Controllers\Api\BookingApiController;
 use App\Http\Controllers\Api\NotificationApiController;
+use App\Http\Controllers\Api\SyncApiController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -12,6 +13,9 @@ Route::post('/auth/login', [AuthApiController::class, 'login']);
 // Server-to-server cho Lara-SCRM (bearer token cố định qua env SCRM_API_TOKEN).
 Route::middleware('scrm.token')->group(function () {
     Route::get('/bookings', [BookingApiController::class, 'index']);
+    Route::post('/bookings', [BookingApiController::class, 'store']);
+    Route::get('/sync/dich-vu', [SyncApiController::class, 'dichVu']);
+    Route::get('/sync/khung-gio', [SyncApiController::class, 'khungGio']);
 });
 
 // Protected

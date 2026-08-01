@@ -90,6 +90,10 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::patch('/xong-dat-phong/{booking}',  [BookingController::class, 'xong'])->name('booking.done');
         Route::patch('/phan-hoi-dat-phong/{booking}', [BookingController::class, 'phanHoi'])->name('booking.feedback');
         Route::patch('/trang-thai-khach/{booking}', [BookingController::class, 'capNhatTrangThaiKhach'])->name('booking.trangthaikhach');
+        // Phase C1.b rev11 2026-08-02: GET fallback redirect về trang xem (tránh 405 khi user copy nhầm URL action).
+        Route::get('/trang-thai-khach/{booking}', function ($co_so_slug, $booking) {
+            return redirect("/{$co_so_slug}/xem-dat-phong/{$booking}");
+        });
         Route::post('/binh-luan/{booking}', [BookingController::class, 'themBinhLuan'])->name('booking.binhluan.them');
         Route::delete('/binh-luan/{booking}/{binh_luan}', [BookingController::class, 'xoaBinhLuan'])->name('booking.binhluan.xoa');
 

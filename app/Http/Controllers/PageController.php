@@ -482,6 +482,13 @@ class PageController extends Controller
             ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
             ->latest('id');
 
+        // Phase C1.b rev6 2026-08-01: tìm theo mã booking (ma_booking) hoặc mã KH bên CRM (crm_khach_ma).
+        if ($request->filled('q_ma')) {
+            $needle = trim((string) $request->query('q_ma'));
+            $query->where(fn ($q) => $q
+                ->where('ma_booking', 'like', "%{$needle}%")
+                ->orWhere('crm_khach_ma', 'like', "%{$needle}%"));
+        }
         if ($request->filled('ngay_tu')) {
             $query->whereDate('ngay_dat', '>=', $request->query('ngay_tu'));
         }
@@ -533,7 +540,7 @@ class PageController extends Controller
                 ])->merge(Booking::where('co_so_id', $co_so->id)
                     ->whereNotNull('nguon')->distinct()->pluck('nguon'))
                 ->unique()->values(),
-            'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
+            'filters' => $request->only(['q_ma', 'ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
             'approvalMode' => $approvalMode,
         ]);
     }

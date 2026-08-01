@@ -36,6 +36,7 @@ return [
     ],
 
     'scrm' => [
+        'url' => env('CRM_URL', 'http://127.0.0.1:1999'), // Phase C1.b rev11 2026-08-02: fix CRM_URL không đọc được khi config cache.
         'api_token' => env('SCRM_API_TOKEN'),
         // Whitelist host cho callback return_url (comma-separated env). Chống open-redirect.
         'callback_hosts' => array_values(array_filter(array_map('trim', explode(',', (string) env('SCRM_CALLBACK_HOSTS', ''))))),

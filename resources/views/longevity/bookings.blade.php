@@ -169,6 +169,10 @@
 <!-- Advanced Filters -->
 <form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4 mb-8">
 <div class="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:items-end">
+<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
+<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">MÃ BOOKING / MÃ KH</label>
+<input name="q_ma" value="{{ $filters['q_ma'] ?? '' }}" placeholder="BKG-… / KH-…" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[180px] font-mono" type="search"/>
+</div>
 <div class="flex flex-col gap-1.5 col-span-2 sm:col-auto sm:w-auto">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">KHOẢNG THỜI GIAN</label>
 <div class="flex items-center gap-2 w-full">
@@ -233,6 +237,7 @@
     $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_booking')->exists();
     $canEditBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_booking')->exists();
     $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
+    $canCheckIn = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'cap_nhat_trang_thai_khach')->exists();
 @endphp
 <div class="col-span-2 sm:col-auto flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
 <a href="/{{ $coSo->slug }}/{{ $approvalMode ? 'duyet-lich' : 'danh-sach' }}" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors whitespace-nowrap">
@@ -320,11 +325,17 @@
 @php
     $approved = $b->trang_thai === 'da_duyet';
     $done = $b->trang_thai === 'da_xong';
+    $checkedIn = in_array($b->trang_thai_khach, ['da_toi', 'toi_tre'], true);
+    // Phase C1.b rev6 2026-08-01: badge phân biệt "Đã duyệt · Chờ check-in" và "Đã check-in".
     $badge = $done
         ? ['Đã xong', 'bg-primary/10 text-primary']
-        : ($approved ? ['Đã duyệt', 'bg-tertiary-fixed-dim/40 text-on-tertiary-container']
-        : ($rejected ? ['Từ chối', 'bg-red-100 text-red-700']
-                     : ['Chờ duyệt', 'bg-secondary-container/40 text-on-secondary-container']));
+        : ($approved && $checkedIn
+            ? ['Đã check-in', 'bg-emerald-100 text-emerald-700']
+            : ($approved
+                ? ['Đã duyệt · Chờ check-in', 'bg-tertiary-fixed-dim/40 text-on-tertiary-container']
+                : ($rejected
+                    ? ['Từ chối', 'bg-red-100 text-red-700']
+                    : ['Chờ duyệt', 'bg-secondary-container/40 text-on-secondary-container'])));
 @endphp
 <span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $badge[1] }}" @if($rejected && $b->ly_do_tu_choi) title="Lý do từ chối: {{ $b->ly_do_tu_choi }}" @endif>{{ $badge[0] }}</span>
 @if ($canDuyet)
@@ -341,6 +352,16 @@
 <span class="material-symbols-outlined text-[16px]">block</span>
 </button>
 @endunless
+{{-- Phase C1.b rev6 2026-08-01: nút Check-in — chỉ show khi đã duyệt + chưa check-in + chưa xong. --}}
+@if ($approved && $canCheckIn)
+<form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $b->id }}" class="inline">
+@csrf @method('PATCH')
+<input type="hidden" name="trang_thai_khach" value="da_toi">
+<button type="submit" title="{{ $checkedIn ? 'Bỏ check-in (khách chưa tới)' : 'Check-in — khách đã tới' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $checkedIn ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600' : 'text-outline border-outline-variant hover:border-emerald-500 hover:text-emerald-600' }}">
+<span class="material-symbols-outlined text-[16px]">{{ $checkedIn ? 'how_to_reg' : 'login' }}</span>
+</button>
+</form>
+@endif
 @if ($approved || $done)
 <form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $b->id }}" class="inline">
 @csrf @method('PATCH')
