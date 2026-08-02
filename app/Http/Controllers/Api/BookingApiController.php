@@ -109,6 +109,7 @@ class BookingApiController extends Controller
             'gio_thuc_hien'  => ['nullable', 'string'],
             'dich_vu_id'     => ['nullable', 'integer', 'exists:dich_vu,id'],
             'bac_si_id'      => ['nullable', 'integer', 'exists:bac_si,id'],
+            'phong_id'       => ['nullable', 'integer', 'exists:phong,id'],
             'loai_dat_lich'  => ['nullable', 'in:phong_kham,dich_vu'],
             'nguon'          => ['nullable', 'string', 'max:60'],
             'crm_khach_ma'   => ['nullable', 'string', 'max:60'],
@@ -117,7 +118,30 @@ class BookingApiController extends Controller
             'so_luong_lo'     => ['nullable', 'string', 'max:40'],
             'dung_tich_lo'    => ['nullable', 'string', 'max:40'],
             'ket_hop_medical' => ['nullable', 'boolean'],
+            'co_tu_van'       => ['nullable', 'boolean'],
+            'co_kham_cls'     => ['nullable', 'boolean'],
         ]);
+
+        // Phase C1.d 2026-08-02: capacity guard sớm ngay tại API — không cho tạo trùng slot
+        // của phòng dịch vụ. Đơn cho_duyet + da_duyet đã chiếm slot; đơn tu_choi loại trừ.
+        if (! empty($data['phong_id']) && ! empty($data['gio_thuc_hien'])) {
+            $phong = \App\Models\Phong::find($data['phong_id']);
+            if ($phong) {
+                $capacity = max(1, (int) $phong->so_slot_toi_da);
+                $gio = substr($data['gio_thuc_hien'], 0, 5);
+                $count = Booking::where('phong_id', $phong->id)
+                    ->whereDate('ngay_dat', $data['ngay_dat'])
+                    ->where('gio_thuc_hien', 'LIKE', $gio . '%')
+                    ->giuCho()
+                    ->count();
+                if ($count >= $capacity) {
+                    return response()->json([
+                        'message' => "Phòng {$phong->ten} đã đầy ({$count}/{$capacity}) tại {$gio} ngày {$data['ngay_dat']} — chọn giờ khác hoặc phòng khác.",
+                        'error'   => 'room_full',
+                    ], 409);
+                }
+            }
+        }
 
         try {
             $result = DB::transaction(function () use ($data) {
@@ -132,6 +156,7 @@ class BookingApiController extends Controller
                     'loai_dat_lich' => $data['loai_dat_lich'] ?? 'phong_kham',
                     'dich_vu_id'    => $data['dich_vu_id'] ?? null,
                     'bac_si_id'     => $data['bac_si_id'] ?? null,
+                    'phong_id'      => $data['phong_id'] ?? null,
                     'ngay_dat'      => $data['ngay_dat'],
                     'gio_thuc_hien' => $data['gio_thuc_hien'] ?? null,
                     'nguon'         => $data['nguon'] ?? 'SCRM',
@@ -141,6 +166,8 @@ class BookingApiController extends Controller
                     'so_luong_lo'     => $data['so_luong_lo'] ?? null,
                     'dung_tich_lo'    => $data['dung_tich_lo'] ?? null,
                     'ket_hop_medical' => $data['ket_hop_medical'] ?? false,
+                    'co_tu_van'       => $data['co_tu_van'] ?? false,
+                    'co_kham_cls'     => $data['co_kham_cls'] ?? false,
                     'trang_thai'    => 'cho_duyet',
                     'da_duyet'      => false,
                 ]);
@@ -174,5 +201,92 @@ class BookingApiController extends Controller
                 'error'   => $e->getMessage(),
             ], 500);
         }
+    }
+
+    /**
+     * PUT /api/bookings/{booking} — Phase C1.e (2026-08-02).
+     * Nhận edit từ scrm: note, sale, ngay/gio, dich_vu, bac_si, phong, so_lieu_trinh/lo/dung_tich/medical.
+     * Nếu đổi slot (ngay+gio) → re-check capacity phòng. Nếu conflict → 409.
+     */
+    public function update(Booking $booking, Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'ghi_chu'         => ['nullable', 'string', 'max:2000'],
+            'sale_id'         => ['nullable', 'integer', 'exists:users,id'],
+            'ngay_dat'        => ['nullable', 'date_format:Y-m-d'],
+            'gio_thuc_hien'   => ['nullable', 'string'],
+            'dich_vu_id'      => ['nullable', 'integer', 'exists:dich_vu,id'],
+            'bac_si_id'       => ['nullable', 'integer', 'exists:bac_si,id'],
+            'phong_id'        => ['nullable', 'integer', 'exists:phong,id'],
+            'so_lieu_trinh'   => ['nullable', 'string', 'max:40'],
+            'so_luong_lo'     => ['nullable', 'string', 'max:40'],
+            'dung_tich_lo'    => ['nullable', 'string', 'max:40'],
+            'ket_hop_medical' => ['nullable', 'boolean'],
+            'co_tu_van'       => ['nullable', 'boolean'],
+            'co_kham_cls'     => ['nullable', 'boolean'],
+        ]);
+
+        // Capacity guard nếu slot thay đổi (ngay/gio/phong).
+        $newPhongId = $data['phong_id'] ?? $booking->phong_id;
+        $newNgay = $data['ngay_dat'] ?? optional($booking->ngay_dat)->toDateString();
+        $newGio = $data['gio_thuc_hien'] ?? $booking->gio_thuc_hien;
+        $slotChanged = ($newPhongId != $booking->phong_id)
+            || ($newNgay != optional($booking->ngay_dat)->toDateString())
+            || ($newGio != $booking->gio_thuc_hien);
+
+        if ($slotChanged && $newPhongId && $newGio) {
+            $phong = \App\Models\Phong::find($newPhongId);
+            if ($phong) {
+                $capacity = max(1, (int) $phong->so_slot_toi_da);
+                $gio = substr($newGio, 0, 5);
+                $count = Booking::where('phong_id', $phong->id)
+                    ->whereDate('ngay_dat', $newNgay)
+                    ->where('gio_thuc_hien', 'LIKE', $gio . '%')
+                    ->where('id', '!=', $booking->id)
+                    ->giuCho()
+                    ->count();
+                if ($count >= $capacity) {
+                    return response()->json([
+                        'message' => "Phòng {$phong->ten} đã đầy ({$count}/{$capacity}) tại {$gio} ngày {$newNgay} — chọn giờ khác hoặc phòng khác.",
+                        'error'   => 'room_full',
+                    ], 409);
+                }
+            }
+        }
+
+        $booking->fill(array_filter($data, fn ($v) => $v !== null));
+        $booking->save();
+
+        return response()->json([
+            'id'         => $booking->id,
+            'ma_booking' => $booking->ma_booking,
+            'trang_thai' => $booking->trang_thai,
+            'updated_at' => $booking->updated_at,
+        ]);
+    }
+
+    /**
+     * POST /api/bookings/{booking}/comments — Phase C1.f (2026-08-02).
+     * Nhận bình luận từ scrm, tạo BookingBinhLuan. Không notify (scrm là caller, đã có UI).
+     * user_id resolve từ payload sbooking_user_id (đã map ở scrm.users.sbooking_user_id).
+     */
+    public function comment(\App\Models\Booking $booking, Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'noi_dung' => ['required', 'string', 'max:2000'],
+            'sbooking_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'scrm_user_name' => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $bl = $booking->binhLuans()->create([
+            'user_id'  => $data['sbooking_user_id'] ?? null,
+            'noi_dung' => ($data['scrm_user_name'] ? '[Hệ thống Data · ' . $data['scrm_user_name'] . '] ' : '[Hệ thống Data] ') . $data['noi_dung'],
+        ]);
+
+        return response()->json([
+            'id' => $bl->id,
+            'booking_id' => $bl->booking_id,
+            'created_at' => $bl->created_at,
+        ], 201);
     }
 }

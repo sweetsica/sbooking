@@ -70,16 +70,38 @@ class CrmPushService
         return self::push($booking, $userId, [
             'type' => 'comment',
             'booking_ma' => $booking->ma_booking,
+            'sbooking_booking_id' => $booking->id,
+            'sbooking_user_id' => $userId,
             'comment' => $comment,
         ]);
     }
 
+    /**
+     * Phase C1.e.2 (2026-08-02) — pushEdit giờ gửi cả snapshot booking hiện tại để scrm sync
+     * ghi_chu / sale_id / ngay_dat / gio_thuc_hien / phong_id / bac_si_id / dich_vu_id vào booking_log.
+     */
     public static function pushEdit(Booking $booking, int $userId, string $summary): array
     {
         return self::push($booking, $userId, [
             'type' => 'edit',
             'booking_ma' => $booking->ma_booking,
+            'sbooking_booking_id' => $booking->id,
             'summary' => $summary,
+            'changes' => [
+                'ghi_chu'         => $booking->ghi_chu,
+                'sale_id'         => $booking->sale_id,
+                'ngay_dat'        => optional($booking->ngay_dat)->toDateString(),
+                'gio_thuc_hien'   => $booking->gio_thuc_hien,
+                'phong_id'        => $booking->phong_id,
+                'bac_si_id'       => $booking->bac_si_id,
+                'dich_vu_id'      => $booking->dich_vu_id,
+                'so_lieu_trinh'   => $booking->so_lieu_trinh,
+                'so_luong_lo'     => $booking->so_luong_lo,
+                'dung_tich_lo'    => $booking->dung_tich_lo,
+                'ket_hop_medical' => (bool) $booking->ket_hop_medical,
+                'co_tu_van'       => (bool) $booking->co_tu_van,
+                'co_kham_cls'     => (bool) $booking->co_kham_cls,
+            ],
         ]);
     }
 

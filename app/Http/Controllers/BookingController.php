@@ -914,7 +914,7 @@ class BookingController extends Controller
         abort_unless($booking->co_so_id === $co_so->id, 404);
         $this->authorizePerm('sua_booking');
 
-        // Snapshot trước khi update để diff → push edit sang CRM nếu có thay đổi lịch/phòng/dịch vụ.
+        // Snapshot trước khi update để diff → push edit sang CRM nếu có thay đổi lịch/phòng/dịch vụ/note/sale.
         $beforeSnapshot = [
             'ngay_dat'     => (string) $booking->ngay_dat,
             'gio_thuc_hien' => (string) $booking->gio_thuc_hien,
@@ -922,6 +922,8 @@ class BookingController extends Controller
             'phong_id'     => $booking->phong_id,
             'bac_si_id'    => $booking->bac_si_id,
             'dich_vu_id'   => $booking->dich_vu_id,
+            'ghi_chu'      => (string) $booking->ghi_chu,
+            'sale_id'      => $booking->sale_id,
         ];
 
         $data = $request->validate([
@@ -1070,6 +1072,8 @@ class BookingController extends Controller
             'phong_id'      => 'phòng',
             'bac_si_id'     => 'bác sĩ',
             'dich_vu_id'    => 'dịch vụ',
+            'ghi_chu'       => 'ghi chú',
+            'sale_id'       => 'sale',
         ];
         foreach ($labelMap as $col => $label) {
             $b = (string) ($beforeSnapshot[$col] ?? '');
@@ -1114,27 +1118,31 @@ class BookingController extends Controller
         $this->authorizePerm('duyet_booking');
 
         $approve = ! $booking->da_duyet;
-        $wasRejected = $booking->trang_thai === 'tu_choi';
 
-        // Khi duyệt lại đơn TỪ CHỐI: slot/KTV/BS có thể đã bị đơn khác chiếm trong thời gian chờ.
-        // → Check lại các conflict trước khi cho phép duyệt.
+        // Phase C1.d (2026-08-02): guard capacity mỗi lần duyệt (không chỉ re-approve
+        // đơn từ chối). Đơn từ CRM push sang có thể trải qua thời gian chờ nên slot có
+        // thể đã bị đơn khác chiếm. Bỏ qua field null (đơn thiếu phong/khung/BS thì
+        // check được gì check nấy).
         $canhBao = [];
-        if ($approve && $wasRejected) {
-            if ($this->khungGioDayCho($co_so, (int) $booking->phong_id, (int) $booking->khung_gio_id, (string) $booking->ngay_dat->toDateString(), $booking->id)) {
-                return back()->with('error', 'Không duyệt được: khung giờ này đã được đặt kín bởi đơn khác. Vui lòng đổi khung giờ trước khi duyệt.');
+        if ($approve) {
+            $ngayStr = (string) $booking->ngay_dat->toDateString();
+            if ($booking->phong_id && $booking->khung_gio_id) {
+                if ($this->khungGioDayCho($co_so, (int) $booking->phong_id, (int) $booking->khung_gio_id, $ngayStr, $booking->id)) {
+                    return back()->with('error', 'Không duyệt được: phòng đã đầy slot cho khung giờ này. Vui lòng đổi phòng/giờ trước khi duyệt.');
+                }
             }
-            if ($booking->ktv_user_id) {
-                $busy = $this->ktvBanKhoangGio($co_so, (int) $booking->ktv_user_id, (string) $booking->ngay_dat->toDateString(), (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
+            if ($booking->ktv_user_id && $booking->khung_gio_id) {
+                $busy = $this->ktvBanKhoangGio($co_so, (int) $booking->ktv_user_id, $ngayStr, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
                 if ($busy) {
                     return back()->with('error', 'Không duyệt được: KTV đã được đặt cho khung giờ này bởi đơn khác.');
                 }
             }
-            if ($booking->bac_si_id) {
-                $err = $this->checkBacSiCapacity((int) $booking->bac_si_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, (string) $booking->ngay_dat->toDateString(), $booking->id);
+            if ($booking->bac_si_id && $booking->dich_vu_id && $booking->khung_gio_id) {
+                $err = $this->checkBacSiCapacity((int) $booking->bac_si_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, $ngayStr, $booking->id);
                 if ($err) {
                     return back()->with('error', 'Không duyệt được: '.$err);
                 }
-                $msg = $this->bacSiTrungLich($co_so, (int) $booking->bac_si_id, (string) $booking->ngay_dat->toDateString(), (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
+                $msg = $this->bacSiTrungLich($co_so, (int) $booking->bac_si_id, $ngayStr, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
                 if ($msg) $canhBao[] = $msg;
             }
         }
