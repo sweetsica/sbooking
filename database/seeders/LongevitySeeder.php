@@ -129,7 +129,7 @@ class LongevitySeeder extends Seeder
         $pbTuVan207  = $pb[$cs207nvt->id]['tu_van'];
 
         // ---- Admin Hệ thống (IT) — tài khoản đặc biệt, không thuộc phòng ban / cơ sở nào, full quyền ----
-        $this->upsertUser('admin', 'admin@sweetsica.com', [
+        $this->upsertUser('admin', 'admin@longevity.com.vn', [
             'name'         => 'Admin Hệ thống',
             'password'     => Hash::make('59ntn'),
             'co_so_id'     => null,
@@ -138,7 +138,7 @@ class LongevitySeeder extends Seeder
             'is_admin'     => true,
         ]);
 
-        $this->upsertUser('adminvh', 'adminvh@sweetsica.com', [
+        $this->upsertUser('adminvh', 'adminvh@longevity.com.vn', [
             'name'         => 'Admin Vận hành',
             'password'     => Hash::make('59@ntn'),
             'co_so_id'     => null,
@@ -152,7 +152,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'baoit', 'name' => 'Bảo IT'],
             ['username' => 'tumod', 'name' => 'Tú MOD'],
         ] as $a) {
-            $this->upsertUser($a['username'], $a['username'] . '@sweetsica.com', [
+            $this->upsertUser($a['username'], $a['username'] . '@longevity.com.vn', [
                 'name'         => $a['name'],
                 'password'     => Hash::make('59@ntn'),
                 'co_so_id'     => null,
@@ -186,7 +186,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'ktv_vi',      'name' => 'Nguyễn Thị Lan Vi',       'chuc_danh' => 'KTV.'],
         ];
         foreach ($ktvHN as $k) {
-            $this->upsertUser($k['username'], $k['username'] . '@59ntn.local', [
+            $this->upsertUser($k['username'], $k['username'] . '@longevity.com.vn', [
                 'name'         => $k['name'],
                 'chuc_danh'    => $k['chuc_danh'],
                 'password'     => $matKhau,
@@ -291,7 +291,7 @@ class LongevitySeeder extends Seeder
 
         // Mỗi cơ sở có 1 tài khoản BÁC SĨ DÙNG CHUNG (đăng nhập), độc lập với module bác sĩ–phòng.
         foreach ([$cs59ntn, $cs207nvt] as $cs) {
-            $this->upsertUser('bsi' . $cs->slug, 'bsi' . $cs->slug . '@local', [
+            $this->upsertUser('bsi' . $cs->slug, 'bsi' . $cs->slug . '@longevity.com.vn', [
                 'name'         => 'Bác sĩ ' . $cs->slug,
                 'chuc_danh'    => 'BS.',
                 'password'     => Hash::make('59@ntn'),
@@ -320,7 +320,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'nma',  'name' => 'Nguyễn Mai Anh',      'chuc_danh' => 'HC'],
         ];
         foreach ($tvHN as $tv) {
-            $this->upsertUser($tv['username'], $tv['username'] . '@59ntn.local', [
+            $this->upsertUser($tv['username'], $tv['username'] . '@longevity.com.vn', [
                 'name'         => $tv['name'],
                 'chuc_danh'    => $tv['chuc_danh'],
                 'password'     => $matKhau,
@@ -408,7 +408,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'hbtl', 'name' => 'Huỳnh Bùi Thanh Lan',   'chuc_danh' => 'CM'],
         ];
         foreach ($tvHCM as $tv) {
-            $this->upsertUser($tv['username'], $tv['username'] . '@207nvt.local', [
+            $this->upsertUser($tv['username'], $tv['username'] . '@longevity.com.vn', [
                 'name'         => $tv['name'],
                 'chuc_danh'    => $tv['chuc_danh'],
                 'password'     => $matKhau207,
@@ -432,7 +432,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'dd_thanh',   'name' => 'Khưu Thị Phương Thanh',  'chuc_danh' => 'ĐD.'],
         ];
         foreach ($ktvHCM as $k) {
-            $this->upsertUser($k['username'], $k['username'] . '@207nvt.local', [
+            $this->upsertUser($k['username'], $k['username'] . '@longevity.com.vn', [
                 'name'         => $k['name'],
                 'chuc_danh'    => $k['chuc_danh'],
                 'password'     => $matKhau207,
