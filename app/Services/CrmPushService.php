@@ -44,16 +44,28 @@ class CrmPushService
         });
     }
 
+    /**
+     * 2026-08-03: token dùng cho callback = shared secret (env SCRM_API_TOKEN — cùng chuỗi scrm dùng
+     * để gọi sbooking, đơn giản hoá cấu hình). Fallback user.api_token nếu env chưa set.
+     */
+    public static function callbackToken(int $userId = 0): ?string
+    {
+        $shared = env('SCRM_API_TOKEN');
+        if ($shared) return $shared;
+        $user = $userId ? \App\Models\User::find($userId) : null;
+        return $user?->api_token;
+    }
+
     public static function pushDeleteAsync(Booking $booking, int $userId): void
     {
         if (! $booking->crm_khach_ma) return;
         // Snapshot booking data trước khi delete (Job chạy sau response, booking có thể đã gone).
         $snapshot = ['id' => $booking->id, 'ma_booking' => $booking->ma_booking, 'crm_khach_ma' => $booking->crm_khach_ma];
         \Illuminate\Support\Facades\App::terminating(function () use ($snapshot, $userId) {
-            $user = \App\Models\User::find($userId);
-            if (! $user?->api_token) return;
+            $token = self::callbackToken($userId);
+            if (! $token) return;
             try {
-                \Illuminate\Support\Facades\Http::withToken($user->api_token)->acceptJson()->timeout(6)
+                \Illuminate\Support\Facades\Http::withToken($token)->acceptJson()->timeout(6)
                     ->post(self::crmUrl() . '/api/leads/' . $snapshot['crm_khach_ma'] . '/booking-event', [
                         'type' => 'delete',
                         'booking_ma' => $snapshot['ma_booking'],
@@ -122,11 +134,10 @@ class CrmPushService
             return ['ok' => false, 'msg' => 'Booking chưa link CRM khách_ma → không đẩy.'];
         }
 
-        $user = \App\Models\User::find($userId);
-        $token = $user?->api_token;
+        $token = self::callbackToken($userId);
         if (! $token) {
-            Log::warning("CrmPush skipped: user $userId thiếu api_token.");
-            return ['ok' => false, 'msg' => 'User chưa có api_token, chưa đẩy CRM.'];
+            Log::warning("CrmPush skipped: không có SCRM_API_TOKEN env + user $userId thiếu api_token.");
+            return ['ok' => false, 'msg' => 'Chưa cấu hình SCRM_API_TOKEN, chưa đẩy CRM.'];
         }
 
         try {
