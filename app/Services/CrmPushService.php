@@ -144,12 +144,50 @@ class CrmPushService
             $r = Http::withToken($token)->acceptJson()->timeout(6)
                 ->post(self::crmUrl() . '/api/leads/' . $booking->crm_khach_ma . '/booking-event', $payload);
             if ($r->successful()) {
+                // Phase 6.25.C — scrm trả ups_assignment khi checkin auto-chia sale từ Sale Tiếp Đón.
+                $body = $r->json();
+                if (! empty($body['ups_assignment']['sale_user_id'])) {
+                    $assign = $body['ups_assignment'];
+                    $localUserId = null;
+                    if (! empty($assign['sbooking_user_id'])) {
+                        $localUserId = (int) $assign['sbooking_user_id'];
+                    } elseif (! empty($assign['sale_email'])) {
+                        $localUserId = \App\Models\User::where('email', $assign['sale_email'])->value('id');
+                    }
+                    if ($localUserId) {
+                        $booking->update(['tiep_don_user_id' => $localUserId]);
+                    }
+                }
                 return ['ok' => true, 'msg' => 'Đã đẩy sang CRM ' . $booking->crm_khach_ma . '.'];
             }
             Log::warning('CrmPush non-2xx', ['status' => $r->status(), 'body' => $r->body(), 'payload' => $payload]);
             return ['ok' => false, 'msg' => 'CRM trả HTTP ' . $r->status() . '.'];
         } catch (\Throwable $e) {
             Log::warning('CrmPush failed: ' . $e->getMessage(), ['payload' => $payload]);
+            return ['ok' => false, 'msg' => 'Lỗi mạng CRM: ' . $e->getMessage()];
+        }
+    }
+
+    /** Phase 6.25.C — Push nút "Đang tiếp đón" / "Hoàn tất" sang scrm. */
+    public static function pushTiepDon(Booking $booking, int $userId, bool $isBusy): array
+    {
+        $token = self::callbackToken($userId);
+        if (! $token) {
+            return ['ok' => false, 'msg' => 'Chưa cấu hình SCRM_API_TOKEN.'];
+        }
+        $u = \App\Models\User::find($userId);
+        $endpoint = $isBusy ? '/api/ups/busy' : '/api/ups/complete';
+        try {
+            $r = Http::withToken($token)->acceptJson()->timeout(6)
+                ->post(self::crmUrl() . $endpoint, [
+                    'sale_email' => $u?->email,
+                    'work_date'  => now()->toDateString(),
+                ]);
+            if ($r->successful()) {
+                return ['ok' => true, 'msg' => $isBusy ? 'Đã báo đang tiếp đón.' : 'Đã báo hoàn tất.'];
+            }
+            return ['ok' => false, 'msg' => 'CRM trả HTTP ' . $r->status() . '.'];
+        } catch (\Throwable $e) {
             return ['ok' => false, 'msg' => 'Lỗi mạng CRM: ' . $e->getMessage()];
         }
     }

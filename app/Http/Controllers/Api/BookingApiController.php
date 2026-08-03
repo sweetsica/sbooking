@@ -107,9 +107,11 @@ class BookingApiController extends Controller
             'co_so_id'       => ['required', 'integer', 'exists:co_so,id'],
             'ngay_dat'       => ['required', 'date_format:Y-m-d'],
             'gio_thuc_hien'  => ['nullable', 'string'],
+            'gio_ket_thuc'   => ['nullable', 'string'], // Phase 6.25.C fix
             'dich_vu_id'     => ['nullable', 'integer', 'exists:dich_vu,id'],
             'bac_si_id'      => ['nullable', 'integer', 'exists:bac_si,id'],
             'phong_id'       => ['nullable', 'integer', 'exists:phong,id'],
+            'khung_gio_id'   => ['nullable', 'integer', 'exists:khung_gio,id'],
             'loai_dat_lich'  => ['nullable', 'in:phong_kham,dich_vu'],
             'nguon'          => ['nullable', 'string', 'max:60'],
             'crm_khach_ma'   => ['nullable', 'string', 'max:60'],
@@ -120,6 +122,8 @@ class BookingApiController extends Controller
             'ket_hop_medical' => ['nullable', 'boolean'],
             'co_tu_van'       => ['nullable', 'boolean'],
             'co_kham_cls'     => ['nullable', 'boolean'],
+            'sale_id'          => ['nullable', 'integer', 'exists:users,id'],
+            'tiep_don_user_id' => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
         // Phase C1.d 2026-08-02: capacity guard sớm ngay tại API — không cho tạo trùng slot
@@ -157,8 +161,10 @@ class BookingApiController extends Controller
                     'dich_vu_id'    => $data['dich_vu_id'] ?? null,
                     'bac_si_id'     => $data['bac_si_id'] ?? null,
                     'phong_id'      => $data['phong_id'] ?? null,
+                    'khung_gio_id'  => $data['khung_gio_id'] ?? null,
                     'ngay_dat'      => $data['ngay_dat'],
                     'gio_thuc_hien' => $data['gio_thuc_hien'] ?? null,
+                    'gio_ket_thuc'  => $data['gio_ket_thuc'] ?? null,
                     'nguon'         => $data['nguon'] ?? 'SCRM',
                     'crm_khach_ma'  => $data['crm_khach_ma'] ?? null,
                     'ghi_chu'       => $data['ghi_chu'] ?? null,
@@ -168,6 +174,8 @@ class BookingApiController extends Controller
                     'ket_hop_medical' => $data['ket_hop_medical'] ?? false,
                     'co_tu_van'       => $data['co_tu_van'] ?? false,
                     'co_kham_cls'     => $data['co_kham_cls'] ?? false,
+                    'sale_id'         => $data['sale_id'] ?? null,
+                    'tiep_don_user_id' => $data['tiep_don_user_id'] ?? null,
                     'trang_thai'    => 'cho_duyet',
                     'da_duyet'      => false,
                 ]);
@@ -218,6 +226,9 @@ class BookingApiController extends Controller
             'dich_vu_id'      => ['nullable', 'integer', 'exists:dich_vu,id'],
             'bac_si_id'       => ['nullable', 'integer', 'exists:bac_si,id'],
             'phong_id'        => ['nullable', 'integer', 'exists:phong,id'],
+            'khung_gio_id'    => ['nullable', 'integer', 'exists:khung_gio,id'],
+            'tiep_don_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            'gio_ket_thuc'    => ['nullable', 'string'],
             'so_lieu_trinh'   => ['nullable', 'string', 'max:40'],
             'so_luong_lo'     => ['nullable', 'string', 'max:40'],
             'dung_tich_lo'    => ['nullable', 'string', 'max:40'],

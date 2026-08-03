@@ -147,6 +147,14 @@
 </div>
 <script>setTimeout(()=>document.getElementById('flash-warning')?.remove(), 8000);</script>
 @endif
+{{-- 2026-08-03 fix: thiếu block 'error' → bấm Duyệt fail silently không thấy thông báo (VD BS không nhận tư vấn). --}}
+@if (session('error'))
+<div class="fixed top-20 left-1/2 -translate-x-1/2 z-[60] max-w-lg px-5 py-3 rounded-xl bg-error text-on-error shadow-lg flex items-start gap-2 text-body-md font-semibold" id="flash-error">
+<span class="material-symbols-outlined">error</span> {{ session('error') }}
+<button onclick="document.getElementById('flash-error')?.remove()" class="ml-2 material-symbols-outlined text-lg opacity-70 hover:opacity-100">close</button>
+</div>
+<script>setTimeout(()=>document.getElementById('flash-error')?.remove(), 10000);</script>
+@endif
 <!-- Top Navigation Bar -->
 @php $approvalMode = $approvalMode ?? false; @endphp
 @include('partials.topnav', ['active' => $approvalMode ? 'duyet-lich' : 'lich-hen'])
@@ -292,7 +300,7 @@
 <tbody class="divide-y divide-outline-variant/30">
 @forelse ($bookings as $b)
 @php $rejected = $b->trang_thai === 'tu_choi'; $rowBg = $rejected ? 'bg-red-50' : 'bg-surface-container-lowest'; @endphp
-<tr class="transition-colors {{ $rejected ? 'bg-red-50 hover:bg-red-100/60' : 'hover:bg-surface-variant/10' }}">
+<tr data-booking-id="{{ $b->id }}" class="transition-colors {{ $rejected ? 'bg-red-50 hover:bg-red-100/60' : 'hover:bg-surface-variant/10' }}">
 <td class="px-4 py-4 sticky-col sticky-left-0 {{ $rowBg }} shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
 <span class="text-body-sm font-time-slot text-on-surface-variant">{{ $b->created_at->format('d/m H:i') }}</span>
 </td>
@@ -361,6 +369,18 @@
 <span class="material-symbols-outlined text-[16px]">{{ $checkedIn ? 'how_to_reg' : 'login' }}</span>
 </button>
 </form>
+@endif
+{{-- Phase 6.25.C — Nút "Đang tiếp đón / Hoàn tất" cho sale được gán (manual bên scrm phase 3 hoặc auto UPS). --}}
+@if ($b->tiep_don_user_id === auth()->id() || $b->sale_id === auth()->id())
+    @php $tdBusy = $b->trang_thai_tiep_don === 'dang_tiep_don'; @endphp
+    <form method="POST" action="/{{ $coSo->slug }}/tiep-don/{{ $b->id }}" class="inline">
+        @csrf @method('PATCH')
+        <input type="hidden" name="trang_thai_tiep_don" value="{{ $tdBusy ? 'hoan_tat' : 'dang_tiep_don' }}">
+        <button type="submit" title="{{ $tdBusy ? 'Hoàn tất tiếp đón (bỏ bận)' : 'Đang tiếp đón (đánh dấu bận)' }}"
+                class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $tdBusy ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600' : 'text-outline border-outline-variant hover:border-amber-500 hover:text-amber-600' }}">
+            <span class="material-symbols-outlined text-[16px]">{{ $tdBusy ? 'done_all' : 'record_voice_over' }}</span>
+        </button>
+    </form>
 @endif
 @if ($approved || $done)
 <form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $b->id }}" class="inline">
@@ -500,4 +520,47 @@ Không có kết quả
 </script>
 @endif
 @include('partials.datepicker')
+
+{{-- Phase 6.25.C — Realtime lắng nghe scrm broadcast: khi UPS auto-chia sale hoặc sale bận/rảnh, hiện toast + reload nhẹ. --}}
+<script src="https://cdn.jsdelivr.net/npm/pusher-js@8.4.0/dist/web/pusher.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.16.1/dist/echo.iife.js"></script>
+<script>
+(function(){
+    if (typeof Echo === 'undefined' || typeof Pusher === 'undefined') return;
+    try {
+        window.ScrmEcho = new Echo({
+            broadcaster: 'reverb',
+            key: 'local-app-key',
+            wsHost: '127.0.0.1',
+            wsPort: 8080,
+            wssPort: 8080,
+            forceTLS: false,
+            enabledTransports: ['ws','wss'],
+        });
+
+        const showToast = (msg, tone) => {
+            const t = document.createElement('div');
+            const bg = tone === 'ok' ? 'background:#059669' : (tone === 'warn' ? 'background:#d97706' : 'background:#1f2937');
+            t.style.cssText = 'position:fixed;top:16px;right:16px;z-index:9999;padding:10px 14px;color:#fff;border-radius:8px;box-shadow:0 6px 20px rgba(0,0,0,.15);font-size:14px;max-width:340px;'+bg;
+            t.textContent = msg;
+            document.body.appendChild(t);
+            setTimeout(()=>t.remove(), 6000);
+        };
+
+        window.ScrmEcho.channel('ups.presence')
+            .listen('.App\\Events\\UpsBusyChanged', (e) => {
+                showToast(`${e.user_name}: ${e.is_busy ? 'Đang tiếp đón' : 'Đã rảnh'}`, e.is_busy ? 'warn' : 'ok');
+            });
+
+        // Lắng nghe theo booking id có mặt trong DOM để reload khi có gán sale mới
+        document.querySelectorAll('[data-booking-id]').forEach(el => {
+            const id = el.getAttribute('data-booking-id');
+            window.ScrmEcho.channel('ups.booking.'+id).listen('.App\\Events\\UpsSaleAssigned', (e) => {
+                showToast(`UPS: Đã chia sale ${e.sale_name} cho booking #${id}. Trang sẽ tải lại.`, 'ok');
+                setTimeout(()=>location.reload(), 1500);
+            });
+        });
+    } catch (err) { console.warn('Echo init failed', err); }
+})();
+</script>
 </body></html>

@@ -100,6 +100,13 @@ class BookingController extends Controller
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
         $this->authorizePerm('sua_booking');
+        // Phase 6.25.C fix — Sale tiếp nhận (được gán) không mở form Sửa được (chỉ Admin).
+        $u = auth()->user();
+        $isTiepDon = ($booking->tiep_don_user_id === $u->id) || ($booking->sale_id === $u->id);
+        if ($isTiepDon && ! $u->is_admin) {
+            return redirect("/{$co_so->slug}/xem-dat-phong/{$booking->id}")
+                ->with('warn', 'Sale tiếp nhận chỉ xem + ghi trạng thái. Không được sửa info khách.');
+        }
 
         $booking->load(['khachHang', 'menus', 'binhLuans.nguoiDung.vaiTro']);
 
@@ -914,6 +921,14 @@ class BookingController extends Controller
         abort_unless($booking->co_so_id === $co_so->id, 404);
         $this->authorizePerm('sua_booking');
 
+        // Phase 6.25.C fix (2026-08-03) — Sale tiếp nhận (được gán manual scrm hoặc auto UPS)
+        // chỉ được ghi tình trạng khách + comment, KHÔNG sửa info khách. Admin bypass.
+        $u = auth()->user();
+        $isTiepDon = ($booking->tiep_don_user_id === $u->id) || ($booking->sale_id === $u->id);
+        if ($isTiepDon && ! $u->is_admin) {
+            abort(403, 'Sale tiếp nhận không được sửa thông tin khách — chỉ được ghi trạng thái (Đang tiếp đón / Hoàn tất) và bình luận. Liên hệ Admin nếu cần sửa.');
+        }
+
         // Snapshot trước khi update để diff → push edit sang CRM nếu có thay đổi lịch/phòng/dịch vụ/note/sale.
         $beforeSnapshot = [
             'ngay_dat'     => (string) $booking->ngay_dat,
@@ -1270,6 +1285,41 @@ class BookingController extends Controller
         $msg .= ' ' . $push['msg'];
 
         return back()->with($push['ok'] ? 'ok' : 'warn', $msg);
+    }
+
+    /**
+     * Phase 6.25.C — Sale được auto-chia từ UPS scrm tick "Đang tiếp đón" / "Hoàn tất".
+     * Toggle trạng thái + push sang scrm để mark busy/free trong daily_attendance.
+     */
+    public function capNhatTiepDon(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        // Chỉ sale được scrm auto-chia mới được tick.
+        abort_unless(
+            $booking->tiep_don_user_id === auth()->id() || $booking->sale_id === auth()->id(),
+            403,
+            'Chỉ sale được gán (manual scrm phase 3 hoặc auto UPS) mới có quyền tick.'
+        );
+
+        $data = $request->validate([
+            'trang_thai_tiep_don' => ['required', Rule::in(['dang_tiep_don', 'hoan_tat'])],
+        ]);
+        $moi = $data['trang_thai_tiep_don'];
+
+        $updates = ['trang_thai_tiep_don' => $moi];
+        if ($moi === 'dang_tiep_don') {
+            $updates['tiep_don_bat_dau'] = now();
+            $updates['tiep_don_hoan_tat'] = null;
+        } else {
+            $updates['tiep_don_hoan_tat'] = now();
+        }
+        $booking->update($updates);
+
+        $push = \App\Services\CrmPushService::pushTiepDon($booking, auth()->id(), $moi === 'dang_tiep_don');
+
+        $label = $moi === 'dang_tiep_don' ? 'Bắt đầu tiếp đón khách' : 'Hoàn tất tiếp đón';
+
+        return back()->with($push['ok'] ? 'ok' : 'warn', $label . '. ' . $push['msg']);
     }
 
     /** Thêm bình luận "sau dịch vụ" (nhiều vai trò được phép). */

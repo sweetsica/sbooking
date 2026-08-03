@@ -19,6 +19,8 @@ class Booking extends Model
         'so_lieu_trinh', 'so_luong_lo', 'dung_tich_lo', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
         'ghi_chu', 'trang_thai', 'trang_thai_khach', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet', 'crm_khach_ma',
         'nguoi_tao_id',
+        // Phase 6.25.C — Nút "Đang tiếp đón / Hoàn tất" cho sale được auto-chia từ UPS scrm
+        'trang_thai_tiep_don', 'tiep_don_user_id', 'tiep_don_bat_dau', 'tiep_don_hoan_tat',
     ];
 
     protected $casts = [
@@ -28,6 +30,8 @@ class Booking extends Model
         'co_tu_van' => 'boolean',
         'co_kham_cls' => 'boolean',
         'da_duyet' => 'boolean',
+        'tiep_don_bat_dau' => 'datetime',
+        'tiep_don_hoan_tat' => 'datetime',
     ];
 
     protected static function booted(): void
@@ -79,6 +83,12 @@ class Booking extends Model
     public function sale(): BelongsTo
     {
         return $this->belongsTo(User::class, 'sale_id');
+    }
+
+    /** Phase 6.25.C — Sale được scrm UPS auto-chia (khác sale_id — người đặt booking). */
+    public function tiepDonUser(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'tiep_don_user_id');
     }
 
     public function nguoiTao(): BelongsTo
