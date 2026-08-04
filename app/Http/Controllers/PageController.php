@@ -237,6 +237,112 @@ class PageController extends Controller
         ]);
     }
 
+    /**
+     * 2026-08-04 (SCRM T10): dashboard mặc định của /lich-hen.
+     * 4 widget theo status + list booking cơ bản.
+     */
+    public function dashboard(CoSo $co_so, Request $request)
+    {
+        $today = now()->toDateString();
+        $now = now();
+        $in1h = $now->copy()->addHour();
+
+        // Base query: booking của cơ sở này, respect scope visibility.
+        $base = fn () => Booking::where('co_so_id', $co_so->id)->visibleTo(auth()->user());
+
+        // Widget 1: Lịch hôm nay (tất cả booking ngày hôm nay, chưa lọc status)
+        $todayCount = (clone $base())->whereDate('ngay_dat', $today)->count();
+
+        // Widget 2: Đang xử lý (khách đã tới đang được tiếp / khám)
+        $processingCount = (clone $base())
+            ->whereDate('ngay_dat', $today)
+            ->where(function ($q) {
+                $q->where('trang_thai_khach', 'da_toi')
+                  ->orWhere('trang_thai_khach', 'toi_tre')
+                  ->orWhere('trang_thai_tiep_don', 'dang_tiep_don');
+            })
+            ->where('trang_thai', '!=', 'da_xong')
+            ->count();
+
+        // Widget 3: Sắp tới (trong 60 phút, đã duyệt, chưa tới/hoàn thành)
+        $upcomingCount = (clone $base())
+            ->whereDate('ngay_dat', $today)
+            ->where('trang_thai', 'da_duyet')
+            ->whereNull('trang_thai_khach')
+            ->where(function ($q) use ($now, $in1h) {
+                $q->whereBetween('gio_thuc_hien', [$now->format('H:i:s'), $in1h->format('H:i:s')]);
+            })
+            ->count();
+
+        // Widget 4: Đã hoàn thành hôm nay
+        $doneCount = (clone $base())
+            ->whereDate('ngay_dat', $today)
+            ->where('trang_thai', 'da_xong')
+            ->count();
+
+        // Filter list bằng ?tab=today|processing|upcoming|done — default today.
+        $tab = in_array($request->query('tab'), ['today', 'processing', 'upcoming', 'done'], true)
+            ? $request->query('tab') : 'today';
+
+        $listQ = (clone $base())->whereDate('ngay_dat', $today);
+        if ($tab === 'processing') {
+            $listQ->where(function ($q) {
+                $q->where('trang_thai_khach', 'da_toi')
+                  ->orWhere('trang_thai_khach', 'toi_tre')
+                  ->orWhere('trang_thai_tiep_don', 'dang_tiep_don');
+            })->where('trang_thai', '!=', 'da_xong');
+        } elseif ($tab === 'upcoming') {
+            $listQ->where('trang_thai', 'da_duyet')
+                ->whereNull('trang_thai_khach')
+                ->whereBetween('gio_thuc_hien', [$now->format('H:i:s'), $in1h->format('H:i:s')]);
+        } elseif ($tab === 'done') {
+            $listQ->where('trang_thai', 'da_xong');
+        }
+
+        $bookings = $listQ->with(['khachHang', 'dichVu', 'sale'])
+            ->orderBy('gio_thuc_hien')
+            ->limit(100)
+            ->get();
+
+        // 2026-08-05: JSON response cho JS poll 15s (client fetch không reload trang).
+        if ($request->expectsJson() || $request->boolean('json')) {
+            return response()->json([
+                'counts' => [
+                    'today' => $todayCount,
+                    'processing' => $processingCount,
+                    'upcoming' => $upcomingCount,
+                    'done' => $doneCount,
+                ],
+                'tab' => $tab,
+                'bookings' => $bookings->map(fn ($b) => [
+                    'id' => $b->id,
+                    'ma_booking' => $b->ma_booking,
+                    'ten_khach' => $b->khachHang?->ho_ten,
+                    'sdt' => $b->khachHang?->so_dien_thoai,
+                    'sale' => $b->sale?->name,
+                    'loai' => $b->loai_dat_lich,
+                    'dich_vu' => $b->dichVu?->ten,
+                    'gio' => $b->gio_thuc_hien ? substr($b->gio_thuc_hien, 0, 5) : null,
+                    'trang_thai' => $b->trang_thai,
+                    'trang_thai_khach' => $b->trang_thai_khach,
+                    'url' => "/{$co_so->slug}/xem-dat-phong/{$b->id}",
+                ])->values(),
+                'server_time' => now()->format('H:i:s'),
+            ]);
+        }
+
+        return view('longevity.dashboard', [
+            'coSo' => $co_so,
+            'todayCount' => $todayCount,
+            'processingCount' => $processingCount,
+            'upcomingCount' => $upcomingCount,
+            'doneCount' => $doneCount,
+            'tab' => $tab,
+            'bookings' => $bookings,
+            'active' => 'lich-hen',
+        ]);
+    }
+
     public function timeline(CoSo $co_so, Request $request)
     {
         // Lọc phòng theo kiểu: 'phong_kham' (mặc định) hoặc 'phong_dich_vu'

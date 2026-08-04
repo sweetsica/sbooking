@@ -70,7 +70,9 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::get('/dat-kham/check-sdt',  [LichHenController::class, 'checkPhone'])->name('lichhen.checksdt');
 
         Route::get('/phong',     [PageController::class, 'rooms'])->name('phong');
-        Route::get('/lich-hen',  [PageController::class, 'timeline'])->name('timeline');
+        // 2026-08-04 (SCRM T10): /lich-hen giờ = dashboard 4 widget + list. Timeline gantt cũ dời sang /lich-hen/timeline.
+        Route::get('/lich-hen',           [PageController::class, 'dashboard'])->name('dashboard');
+        Route::get('/lich-hen/timeline',  [PageController::class, 'timeline'])->name('timeline');
         Route::get('/danh-sach', [PageController::class, 'bookings'])->name('bookings');
         Route::get('/duyet-lich', [PageController::class, 'approvals'])->name('approvals');
 

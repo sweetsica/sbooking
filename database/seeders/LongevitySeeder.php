@@ -106,6 +106,9 @@ class LongevitySeeder extends Seeder
             'phong_kham_noi_1' => 'Phòng khám Nội 1',
             'phong_kham_noi_2' => 'Phòng khám Nội 2',
             'phong_sieu_am'    => 'Phòng siêu âm',
+            // 2026-08-04 (scrm Task 2): phòng BO Lễ Tân — chứa tài khoản Admin cơ sở
+            // phụ trách duyệt/không duyệt booking + check-in khách.
+            'bo_le_tan'        => 'Phòng BO (Lễ Tân)',
         ];
         $pb = []; // $pb[co_so_id][ma] = PhongBan
         foreach ([$cs59ntn, $cs207nvt, $cslo23tdn, $cs137nct] as $cs) {
