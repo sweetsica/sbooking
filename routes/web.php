@@ -91,9 +91,12 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::patch('/tu-choi-dat-phong/{booking}', [BookingController::class, 'tuChoi'])->name('booking.reject');
         Route::patch('/xong-dat-phong/{booking}',  [BookingController::class, 'xong'])->name('booking.done');
         Route::patch('/phan-hoi-dat-phong/{booking}', [BookingController::class, 'phanHoi'])->name('booking.feedback');
-        Route::patch('/trang-thai-khach/{booking}', [BookingController::class, 'capNhatTrangThaiKhach'])->name('booking.trangthaikhach');
+        // Phản hồi sau khi sử dụng dịch vụ (trạng thái khách + note nhiều dòng có tác giả) — GIỮ tên remote booking.tt-khach.
+        Route::patch('/trang-thai-khach/{booking}', [BookingController::class, 'capNhatTrangThaiKhach'])->name('booking.tt-khach');
+        Route::post('/them-phan-hoi/{booking}',     [BookingController::class, 'themPhanHoi'])->name('booking.them-phan-hoi');
+        Route::delete('/xoa-phan-hoi/{booking}/{note}', [BookingController::class, 'xoaPhanHoi'])->name('booking.xoa-phan-hoi');
+        // Phase 6.25 (local): tiếp đón + bình luận + GET fallback (tránh 405 khi user copy URL action).
         Route::patch('/tiep-don/{booking}', [BookingController::class, 'capNhatTiepDon'])->name('booking.tiepdon');
-        // Phase C1.b rev11 2026-08-02: GET fallback redirect về trang xem (tránh 405 khi user copy nhầm URL action).
         Route::get('/trang-thai-khach/{booking}', function ($co_so_slug, $booking) {
             return redirect("/{$co_so_slug}/xem-dat-phong/{$booking}");
         });
@@ -131,15 +134,18 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::get('/xuat-tu-van',  [ExcelController::class, 'exportLichHen'])->name('excel.exportLichHen');
         Route::post('/nhap-tu-van', [ExcelController::class, 'importLichHen'])->name('excel.importLichHen');
 
-        // ----- Thiết lập -----
-        // Admin xem/sửa mọi mục. Người có quyền "xem_bao_cao" chỉ vào được mục Báo cáo
-        // (SettingsController tự chặn các mục khác) — nên các route ĐỌC không gắn middleware admin.
-        Route::prefix('thiet-lap')->name('settings.')->group(function () {
-            // Đọc: admin (mọi mục) hoặc người có quyền xem_bao_cao (chỉ Báo cáo)
+        // ----- Báo cáo (admin HOẶC quyền xem_bao_cao) -----
+        Route::get('/bao-cao',      [SettingsController::class, 'baoCao'])->name('settings.baocao');
+        Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('settings.baocao.xuat');
+
+        // ----- Sơ đồ tổ chức -----
+        Route::get('/so-do-to-chuc', [SettingsController::class, 'soDo'])->name('settings.sodo');
+
+        // ----- CHỈ ADMIN: Thiết lập -----
+        Route::middleware('admin')->prefix('thiet-lap')->name('settings.')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');
-            Route::get('/bao-cao/xuat', [ExcelController::class, 'exportBaoCao'])->name('baocao.xuat');
-            // Trang riêng: phải đăng ký TRƯỚC catch-all /{section} bên dưới
-            Route::middleware('admin')->get('/nhat-ky-thong-bao', [\App\Http\Controllers\NotificationLogController::class, 'index'])->name('notification-log');
+            // Nhật ký thông báo — admin only.
+            Route::get('/nhat-ky-thong-bao', [\App\Http\Controllers\NotificationLogController::class, 'index'])->name('notification-log');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
 
             // Ghi + các mục quản trị khác: CHỈ ADMIN

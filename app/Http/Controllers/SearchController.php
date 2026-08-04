@@ -17,6 +17,9 @@ class SearchController extends Controller
      */
     public function index(CoSo $co_so, Request $request)
     {
+        $scope = $this->bookingViewScope();
+        if ($scope === null) abort(403, 'Bạn không có quyền xem booking.');
+
         $q = trim((string) $request->query('q', ''));
 
         $bookings = collect();
@@ -29,11 +32,13 @@ class SearchController extends Controller
                 })
                 ->pluck('id');
 
-            $bookings = Booking::where('co_so_id', $co_so->id)
-                ->visibleTo(auth()->user()) // không có xem_booking → chỉ tìm trong booking mình tạo
+            $query = Booking::where('co_so_id', $co_so->id)
                 ->whereIn('khach_hang_id', $khIds)
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
-                ->latest('ngay_dat')->latest('id')->limit(50)->get();
+                ->latest('ngay_dat')->latest('id')->limit(50);
+
+            $this->applyViewScope($query);
+            $bookings = $query->get();
         }
 
         return view('longevity.search', [
@@ -50,25 +55,16 @@ class SearchController extends Controller
     public function showBooking(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-
-        // Kiểm tra quyền xem theo đúng 3 mức (toàn bộ / phòng ban / mình tạo)
-        // bằng chính scope visibleTo để không lặp logic.
-        abort_unless(
-            Booking::whereKey($booking->id)->visibleTo(auth()->user())->exists(),
-            403,
-            'Bạn không có quyền xem booking này.'
-        );
+        abort_unless($this->canViewBooking($booking), 403, 'Bạn không có quyền xem booking này.');
 
         $booking->load(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale', 'menus',
-            'binhLuans.nguoiDung.vaiTro']);
+            'phanHois.nguoiDung.vaiTro', 'phanHois.nguoiDung.phongBan']);
 
         return view('longevity.show', [
             'coSo' => $co_so,
             'booking' => $booking,
             'canDuyet' => $this->hasPerm('duyet_booking'),
-            'canTrangThai' => $this->hasPerm('cap_nhat_trang_thai_khach'),
-            'canBinhLuan' => $this->hasPerm('binh_luan_booking'),
-            'isAdmin' => (bool) auth()->user()?->is_admin,
+            'canPhanHoi' => $this->hasPerm('ghi_chu_phan_hoi'),
         ]);
     }
 }

@@ -174,6 +174,82 @@
 </div>
 @endunless
 </div>
+@php
+    // Preset khoảng thời gian: xác định preset đang active bằng cách so 2 mốc ngay_tu / ngay_den.
+    $today = now()->toDateString();
+    $wStart = now()->startOfWeek(\Carbon\CarbonInterface::MONDAY)->toDateString();
+    $wEnd   = now()->endOfWeek(\Carbon\CarbonInterface::SUNDAY)->toDateString();
+    $mStart = now()->startOfMonth()->toDateString();
+    $mEnd   = now()->endOfMonth()->toDateString();
+    $tu = $filters['ngay_tu'] ?? null;
+    $den = $filters['ngay_den'] ?? null;
+    $isDay   = $tu === $today  && $den === $today;
+    $isWeek  = $tu === $wStart && $den === $wEnd;
+    $isMonth = $tu === $mStart && $den === $mEnd;
+    $presetUrl = fn ($from, $to) => request()->fullUrlWithQuery(['ngay_tu' => $from, 'ngay_den' => $to, 'page' => null]);
+@endphp
+<!-- Khung giờ hiện tại — theo dõi nhanh khách đang / sắp đến, độc lập với bộ lọc phía dưới -->
+@isset ($currentSlotBookings)
+<div class="mb-6 rounded-2xl border border-secondary/30 bg-secondary-container/15 overflow-hidden">
+<div class="flex items-center gap-2 px-5 py-3 border-b border-secondary/20 bg-secondary-container/25">
+<span class="material-symbols-outlined text-secondary">schedule</span>
+<div class="flex-1 flex flex-wrap items-baseline gap-x-3 gap-y-1">
+<h3 class="text-body-md font-semibold text-on-secondary-container">Dữ liệu trong khung giờ</h3>
+<span class="font-time-slot text-body-md font-semibold text-on-secondary-container">{{ $currentSlotLabel }}</span>
+<span class="text-body-sm text-on-surface-variant">({{ $currentSlotBookings->count() }} lịch — hôm nay {{ now()->format('d/m') }})</span>
+</div>
+</div>
+@if ($currentSlotBookings->count())
+<div class="overflow-x-auto">
+<table class="w-full text-body-sm">
+<thead class="bg-secondary-container/10 text-label-caps font-label-caps text-on-surface-variant text-left">
+<tr>
+<th class="px-5 py-2 whitespace-nowrap w-[110px]">Giờ</th>
+<th class="px-3 py-2 whitespace-nowrap">Khách hàng</th>
+<th class="px-3 py-2 whitespace-nowrap w-[130px]">SĐT</th>
+<th class="px-3 py-2 whitespace-nowrap">Phòng</th>
+<th class="px-3 py-2 whitespace-nowrap">Dịch vụ</th>
+<th class="px-3 py-2 whitespace-nowrap">BS / KTV</th>
+<th class="px-5 py-2 whitespace-nowrap text-right w-[110px]">Trạng thái</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/40">
+@foreach ($currentSlotBookings as $cs)
+@php
+    $ttKhach = $cs->trang_thai_khach;
+    $ttBadge = match ($ttKhach) {
+        'dung_gio' => ['Đúng giờ', 'bg-emerald-100 text-emerald-700'],
+        'muon'     => ['Muộn',     'bg-amber-100 text-amber-700'],
+        'huy'      => ['Hủy',      'bg-red-100 text-red-700'],
+        default    => null,
+    };
+    $viewUrl = '/'.$coSo->slug.'/xem-dat-phong/'.$cs->id;
+@endphp
+<tr class="hover:bg-surface-container-low/60 cursor-pointer" onclick="window.location='{{ $viewUrl }}'">
+<td class="px-5 py-2 font-time-slot text-on-surface font-semibold whitespace-nowrap">{{ substr($cs->gio_thuc_hien, 0, 5) }}{{ $cs->gio_ket_thuc ? '-'.substr($cs->gio_ket_thuc, 0, 5) : '' }}</td>
+<td class="px-3 py-2 font-semibold text-on-surface truncate max-w-[220px]">{{ $cs->khachHang?->ho_ten ?? '—' }}</td>
+<td class="px-3 py-2 text-on-surface-variant font-time-slot whitespace-nowrap">{{ $cs->khachHang?->so_dien_thoai }}</td>
+<td class="px-3 py-2 text-on-surface-variant truncate max-w-[200px]" title="{{ $cs->phong?->ten }}">{{ $cs->phong?->ten ?? '—' }}</td>
+<td class="px-3 py-2 text-on-surface-variant truncate max-w-[200px]" title="{{ $cs->dichVu?->ten }}">{{ $cs->dichVu?->ten ?? '—' }}</td>
+<td class="px-3 py-2 text-on-surface-variant truncate max-w-[220px]" title="{{ $cs->bacSi?->ten_day_du ?? $cs->ktv?->ten_day_du }}">{{ $cs->bacSi?->ten_day_du ?? $cs->ktv?->ten_day_du ?? '—' }}</td>
+<td class="px-5 py-2 text-right whitespace-nowrap">
+@if ($ttBadge)
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $ttBadge[1] }}">{{ $ttBadge[0] }}</span>
+@else
+<span class="text-on-surface-variant/60 text-[11px]">—</span>
+@endif
+</td>
+</tr>
+@endforeach
+</tbody>
+</table>
+</div>
+@else
+<div class="px-5 py-4 text-body-sm text-on-surface-variant italic">Không có lịch nào trong khung giờ này.</div>
+@endif
+</div>
+@endisset
+
 <!-- Advanced Filters -->
 <form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4 mb-8">
 <div class="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:items-end">
@@ -182,7 +258,15 @@
 <input name="q_ma" value="{{ $filters['q_ma'] ?? '' }}" placeholder="BKG-… / KH-…" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[180px] font-mono" type="search"/>
 </div>
 <div class="flex flex-col gap-1.5 col-span-2 sm:col-auto sm:w-auto">
+<div class="flex items-center justify-between gap-3">
 <label class="text-label-caps font-label-caps text-on-surface-variant ml-1">KHOẢNG THỜI GIAN</label>
+{{-- Preset chip nhỏ, đặt cạnh label để không tăng chiều cao cột --}}
+<div class="inline-flex rounded-lg border border-outline-variant overflow-hidden bg-surface">
+<a href="{{ $presetUrl($today, $today) }}" class="px-2.5 py-0.5 text-[11px] font-semibold border-r border-outline-variant transition-colors {{ $isDay  ? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Ngày</a>
+<a href="{{ $presetUrl($wStart, $wEnd) }}" class="px-2.5 py-0.5 text-[11px] font-semibold border-r border-outline-variant transition-colors {{ $isWeek ? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Tuần</a>
+<a href="{{ $presetUrl($mStart, $mEnd) }}" class="px-2.5 py-0.5 text-[11px] font-semibold transition-colors {{ $isMonth? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Tháng</a>
+</div>
+</div>
 <div class="flex items-center gap-2 w-full">
 <input name="ngay_tu" value="{{ $filters['ngay_tu'] ?? '' }}" class="flex-1 min-w-0 border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface" type="date"/>
 <span class="text-on-surface-variant shrink-0">đến</span>
@@ -243,7 +327,22 @@
     $isAdmin = auth()->user()->is_admin;
     $canExportBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xuat_lich_dat_phong')->exists();
     $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_booking')->exists();
-    $canEditBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'sua_booking')->exists();
+    // 3 mức quyền sửa, từ rộng → hẹp. Gộp query để 1 lần lấy tất cả perm keys của user.
+    $mySuaPerms = $isAdmin
+        ? ['sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi']
+        : \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))
+            ->whereIn('truong', ['sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi'])
+            ->pluck('truong')->all();
+    $canEditAll       = in_array('sua_booking', $mySuaPerms, true);
+    $canEditLienQuan  = in_array('sua_booking_lien_quan', $mySuaPerms, true);
+    $canEditDichVuMe  = in_array('sua_booking_dich_vu_cua_toi', $mySuaPerms, true);
+    $authUid = auth()->id();
+    $canEditBookingRow = function ($b) use ($canEditAll, $canEditLienQuan, $canEditDichVuMe, $authUid) {
+        if ($canEditAll) return true;
+        $lienQuan = in_array($authUid, array_filter([$b->nguoi_tao_id, $b->bac_si_user_id, $b->ktv_user_id, $b->sale_id]), true);
+        if ($canEditLienQuan && $lienQuan) return true;
+        return $canEditDichVuMe && $b->loai_dat_lich === 'dich_vu' && $lienQuan;
+    };
     $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
     $canCheckIn = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'cap_nhat_trang_thai_khach')->exists();
 @endphp
@@ -274,14 +373,31 @@
 <div class="overflow-x-auto custom-scrollbar w-full min-w-0">
 <table class="w-full text-left border-collapse table-auto min-w-[1800px] whitespace-nowrap">
 <thead>
+@php
+    // Helper build URL sort + icon indicator
+    $sortUrl = function ($col) use ($sort, $dir) {
+        $nextDir = ($sort === $col && $dir === 'desc') ? 'asc' : 'desc';
+        return request()->fullUrlWithQuery(['sort' => $col, 'dir' => $nextDir, 'page' => null]);
+    };
+    $sortIcon = function ($col) use ($sort, $dir) {
+        if ($sort !== $col) return '<span class="material-symbols-outlined text-[14px] opacity-30 align-middle">unfold_more</span>';
+        return $dir === 'asc'
+            ? '<span class="material-symbols-outlined text-[14px] text-secondary align-middle">arrow_upward</span>'
+            : '<span class="material-symbols-outlined text-[14px] text-secondary align-middle">arrow_downward</span>';
+    };
+@endphp
 <tr class="bg-surface-container-low border-b border-outline-variant">
-<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant sticky-col sticky-left-0 bg-surface-container-low shadow-[2px_0_5px_rgba(0,0,0,0.05)]">DẤU THỜI GIAN</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant sticky-col sticky-left-0 bg-surface-container-low shadow-[2px_0_5px_rgba(0,0,0,0.05)]">ID</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">
+<a href="{{ $sortUrl('ngay_dat') }}" class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">NGÀY ĐẶT {!! $sortIcon('ngay_dat') !!}</a>
+</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">HỌ TÊN KH</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">SỐ ĐIỆN THOẠI</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">ĐỊA CHỈ EMAIL</th>
-<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">NGÀY ĐẶT</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">PHÒNG</th>
-<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">KHUNG GIỜ</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">
+<a href="{{ $sortUrl('khung_gio') }}" class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">KHUNG GIỜ {!! $sortIcon('khung_gio') !!}</a>
+</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">THỰC HIỆN DV</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">DỰ KIẾN KẾT THÚC</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">NGUỒN</th>
@@ -294,20 +410,32 @@
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">BÁC SĨ</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">KTV</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">GHI CHÚ</th>
+<th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">DẤU THỜI GIAN</th>
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant sticky-col sticky-right-0 bg-surface-container-low text-right shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">THAO TÁC</th>
 </tr>
 </thead>
 <tbody class="divide-y divide-outline-variant/30">
+{{-- Safelist cho Tailwind CDN JIT: đảm bảo các class màu mới có trong CSS
+     ngay cả khi chưa có booking nào ứng với trạng thái tương ứng. --}}
+<tr class="hidden bg-emerald-50 bg-amber-50 hover:bg-emerald-100/60 hover:bg-amber-100/60"></tr>
 @forelse ($bookings as $b)
-@php $rejected = $b->trang_thai === 'tu_choi'; $rowBg = $rejected ? 'bg-red-50' : 'bg-surface-container-lowest'; @endphp
-<tr data-booking-id="{{ $b->id }}" class="transition-colors {{ $rejected ? 'bg-red-50 hover:bg-red-100/60' : 'hover:bg-surface-variant/10' }}">
-<td class="px-4 py-4 sticky-col sticky-left-0 {{ $rowBg }} shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
-<span class="text-body-sm font-time-slot text-on-surface-variant">{{ $b->created_at->format('d/m H:i') }}</span>
-</td>
+@php
+    $rejected = $b->trang_thai === 'tu_choi';
+    [$rowBg, $rowHover] = match ($b->trang_thai_khach) {
+        'dung_gio' => ['bg-emerald-50',  'hover:bg-emerald-100/60'],
+        'muon'     => ['bg-amber-50',    'hover:bg-amber-100/60'],
+        'huy'      => ['bg-red-50',      'hover:bg-red-100/60'],
+        default    => $rejected
+            ? ['bg-red-50',                  'hover:bg-red-100/60']
+            : ['bg-surface-container-lowest', 'hover:bg-surface-variant/10'],
+    };
+@endphp
+<tr data-booking-id="{{ $b->id }}" class="transition-colors {{ $rowBg }} {{ $rowHover }}">
+<td class="px-4 py-4 sticky-col sticky-left-0 {{ $rowBg }} shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-body-sm font-time-slot text-on-surface-variant">#{{ $b->id }}</td>
+<td class="px-4 py-4 text-body-sm font-semibold">{{ $b->ngay_dat?->format('d/m/Y') }}</td>
 <td class="px-4 py-4 font-bold text-on-surface">{{ $b->khachHang?->ho_ten }}</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->khachHang?->so_dien_thoai }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant">{{ $b->khachHang?->email ?: '—' }}</td>
-<td class="px-4 py-4 text-body-sm">{{ $b->ngay_dat?->format('d/m/Y') }}</td>
 <td class="px-4 py-4 text-body-sm font-semibold">{{ $b->phong?->ten ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->khungGio?->nhan ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : '—' }}</td>
@@ -328,6 +456,7 @@
 <td class="px-4 py-4 text-body-sm">{{ $b->bacSi?->ten_day_du ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm">{{ $b->ktv?->ten_day_du ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant italic truncate max-w-[150px]" title="{{ $b->ghi_chu }}">{{ $b->ghi_chu ?: '—' }}</td>
+<td class="px-4 py-4 text-body-sm font-time-slot text-on-surface-variant">{{ $b->created_at->format('d/m H:i') }}</td>
 <td class="px-4 py-4 sticky-col sticky-right-0 {{ $rowBg }} shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
 <div class="flex items-center justify-end gap-1">
 @php
@@ -394,7 +523,7 @@
 <a href="/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}" title="Xem chi tiết" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
 <span class="material-symbols-outlined text-[18px]">visibility</span>
 </a>
-@if ($canEditBooking)
+@if ($canEditBookingRow($b))
 <a href="/{{ $coSo->slug }}/sua-dat-phong/{{ $b->id }}" title="Sửa" class="p-1.5 rounded-lg text-secondary hover:bg-secondary-container/30 transition-colors">
 <span class="material-symbols-outlined text-[18px]">edit</span>
 </a>
@@ -412,7 +541,7 @@
 </tr>
 @empty
 <tr>
-<td colspan="18" class="px-4 py-16 text-center">
+<td colspan="19" class="px-4 py-16 text-center">
 <div class="flex flex-col items-center gap-2 text-on-surface-variant">
 <span class="material-symbols-outlined text-[40px] opacity-50">{{ $approvalMode ? 'task_alt' : 'event_busy' }}</span>
 <p class="text-body-md">{{ $approvalMode ? 'Không còn đơn nào đang chờ duyệt.' : 'Chưa có lịch hẹn nào khớp bộ lọc.' }}</p>

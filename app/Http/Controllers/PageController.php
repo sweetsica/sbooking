@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Concerns\AuthorizesByPhanQuyen;
-use App\Models\BacSi;
 use App\Models\Booking;
 use App\Models\CoSo;
 use App\Models\User;
@@ -25,20 +24,21 @@ class PageController extends Controller
         $isDoctorView = $authUser && ! $authUser->is_admin
             && in_array($authUser->vaiTro?->ma, ['bac_si', 'bac_si_tu_van'], true);
 
-        // Bác sĩ = DANH MỤC bac_si (không còn gắn tài khoản đăng nhập).
-        $bacSis = BacSi::where('active', true)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
-            ->orderBy('ten')->get();
+        $vaiTroIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+        $bacSis = User::whereIn('vai_tro_id', $vaiTroIds)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->with('phongBan')
+            ->orderBy('name')->get();
 
-        // Danh mục bác sĩ không gắn với tài khoản đăng nhập nên không lọc "của chính mình".
-        $bacSiUserId = null;
+        // Tài khoản bác sĩ: chỉ quan tâm lịch của chính mình.
+        $bacSiUserId = $isDoctorView ? $authUser->id : null;
 
         // ----- VIEW THÁNG: lưới lịch, mỗi ô đếm số booking trong ngày -----
         if ($view === 'thang') {
             $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $bacSiUserId) {
                 $q = Booking::where('co_so_id', $co_so->id)
                     ->whereBetween('ngay_dat', [$from, $to]);
-                if ($bacSiUserId) $q->where('bac_si_id', $bacSiUserId);
+                if ($bacSiUserId) $q->where('bac_si_user_id', $bacSiUserId);
 
                 return $q->selectRaw('DATE(ngay_dat) d, COUNT(*) c')->groupBy('d')->pluck('c', 'd')->all();
             });
@@ -62,7 +62,7 @@ class PageController extends Controller
         // Mỗi bác sĩ: 5 lịch gần nhất + phân trang riêng (page param "bs{id}").
         $cards = $bacSis->map(function ($bs) use ($co_so, $date) {
             $q = Booking::where('co_so_id', $co_so->id)
-                ->where('bac_si_id', $bs->id)
+                ->where('bac_si_user_id', $bs->id)
                 ->whereDate('ngay_dat', $date)
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
                 ->orderByDesc('gio_thuc_hien')->orderByDesc('id');
@@ -80,7 +80,7 @@ class PageController extends Controller
         $unassigned = null;
         if (! $isDoctorView) {
             $unassigned = Booking::where('co_so_id', $co_so->id)
-                ->whereNull('bac_si_id')
+                ->whereNull('bac_si_user_id')
                 ->whereDate('ngay_dat', $date)
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
                 ->orderByDesc('gio_thuc_hien')->orderByDesc('id')
@@ -89,7 +89,7 @@ class PageController extends Controller
 
         // Thống kê tổng (mọi lịch của cơ sở trong ngày đã chọn).
         $statQ = Booking::where('co_so_id', $co_so->id)->whereDate('ngay_dat', $date);
-        if ($bacSiUserId) $statQ->where('bac_si_id', $bacSiUserId);
+        if ($bacSiUserId) $statQ->where('bac_si_user_id', $bacSiUserId);
         $total = (clone $statQ)->count();
         $approved = (clone $statQ)->whereIn('trang_thai', ['da_duyet', 'da_xong'])->count();
 
@@ -154,7 +154,7 @@ class PageController extends Controller
             ->get()->keyBy('phong_id');
 
         $bookingsByPhong = Booking::where('co_so_id', $co_so->id)
-            ->giuCho() // đơn bị từ chối không chiếm chỗ
+            ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
             ->whereDate('ngay_dat', $date)
             ->get(['id', 'phong_id', 'khung_gio_id', 'gio_thuc_hien', 'gio_ket_thuc'])
             ->groupBy('phong_id');
@@ -238,8 +238,8 @@ class PageController extends Controller
     }
 
     /**
-     * 2026-08-04 (SCRM T10): dashboard mặc định của /lich-hen.
-     * 4 widget theo status + list booking cơ bản.
+     * 2026-08-05 (SCRM T10 merge): dashboard mặc định của /lich-hen.
+     * 4 widget + list booking cơ bản + JSON endpoint bán real-time 15s.
      */
     public function dashboard(CoSo $co_so, Request $request)
     {
@@ -247,13 +247,10 @@ class PageController extends Controller
         $now = now();
         $in1h = $now->copy()->addHour();
 
-        // Base query: booking của cơ sở này, respect scope visibility.
         $base = fn () => Booking::where('co_so_id', $co_so->id)->visibleTo(auth()->user());
 
-        // Widget 1: Lịch hôm nay (tất cả booking ngày hôm nay, chưa lọc status)
         $todayCount = (clone $base())->whereDate('ngay_dat', $today)->count();
 
-        // Widget 2: Đang xử lý (khách đã tới đang được tiếp / khám)
         $processingCount = (clone $base())
             ->whereDate('ngay_dat', $today)
             ->where(function ($q) {
@@ -264,7 +261,6 @@ class PageController extends Controller
             ->where('trang_thai', '!=', 'da_xong')
             ->count();
 
-        // Widget 3: Sắp tới (trong 60 phút, đã duyệt, chưa tới/hoàn thành)
         $upcomingCount = (clone $base())
             ->whereDate('ngay_dat', $today)
             ->where('trang_thai', 'da_duyet')
@@ -274,13 +270,11 @@ class PageController extends Controller
             })
             ->count();
 
-        // Widget 4: Đã hoàn thành hôm nay
         $doneCount = (clone $base())
             ->whereDate('ngay_dat', $today)
             ->where('trang_thai', 'da_xong')
             ->count();
 
-        // Filter list bằng ?tab=today|processing|upcoming|done — default today.
         $tab = in_array($request->query('tab'), ['today', 'processing', 'upcoming', 'done'], true)
             ? $request->query('tab') : 'today';
 
@@ -304,27 +298,21 @@ class PageController extends Controller
             ->limit(100)
             ->get();
 
-        // 2026-08-05: JSON response cho JS poll 15s (client fetch không reload trang).
         if ($request->expectsJson() || $request->boolean('json')) {
             return response()->json([
-                'counts' => [
-                    'today' => $todayCount,
-                    'processing' => $processingCount,
-                    'upcoming' => $upcomingCount,
-                    'done' => $doneCount,
+                'counts' => compact('todayCount', 'processingCount', 'upcomingCount', 'doneCount') + [
+                    'today' => $todayCount, 'processing' => $processingCount,
+                    'upcoming' => $upcomingCount, 'done' => $doneCount,
                 ],
                 'tab' => $tab,
                 'bookings' => $bookings->map(fn ($b) => [
-                    'id' => $b->id,
-                    'ma_booking' => $b->ma_booking,
+                    'id' => $b->id, 'ma_booking' => $b->ma_booking,
                     'ten_khach' => $b->khachHang?->ho_ten,
                     'sdt' => $b->khachHang?->so_dien_thoai,
                     'sale' => $b->sale?->name,
-                    'loai' => $b->loai_dat_lich,
-                    'dich_vu' => $b->dichVu?->ten,
+                    'loai' => $b->loai_dat_lich, 'dich_vu' => $b->dichVu?->ten,
                     'gio' => $b->gio_thuc_hien ? substr($b->gio_thuc_hien, 0, 5) : null,
-                    'trang_thai' => $b->trang_thai,
-                    'trang_thai_khach' => $b->trang_thai_khach,
+                    'trang_thai' => $b->trang_thai, 'trang_thai_khach' => $b->trang_thai_khach,
                     'url' => "/{$co_so->slug}/xem-dat-phong/{$b->id}",
                 ])->values(),
                 'server_time' => now()->format('H:i:s'),
@@ -332,14 +320,10 @@ class PageController extends Controller
         }
 
         return view('longevity.dashboard', [
-            'coSo' => $co_so,
-            'todayCount' => $todayCount,
+            'coSo' => $co_so, 'todayCount' => $todayCount,
             'processingCount' => $processingCount,
-            'upcomingCount' => $upcomingCount,
-            'doneCount' => $doneCount,
-            'tab' => $tab,
-            'bookings' => $bookings,
-            'active' => 'lich-hen',
+            'upcomingCount' => $upcomingCount, 'doneCount' => $doneCount,
+            'tab' => $tab, 'bookings' => $bookings, 'active' => 'lich-hen',
         ]);
     }
 
@@ -362,7 +346,7 @@ class PageController extends Controller
         // Mặc định lọc = chính mình nếu người đăng nhập đúng vai trò đó; 0 = tất cả.
         $isDichVu   = $kieu === 'phong_dich_vu';
         $staffParam = $isDichVu ? 'ktv_id' : 'bac_si_id';
-        $staffCol   = $isDichVu ? 'ktv_user_id' : 'bac_si_id';
+        $staffCol   = $isDichVu ? 'ktv_user_id' : 'bac_si_user_id';
         $staffLabel = $isDichVu ? 'KTV' : 'Bác sĩ';
         $authUser   = auth()->user();
 
@@ -371,16 +355,14 @@ class PageController extends Controller
             $staffList = User::whereIn('vai_tro_id', $vrIds)
                 ->where('co_so_id', $co_so->id)
                 ->orderBy('name')->get();
-            // KTV vẫn là tài khoản user → cho phép lọc "của chính mình".
-            $selfIsStaff = $authUser && $vrIds->contains($authUser->vai_tro_id);
         } else {
-            // Bác sĩ = DANH MỤC bac_si của cơ sở (hoặc xuất hiện mọi cơ sở).
-            $staffList = BacSi::where('active', true)
-                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
-                ->orderBy('ten')->get();
-            // Danh mục bác sĩ không gắn tài khoản đăng nhập → không lọc "của chính mình".
-            $selfIsStaff = false;
+            // Bác sĩ của cơ sở + bác sĩ tư vấn global.
+            $vrIds = VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+            $staffList = User::whereIn('vai_tro_id', $vrIds)
+                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+                ->orderBy('name')->get();
         }
+        $selfIsStaff = $authUser && $vrIds->contains($authUser->vai_tro_id);
         $staffId = $request->has($staffParam)
             ? (int) $request->query($staffParam)
             : ($selfIsStaff ? (int) $authUser->id : 0);
@@ -389,8 +371,7 @@ class PageController extends Controller
         if ($view === 'thang') {
             $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $room, $staffId, $staffCol) {
                 $q = Booking::where('co_so_id', $co_so->id)
-                    ->visibleTo(auth()->user()) // không có xem_booking → chỉ đếm booking mình tạo
-                    ->giuCho() // đơn bị từ chối không chiếm chỗ
+                    ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ
                     ->whereBetween('ngay_dat', [$from, $to]);
                 if ($room) $q->where('phong_id', $room->id);
                 if ($staffId) $q->where($staffCol, $staffId);
@@ -420,9 +401,8 @@ class PageController extends Controller
         $bookings = collect();
         if ($room) {
             $bookings = Booking::where('co_so_id', $co_so->id)
-                ->visibleTo(auth()->user()) // không có xem_booking → chỉ hiện booking mình tạo
                 ->where('phong_id', $room->id)
-                ->giuCho() // đơn bị từ chối không chiếm chỗ trong lịch biểu
+                ->where('trang_thai', '!=', 'tu_choi') // đơn bị từ chối không chiếm chỗ trong lịch biểu
                 ->whereDate('ngay_dat', $date)
                 ->when($staffId, fn ($q) => $q->where($staffCol, $staffId))
                 ->with(['khachHang', 'dichVu', 'bacSi', 'ktv', 'khungGio'])
@@ -576,25 +556,20 @@ class PageController extends Controller
 
     public function bookings(CoSo $co_so, Request $request, bool $approvalMode = false)
     {
-        // Chế độ duyệt vẫn cần quyền duyệt (approver xem mọi đơn chờ duyệt).
-        // Chế độ xem thường: KHÔNG chặn cứng — có 'xem_booking' thì xem tất,
-        // không có thì chỉ thấy booking mình tạo (visibleTo).
         if ($approvalMode) {
             $this->authorizePerm('duyet_booking');
+        } else {
+            $scope = $this->bookingViewScope();
+            if ($scope === null) abort(403, 'Bạn không có quyền xem booking.');
         }
 
         $query = Booking::where('co_so_id', $co_so->id)
-            ->when(! $approvalMode, fn ($q) => $q->visibleTo(auth()->user()))
-            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
-            ->latest('id');
+            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale']);
 
-        // Phase C1.b rev6 2026-08-01: tìm theo mã booking (ma_booking) hoặc mã KH bên CRM (crm_khach_ma).
-        if ($request->filled('q_ma')) {
-            $needle = trim((string) $request->query('q_ma'));
-            $query->where(fn ($q) => $q
-                ->where('ma_booking', 'like', "%{$needle}%")
-                ->orWhere('crm_khach_ma', 'like', "%{$needle}%"));
+        if (! $approvalMode) {
+            $this->applyViewScope($query);
         }
+
         if ($request->filled('ngay_tu')) {
             $query->whereDate('ngay_dat', '>=', $request->query('ngay_tu'));
         }
@@ -605,7 +580,7 @@ class PageController extends Controller
             $query->where('phong_id', $request->query('phong_id'));
         }
         if ($request->filled('bac_si_id')) {
-            $query->where('bac_si_id', $request->query('bac_si_id'));
+            $query->where('bac_si_user_id', $request->query('bac_si_id'));
         }
         if ($request->filled('sale_id')) {
             $query->where('sale_id', $request->query('sale_id'));
@@ -619,15 +594,50 @@ class PageController extends Controller
             $query->where('trang_thai', $request->query('trang_thai'));
         }
 
+        // Sort: mặc định latest('id'); cho phép sort theo ngay_dat hoặc khung_gio (gio_thuc_hien).
+        $sort = in_array($request->query('sort'), ['ngay_dat', 'khung_gio'], true) ? $request->query('sort') : null;
+        $dir = $request->query('dir') === 'asc' ? 'asc' : 'desc';
+        if ($sort === 'ngay_dat') {
+            // Cùng ngày → xếp theo id (thứ tự tạo) cùng chiều để không nhảy lộn xộn.
+            $query->orderBy('ngay_dat', $dir)->orderBy('id', $dir);
+        } elseif ($sort === 'khung_gio') {
+            // Cùng giờ thực hiện → xếp theo id cùng chiều để tránh nhảy lộn xộn.
+            $query->orderByRaw("gio_thuc_hien IS NULL, gio_thuc_hien {$dir}")->orderBy('id', $dir);
+        } else {
+            $query->latest('id');
+        }
+
         $bookings = $query->paginate(20)->withQueryString();
 
-        // BS để filter: DANH MỤC bac_si thuộc cơ sở hoặc xuất hiện mọi cơ sở
-        $bacSis = BacSi::where('active', true)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
-            ->orderBy('ten')->get(['id', 'ten', 'chuc_danh']);
+        // Lịch trong khung giờ hiện tại (H:00 → H+1:00) của HÔM NAY — độc lập với bộ lọc phía trên.
+        // Mục đích: giúp NV theo dõi nhanh khách đang / sắp đến trong 60' hiện tại.
+        $now = now();
+        $hStart = sprintf('%02d:00', $now->hour);
+        $hEnd = sprintf('%02d:00', ($now->hour + 1) % 24);
+        $currentSlotQuery = Booking::where('co_so_id', $co_so->id)
+            ->whereDate('ngay_dat', $now->toDateString())
+            ->where('trang_thai', '!=', 'tu_choi')
+            ->whereNotNull('gio_thuc_hien')
+            ->where('gio_thuc_hien', '<', $hEnd)
+            ->where(function ($q) use ($hStart) {
+                $q->whereNull('gio_ket_thuc')->orWhere('gio_ket_thuc', '>', $hStart);
+            })
+            ->with(['khachHang', 'phong', 'bacSi', 'ktv', 'dichVu'])
+            ->orderBy('gio_thuc_hien');
+
+        if (! $approvalMode) {
+            $this->applyViewScope($currentSlotQuery);
+        }
+        $currentSlotBookings = $currentSlotQuery->get();
+
+        // BS để filter: thuộc cơ sở hoặc global (is_tu_van=true)
+        $vrBacSiIds = \App\Models\VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
+        $bacSis = \App\Models\User::whereIn('vai_tro_id', $vrBacSiIds)
+            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
+            ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
 
         // Sale để filter: nhân viên phụ trách đơn (tư vấn viên / lễ tân / nhân viên)
-        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'le_tan', 'nhan_vien', 'dn_full_flow'])->pluck('id');
+        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'sales_lead', 'sales_manager', 'le_tan', 'nhan_vien'])->pluck('id');
         $sales = \App\Models\User::whereIn('vai_tro_id', $vrSaleIds)
             ->where('co_so_id', $co_so->id)
             ->where('is_admin', false)
@@ -639,14 +649,13 @@ class PageController extends Controller
             'phongs' => $co_so->phongs()->get(),
             'bacSis' => $bacSis,
             'sales' => $sales,
-            'nguons' => collect([
-                    'MKT — Marketing', 'MKT BR — Marketing BR', 'BDM',
-                    'BOD — Ban lãnh đạo giới thiệu', 'SA — Sale Appointment',
-                    'BA — Booking Appointment', 'WI — Walk-in',
-                ])->merge(Booking::where('co_so_id', $co_so->id)
-                    ->whereNotNull('nguon')->distinct()->pluck('nguon'))
-                ->unique()->values(),
-            'filters' => $request->only(['q_ma', 'ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
+            'nguons' => Booking::where('co_so_id', $co_so->id)
+                ->whereNotNull('nguon')->distinct()->pluck('nguon'),
+            'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
+            'sort' => $sort,
+            'dir' => $dir,
+            'currentSlotBookings' => $currentSlotBookings,
+            'currentSlotLabel' => $hStart . ' - ' . $hEnd,
             'approvalMode' => $approvalMode,
         ]);
     }

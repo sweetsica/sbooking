@@ -41,7 +41,7 @@ tailwind.config = {
 </style>
 </head>
 <body class="bg-surface text-on-surface">
-@include('partials.topnav', ['active' => 'thiet-lap'])
+@include('partials.topnav', ['active' => $navActive ?? 'thiet-lap'])
 
 <main class="pt-16 min-h-screen">
 <div class="px-container-margin py-8 max-w-[1650px] mx-auto">

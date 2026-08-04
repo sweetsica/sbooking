@@ -124,7 +124,7 @@ trait BookingTestSetup
 
         // Permissions cho từng vai trò
         $this->grantPerms($this->vrVanHanh->id, [
-            'xem_booking', 'them_booking', 'sua_booking', 'duyet_booking',
+            'xem_booking_tat_ca', 'them_booking', 'sua_booking', 'duyet_booking',
             'ho_ten', 'so_dien_thoai', 'phong_id', 'khung_gio_id', 'ngay_dat',
             'gio_thuc_hien', 'gio_ket_thuc', 'bac_si_id', 'ktv_user_id',
             'dich_vu_id', 'sale_id', 'ghi_chu', 'nguon',
@@ -132,8 +132,8 @@ trait BookingTestSetup
             'xuat_lich_dat_phong', 'xuat_lich_tu_van',
             'cap_nhat_trang_thai_khach', 'binh_luan_booking',
         ]);
-        $this->grantPerms($this->vrTuVanVien->id, ['them_booking', 'xem_booking', 'sua_lich_tu_van']);
-        $this->grantPerms($this->vrNhanVien->id, ['them_booking', 'xem_booking']);
+        $this->grantPerms($this->vrTuVanVien->id, ['them_booking', 'xem_booking_co_so_toi', 'sua_lich_tu_van']);
+        $this->grantPerms($this->vrNhanVien->id, ['them_booking', 'xem_booking_co_so_toi']);
 
         // Users
         $this->admin = User::create([

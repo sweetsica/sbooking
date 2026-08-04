@@ -13,12 +13,6 @@
         if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
     })->where('truong', 'duyet_booking')->exists();
 
-    // Quyền xem báo cáo (non-admin) → được vào Thiết lập nhưng chỉ thấy mục Báo cáo.
-    $canBaoCao = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
-        if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
-        if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
-    })->where('truong', 'xem_bao_cao')->exists();
-
     // Quyền vào Lịch làm việc (tạo/upload HOẶC duyệt).
     $canLichLamViec = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
         if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
@@ -45,28 +39,32 @@
         ]);
     }
 
-    // "Lịch làm việc": chỉ hiện cho người có quyền tạo/duyệt lịch làm việc.
-    if ($canLichLamViec) {
-        $items[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
-    }
-
-    // "Ngày nghỉ": chỉ hiện cho người có quyền quản lý ngày nghỉ.
-    if ($canNgayNghi) {
-        $items[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
-    }
-
     // Nhân viên: chỉ thấy 2 loại đặt lịch.
     if ($vaiTroMa === 'nhan_vien') {
         $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'dich-vu'], true)));
     }
 
-    // Gộp các mục ít dùng vào menu xổ "Khác" để nhường chỗ ngang cho thanh chọn
-    // cơ sở (tránh 3 icon Tìm + Cơ sở + Thông báo đè nhau trên tablet/iPad).
-    $otherKeys  = ['bac-si', 'phong', 'lich-lam-viec', 'ngay-nghi'];
-    $otherItems = array_values(array_filter($items, fn ($it) => in_array($it['key'], $otherKeys, true)));
-    $items      = array_values(array_filter($items, fn ($it) => ! in_array($it['key'], $otherKeys, true)));
-    $otherActive = in_array($active, $otherKeys, true);
-    // "Thiết lập" đã có icon bánh răng ở góc phải -> không lặp lại trong menu.
+    // Admin: gear icon → /thiet-lap (cards "Lịch làm việc" & "Ngày nghỉ" nằm trong đó).
+    // Non-admin có quyền: dropdown nhỏ chứa 2 mục theo cơ sở.
+    $canBaoCao = $isAdmin || \App\Models\PhanQuyen::where(function ($q) {
+        if (auth()->user()?->phong_ban_id) $q->orWhere('phong_ban_id', auth()->user()->phong_ban_id);
+        if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
+    })->where('truong', 'xem_bao_cao')->exists();
+
+    $settingsItems = [];
+    if (! $isAdmin) {
+        if ($canBaoCao) {
+            $settingsItems[] = ['key' => 'bao-cao', 'label' => 'Báo cáo', 'icon' => 'analytics', 'href' => '/'.$coSo->slug.'/bao-cao'];
+            $settingsItems[] = ['key' => 'so-do', 'label' => 'Sơ đồ tổ chức', 'icon' => 'account_tree', 'href' => '/'.$coSo->slug.'/so-do-to-chuc'];
+        }
+        if ($canLichLamViec) {
+            $settingsItems[] = ['key' => 'lich-lam-viec', 'label' => 'Lịch làm việc', 'icon' => 'event_available', 'href' => '/'.$coSo->slug.'/lich-lam-viec'];
+        }
+        if ($canNgayNghi) {
+            $settingsItems[] = ['key' => 'ngay-nghi', 'label' => 'Ngày nghỉ', 'icon' => 'event_busy', 'href' => '/'.$coSo->slug.'/ngay-nghi'];
+        }
+    }
+    $settingsActive = in_array($active, ['thiet-lap', 'lich-lam-viec', 'ngay-nghi', 'bao-cao', 'so-do'], true);
 @endphp
 <!-- Top Navigation Bar -->
 <header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center px-container-margin z-50">
@@ -87,24 +85,6 @@
 <span class="hidden lg:inline">{{ $it['label'] }}</span>
 </a>
 @endforeach
-@if (count($otherItems))
-<details class="relative shrink-0 group" id="menu-khac">
-<summary title="Khác" class="list-none cursor-pointer select-none px-1.5 sm:px-2.5 lg:px-3 py-2 text-body-md rounded-lg flex items-center gap-1.5 whitespace-nowrap transition-colors [&::-webkit-details-marker]:hidden {{ $otherActive ? 'font-bold bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface' }}">
-<span class="material-symbols-outlined text-[20px]" @if($otherActive) style="font-variation-settings: 'FILL' 1;" @endif>more_horiz</span>
-<span class="hidden lg:inline">Khác</span>
-<span class="material-symbols-outlined text-[18px] group-open:rotate-180 transition-transform">expand_more</span>
-</summary>
-<div class="absolute left-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
-@foreach ($otherItems as $it)
-@php $on = $active === $it['key']; @endphp
-<a href="{{ $it['href'] }}" class="flex items-center gap-3 px-4 py-2.5 text-body-md transition-colors {{ $on ? 'font-bold bg-secondary-container text-on-secondary-container' : 'text-on-surface hover:bg-surface-container-low' }}">
-<span class="material-symbols-outlined text-[20px] {{ $on ? '' : 'text-on-surface-variant' }}" @if($on) style="font-variation-settings: 'FILL' 1;" @endif>{{ $it['icon'] }}</span>
-{{ $it['label'] }}
-</a>
-@endforeach
-</div>
-</details>
-@endif
 </nav>
 <!-- Search and Actions -->
 <div class="ml-auto flex items-center gap-1 sm:gap-2 xl:gap-3 min-w-0">
@@ -135,7 +115,7 @@
 <span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
 </div>
 @endif
-@php $unreadCount = auth()->check() ? auth()->user()->notifications()->whereNull('hidden_at')->whereNull('read_at')->count() : 0; @endphp
+@php $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
 <div class="flex items-center gap-0.5 sm:gap-2 border-l border-outline-variant pl-1 sm:pl-2 xl:pl-4 shrink-0">
 <details class="relative shrink-0" id="thongbao-details">
 <summary title="Thông báo" class="list-none cursor-pointer select-none p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full flex relative [&::-webkit-details-marker]:hidden">
@@ -145,10 +125,7 @@
 <div class="absolute right-0 mt-2 w-[320px] sm:w-[360px] bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg z-50 max-h-[70vh] overflow-hidden flex flex-col">
 <div class="p-3 border-b border-outline-variant flex items-center justify-between gap-2">
 <h3 class="font-headline-md text-on-surface">Thông báo</h3>
-<div class="flex items-center gap-3">
-<button type="button" data-thongbao-mark-all class="text-body-sm text-secondary hover:underline">Đánh dấu đã đọc</button>
-<button type="button" data-thongbao-hide-all class="text-body-sm text-error hover:underline">Xóa tất cả</button>
-</div>
+<button type="button" data-thongbao-mark-all class="text-body-sm text-secondary hover:underline">Đánh dấu tất cả đã đọc</button>
 </div>
 <div data-thongbao-list class="overflow-y-auto divide-y divide-outline-variant/60 max-h-[50vh]">
 <div class="p-6 text-center text-on-surface-variant text-body-sm">Đang tải…</div>
@@ -156,11 +133,24 @@
 <a href="/thong-bao" class="p-3 text-center text-body-sm font-semibold text-secondary hover:bg-surface-container-low transition-colors border-t border-outline-variant">Xem tất cả</a>
 </div>
 </details>
-@if ($isAdmin || $canBaoCao)
-<a href="/{{ $coSo->slug }}/thiet-lap" class="p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full"
-   title="{{ $isAdmin ? 'Thiết lập' : 'Báo cáo' }}">
-<span class="material-symbols-outlined text-[22px] sm:text-[24px]">{{ $isAdmin ? 'settings' : 'analytics' }}</span>
+@if ($isAdmin)
+<a href="/{{ $coSo->slug }}/thiet-lap" title="Thiết lập" class="p-1.5 sm:p-2 transition-all rounded-full flex {{ $settingsActive ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[22px] sm:text-[24px]" @if($settingsActive) style="font-variation-settings: 'FILL' 1;" @endif>settings</span>
 </a>
+@elseif (count($settingsItems))
+<details class="relative shrink-0" id="thietlap-details">
+<summary title="Thiết lập" class="list-none cursor-pointer select-none p-1.5 sm:p-2 transition-all rounded-full flex [&::-webkit-details-marker]:hidden {{ $settingsActive ? 'bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[22px] sm:text-[24px]" @if($settingsActive) style="font-variation-settings: 'FILL' 1;" @endif>settings</span>
+</summary>
+<div class="absolute right-0 mt-2 w-56 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
+@foreach ($settingsItems as $si)
+@php $siOn = $active === $si['key']; @endphp
+<a href="{{ $si['href'] }}" class="flex items-center gap-3 px-4 py-2.5 text-body-md transition-colors {{ $siOn ? 'bg-secondary-container/40 text-on-secondary-container font-semibold' : 'text-on-surface hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">{{ $si['icon'] }}</span> {{ $si['label'] }}
+</a>
+@endforeach
+</div>
+</details>
 @endif
 @auth
 <details class="relative group">
@@ -170,14 +160,14 @@
 </div>
 <div class="hidden md:block text-left leading-tight min-w-0">
 <div class="text-body-sm font-semibold text-on-surface truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->name }}</div>
-<div class="text-[10px] uppercase tracking-wide text-on-surface-variant truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->vaiTro?->ten ?? (auth()->user()->is_admin ? 'Quản trị viên' : 'Nhân viên') }}</div>
+<div class="text-[10px] uppercase tracking-wide text-on-surface-variant truncate max-w-[140px] lg:max-w-[180px] xl:max-w-none">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
 </div>
 <span class="material-symbols-outlined text-[16px] sm:text-[18px] text-on-surface-variant group-open:rotate-180 transition-transform">expand_more</span>
 </summary>
 <div class="absolute right-0 mt-2 w-64 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
 <div class="md:hidden px-4 py-3 border-b border-outline-variant">
 <div class="text-body-md font-semibold text-on-surface leading-tight">{{ auth()->user()->name }}</div>
-<div class="text-[11px] uppercase tracking-wide text-on-surface-variant mt-0.5">{{ auth()->user()->vaiTro?->ten ?? (auth()->user()->is_admin ? 'Quản trị viên' : 'Nhân viên') }}</div>
+<div class="text-[11px] uppercase tracking-wide text-on-surface-variant mt-0.5">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
 </div>
 <a href="/doi-mat-khau" class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface hover:bg-surface-container-low transition-colors">
 <span class="material-symbols-outlined text-[20px] text-on-surface-variant">lock_reset</span> Đổi mật khẩu
@@ -240,48 +230,29 @@
         list.innerHTML = items.map(n => {
             const [icon, color, bg] = iconFor(n.event);
             const unread = ! n.read_at;
-            const id = escapeHtml(n.id);
             return `
-            <div data-item="${id}" class="relative group ${unread ? 'bg-secondary-container/10' : ''}">
-                <a href="${escapeHtml(n.link || '#')}" data-id="${id}" class="block p-3 pr-10 hover:bg-surface-container-low transition-colors">
-                    <div class="flex items-start gap-3">
-                        <div class="w-9 h-9 rounded-full ${bg} flex items-center justify-center shrink-0">
-                            <span class="material-symbols-outlined text-[20px] ${color}">${icon}</span>
-                        </div>
-                        <div class="flex-1 min-w-0">
-                            <div class="text-body-sm font-semibold text-on-surface truncate">${escapeHtml(n.tieu_de)}</div>
-                            <div class="text-body-sm text-on-surface-variant line-clamp-2">${escapeHtml(n.noi_dung)}</div>
-                            <div class="text-[11px] text-on-surface-variant/70 mt-0.5">${escapeHtml(n.created_human)}</div>
-                        </div>
-                        ${unread ? '<span class="shrink-0 w-2 h-2 rounded-full bg-secondary mt-2"></span>' : ''}
+            <a href="${escapeHtml(n.link || '#')}" data-id="${escapeHtml(n.id)}" class="block p-3 hover:bg-surface-container-low transition-colors ${unread ? 'bg-secondary-container/10' : ''}">
+                <div class="flex items-start gap-3">
+                    <div class="w-9 h-9 rounded-full ${bg} flex items-center justify-center shrink-0">
+                        <span class="material-symbols-outlined text-[20px] ${color}">${icon}</span>
                     </div>
-                </a>
-                <button type="button" data-hide="${id}" title="Xóa" class="absolute top-2 right-2 w-6 h-6 rounded-full text-on-surface-variant hover:bg-error/10 hover:text-error flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                    <span class="material-symbols-outlined text-[16px]">close</span>
-                </button>
-            </div>`;
+                    <div class="flex-1 min-w-0">
+                        <div class="text-body-sm font-semibold text-on-surface truncate">${escapeHtml(n.tieu_de)}</div>
+                        <div class="text-body-sm text-on-surface-variant line-clamp-2">${escapeHtml(n.noi_dung)}</div>
+                        <div class="text-[11px] text-on-surface-variant/70 mt-0.5">${escapeHtml(n.created_human)}</div>
+                    </div>
+                    ${unread ? '<span class="shrink-0 w-2 h-2 rounded-full bg-secondary mt-2"></span>' : ''}
+                </div>
+            </a>`;
         }).join('');
 
-        // Click item link → mark read
+        // Click → mark read
         list.querySelectorAll('a[data-id]').forEach(el => {
             el.addEventListener('click', () => {
                 fetch(`/thong-bao/${el.dataset.id}/read`, {
                     method: 'POST',
                     headers: { 'X-CSRF-TOKEN': csrf },
                 }).catch(() => {});
-            });
-        });
-
-        // X từng item
-        list.querySelectorAll('button[data-hide]').forEach(btn => {
-            btn.addEventListener('click', e => {
-                e.preventDefault();
-                e.stopPropagation();
-                const id = btn.dataset.hide;
-                fetch(`/thong-bao/${id}`, {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': csrf },
-                }).then(r => { if (r.ok) { list.querySelector(`[data-item="${id}"]`)?.remove(); load(); } }).catch(() => {});
             });
         });
     }
@@ -298,15 +269,6 @@
     markAllBtn?.addEventListener('click', () => {
         fetch(`/thong-bao/mark-all-read`, {
             method: 'POST',
-            headers: { 'X-CSRF-TOKEN': csrf },
-        }).then(() => load()).catch(() => {});
-    });
-
-    const hideAllBtn = details.querySelector('[data-thongbao-hide-all]');
-    hideAllBtn?.addEventListener('click', () => {
-        if (! confirm('Xóa tất cả thông báo? (Admin vẫn xem được trong nhật ký)')) return;
-        fetch(`/thong-bao/hide-all`, {
-            method: 'DELETE',
             headers: { 'X-CSRF-TOKEN': csrf },
         }).then(() => load()).catch(() => {});
     });

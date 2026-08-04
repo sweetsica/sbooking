@@ -28,9 +28,6 @@ body { background-color: #f7f9fb; }
 <span class="material-symbols-outlined">arrow_back</span>
 </a>
 <h2 class="text-headline-md font-headline-md font-extrabold text-on-surface">Chi tiết Lịch Hẹn</h2>
-@if ($booking->ma_booking)
-<span class="ml-1 px-3 py-1 rounded-full bg-primary/10 text-primary text-body-sm font-mono font-bold">{{ $booking->ma_booking }}</span>
-@endif
 <span class="ml-1 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container text-body-sm font-semibold">{{ $coSo->ten }}</span>
 @if ($booking->trang_thai)
 @php
@@ -70,7 +67,7 @@ body { background-color: #f7f9fb; }
 </div>
 @endif
 
-@include('longevity.partials.trang-thai-lich-hen', ['booking' => $booking])
+@include('longevity._phan_hoi_section', ['booking' => $booking, 'canPhanHoi' => $canPhanHoi ?? false, 'coSo' => $coSo])
 
 <div class="mb-6 flex items-center gap-2 p-3 rounded-xl bg-secondary-container/20 border border-secondary/20 text-on-secondary-container text-body-sm">
 <span class="material-symbols-outlined text-[20px]">visibility</span>
@@ -170,14 +167,6 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="ro">{{ $booking->bacSi?->ten_day_du ?? '—' }}</div>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng lọ</label>
-<div class="ro">{{ $booking->so_luong_lo ?? '—' }}</div>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dung tích lọ</label>
-<div class="ro">{{ $booking->dung_tich_lo ?? '—' }}</div>
-</div>
-<div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">KTV</label>
 <div class="ro">{{ $booking->ktv?->ten_day_du ?? '—' }}</div>
 </div>
@@ -194,6 +183,14 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
 <span class="text-body-md font-medium text-on-surface">KH có SD kết hợp Medical không?</span>
 <span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->ket_hop_medical ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->ket_hop_medical ? 'Có' : 'Không' }}</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
+<span class="text-body-md font-medium text-on-surface">Lần đầu khách tới</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->lan_dau ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->lan_dau ? 'Có' : 'Không' }}</span>
+</div>
+<div class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg">
+<span class="text-body-md font-medium text-on-surface">Khách tặng & Ghi chú</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $booking->khach_tang === 'co' ? 'bg-tertiary-fixed-dim/40 text-on-tertiary-container' : 'bg-surface-container-high text-on-surface-variant' }}">{{ $booking->khach_tang === 'co' ? 'Có' : ($booking->khach_tang === 'khac' ? $booking->khach_tang_ghi_chu : 'Không') }}</span>
 </div>
 </div>
 </div>

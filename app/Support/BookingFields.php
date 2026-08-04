@@ -15,11 +15,14 @@ class BookingFields
     {
         return [
             // ----- Đặt phòng (booking) -----
-            // 3 mức xem (tăng dần). Không có mức nào → chỉ xem booking mình tạo.
-            'xem_booking_phong_ban' => 'Xem booking trong phòng ban (nhánh con)',
-            'xem_booking'     => 'Xem toàn bộ booking (cả cơ sở)',
+            'xem_booking_cua_toi'   => 'Xem booking — của tôi (mình tạo / BS / KTV / Sale)',
+            'xem_booking_phong_toi' => 'Xem booking — của phòng tôi',
+            'xem_booking_co_so_toi' => 'Xem booking — của cơ sở tôi',
+            'xem_booking_tat_ca'    => 'Xem booking — tất cả',
             'them_booking'    => 'Thêm booking',
-            'sua_booking'     => 'Sửa booking (cho phép sửa)',
+            'sua_booking'     => 'Sửa booking — tất cả (mọi lịch)',
+            'sua_booking_lien_quan' => 'Sửa booking — chỉ lịch liên quan (mình tạo / BS / KTV / Sale)',
+            'sua_booking_dich_vu_cua_toi' => 'Sửa booking phòng dịch vụ — chỉ của tôi (dịch vụ + mình là BS/KTV/Sale/người tạo)',
             'xoa_booking'     => 'Xóa booking',
             // Trường con của "Sửa booking"
             'dau_thoi_gian'   => 'Dấu thời gian',
@@ -36,7 +39,7 @@ class BookingFields
             'dich_vu_id'      => 'Liệu pháp / Dịch vụ',
             'so_lieu_trinh'   => 'Số liệu trình',
             'ket_hop_medical' => 'Kết hợp Medical',
-            'bac_si_id'       => 'Bác sĩ',
+            'bac_si_user_id'  => 'Bác sĩ',
             'ktv_user_id'     => 'Kỹ thuật viên',
             'ghi_chu'         => 'Ghi chú',
 
@@ -49,12 +52,11 @@ class BookingFields
             'xuat_lich_tu_van'    => 'Xuất / Nhập lịch tư vấn (Excel)',
 
             // ----- Duyệt -----
-            'duyet_booking'   => 'Duyệt lịch đặt phòng (khám + dịch vụ)',
-            'duyet_tu_van'    => 'Duyệt lịch hẹn bác sĩ (tư vấn / thăm khám)',
+            'duyet_booking'   => 'Duyệt lịch đặt phòng',
+            'duyet_tu_van'    => 'Duyệt lịch tư vấn',
 
-            // ----- Sau dịch vụ -----
-            'cap_nhat_trang_thai_khach' => 'Cập nhật trạng thái khách (đã tới / trễ / hủy / đã xong)',
-            'binh_luan_booking'         => 'Bình luận sau dịch vụ',
+            // ----- Phản hồi khách -----
+            'ghi_chu_phan_hoi' => 'Ghi chú phản hồi khách (trạng thái + note)',
 
             // ----- Lịch làm việc (theo tháng) -----
             'quyen_lich_lam_viec' => 'Tạo / upload lịch làm việc',
@@ -62,9 +64,6 @@ class BookingFields
 
             // ----- Ngày nghỉ (đóng cửa / nghỉ) -----
             'quyen_ngay_nghi' => 'Quản lý ngày nghỉ (đóng cửa / nghỉ)',
-
-            // ----- Báo cáo -----
-            'xem_bao_cao' => 'Xem báo cáo (tổng hợp + xuất Excel)',
 
             // ----- Thông báo (in-app + email) -----
             'nhan_tb_tag_lich'      => 'Nhận TB khi được tag vào lịch',
@@ -82,7 +81,7 @@ class BookingFields
             'dau_thoi_gian', 'ho_ten', 'so_dien_thoai', 'email',
             'ngay_dat', 'phong_id', 'khung_gio_id', 'gio_thuc_hien', 'gio_ket_thuc',
             'nguon', 'sale_id', 'dich_vu_id', 'so_lieu_trinh', 'ket_hop_medical',
-            'bac_si_id', 'ktv_user_id', 'ghi_chu',
+            'bac_si_user_id', 'ktv_user_id', 'ghi_chu',
         ];
         return array_intersect_key($all, array_flip($keys));
     }
@@ -105,10 +104,14 @@ class BookingFields
         return [
             'Quyền đặt phòng' => [
                 'icon'   => 'edit_calendar',
-                'fields' => $pick(['xem_booking_phong_ban', 'xem_booking', 'them_booking', 'sua_booking', 'xoa_booking']),
+                'fields' => $pick(['xem_booking_cua_toi', 'xem_booking_phong_toi', 'xem_booking_co_so_toi', 'xem_booking_tat_ca', 'them_booking', 'sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi', 'xoa_booking']),
                 'sub'    => [
-                    // Trường con xuất hiện ngay dưới quyền cha 'sua_booking'
+                    // Sub-fields hiển thị dưới từng loại "Sửa booking" để admin dễ đối chiếu.
+                    // Backend: 3 loại quyền chia sẻ cùng danh sách trường (không tạo key mới)
+                    // → tick 1 trường ở bất kỳ nhóm nào cũng cấp cùng field-level cho vai trò.
                     'sua_booking' => self::suaSubFields(),
+                    'sua_booking_lien_quan' => self::suaSubFields(),
+                    'sua_booking_dich_vu_cua_toi' => self::suaSubFields(),
                 ],
             ],
             'Quyền đặt lịch bác sĩ' => [
@@ -126,9 +129,9 @@ class BookingFields
                 'fields' => $pick(['duyet_booking', 'duyet_tu_van']),
                 'sub'    => [],
             ],
-            'Quyền sau dịch vụ' => [
-                'icon'   => 'reviews',
-                'fields' => $pick(['cap_nhat_trang_thai_khach', 'binh_luan_booking']),
+            'Quyền phản hồi khách' => [
+                'icon'   => 'rate_review',
+                'fields' => $pick(['ghi_chu_phan_hoi']),
                 'sub'    => [],
             ],
             'Quyền lịch làm việc' => [
@@ -139,11 +142,6 @@ class BookingFields
             'Quyền ngày nghỉ' => [
                 'icon'   => 'event_busy',
                 'fields' => $pick(['quyen_ngay_nghi']),
-                'sub'    => [],
-            ],
-            'Quyền báo cáo' => [
-                'icon'   => 'analytics',
-                'fields' => $pick(['xem_bao_cao']),
                 'sub'    => [],
             ],
             'Thông báo' => [

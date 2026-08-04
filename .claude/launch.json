@@ -2,8 +2,8 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "laravel",
-      "runtimeExecutable": "/Applications/MAMP/bin/php/php8.2.26/bin/php",
+      "name": "dev",
+      "runtimeExecutable": "php",
       "runtimeArgs": ["artisan", "serve", "--port=8000"],
       "port": 8000
     }

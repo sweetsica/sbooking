@@ -14,12 +14,11 @@
         }
     }
     $defaults = ['active' => 1, 'loai' => 'cong_dong', 'trang_thai' => 'hoat_dong',
-        'so_slot_toi_da' => 1, 'gio_mo' => '08:00', 'gio_dong' => '21:00', 'chuc_danh' => '', 'ten' => '',
+        'so_slot_toi_da' => 1, 'gio_mo' => '08:00', 'gio_dong' => '18:00', 'chuc_danh' => '', 'ten' => '',
         'gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00',
         'thoi_gian_phut' => 30, 'thuoc_nhom' => 'khac', 'la_dich_vu' => 0,
-        'phut_tu_van' => 30, 'phut_kham_ls' => 5,
-        'kieu_phong' => 'phong_kham', 'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => '',
-        'co_so_id' => $coSo->id];
+        'phut_tu_van' => 30, 'phut_kham_ls' => 5, 'xuat_hien_moi_co_so' => 0, 'nhan_tu_van' => 0, 'nhan_kham_ls' => 0,
+        'kieu_phong' => 'phong_kham', 'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => ''];
     $hasExtra = in_array($key, ['phong']);
     $colspan = count($cols) + ($hasExtra ? 1 : 0) + 1;
 @endphp
@@ -96,10 +95,21 @@
     $hasSub = ! empty($subFields);
 @endphp
 <tr class="hover:bg-surface-container-low/40">
-<td class="px-4 py-2.5 pl-10 sticky left-0 bg-surface-container-lowest font-medium">
-<span class="{{ $isApprove ? 'text-secondary font-semibold' : '' }}{{ $hasSub ? ' text-on-surface font-semibold' : '' }}">{{ $flabel }}</span>
-@if ($isApprove)<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container uppercase">duyệt</span>@endif
-@if ($hasSub)<span class="ml-1 text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase">{{ count($subFields) }} trường</span>@endif
+<td class="px-4 py-2.5 pl-6 sticky left-0 bg-surface-container-lowest font-medium align-top">
+@if ($hasSub)
+<button type="button" data-toggle-sub="{{ $fkey }}" aria-expanded="false" class="w-full flex items-start gap-1.5 hover:text-secondary transition-colors text-left" title="Ẩn / hiện trường con">
+<span class="material-symbols-outlined text-[18px] chevron-icon transition-transform shrink-0 mt-0.5 leading-none">chevron_right</span>
+<span class="text-on-surface font-semibold flex-1 min-w-0 leading-snug flex flex-wrap items-center gap-1.5">
+<span>{{ $flabel }}</span>
+<span class="text-[10px] px-1.5 py-0.5 rounded bg-surface-container-high text-on-surface-variant uppercase font-label-caps whitespace-nowrap">{{ count($subFields) }} trường</span>
+</span>
+</button>
+@else
+<span class="flex flex-wrap items-center gap-1.5 leading-snug">
+<span class="{{ $isApprove ? 'text-secondary font-semibold' : '' }}">{{ $flabel }}</span>
+@if ($isApprove)<span class="text-[10px] px-1.5 py-0.5 rounded bg-secondary-container/40 text-on-secondary-container uppercase font-label-caps whitespace-nowrap">duyệt</span>@endif
+</span>
+@endif
 </td>
 @foreach ($vaiTros as $pb)
 <td class="px-3 py-2.5 text-center">
@@ -113,7 +123,7 @@
 @endforeach
 </tr>
 @foreach ($subFields as $subKey => $subLabel)
-<tr class="hover:bg-surface-container-low/40 bg-surface-container-low/20">
+<tr data-sub-of="{{ $fkey }}" class="hover:bg-surface-container-low/40 bg-surface-container-low/20 hidden">
 <td class="px-4 py-2 pl-16 sticky left-0 bg-surface-container-lowest text-body-sm text-on-surface-variant">
 <span class="inline-block mr-1 text-on-surface-variant/60">└</span> {{ $subLabel }}
 </td>
@@ -154,26 +164,45 @@
         master.addEventListener('change', sync);
         sync();
     });
+
+    // Collapsible: click mũi tên ở parent-row → toggle các sub-row cùng parent.
+    document.querySelectorAll('[data-toggle-sub]').forEach(function (btn) {
+        var key = btn.dataset.toggleSub;
+        var rows = document.querySelectorAll('tr[data-sub-of="' + key + '"]');
+        var icon = btn.querySelector('.chevron-icon');
+        function setOpen(open) {
+            rows.forEach(function (r) { r.classList.toggle('hidden', ! open); });
+            if (icon) icon.classList.toggle('rotate-90', open);
+            btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+        }
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            setOpen(btn.getAttribute('aria-expanded') !== 'true');
+        });
+    });
+
+    // Sub-fields được nhân bản dưới 3 loại "Sửa booking" nhưng cùng lưu 1 field key.
+    // Đồng bộ trạng thái các checkbox có cùng (name, value) trong toàn form để admin
+    // không hoang mang khi thấy 3 ô cùng trường: tick 1 ô → 3 ô cùng đồng loạt tick.
+    document.querySelectorAll('form input[type="checkbox"][name^="allow["]').forEach(function (cb) {
+        cb.addEventListener('change', function () {
+            var name = cb.getAttribute('name');
+            var val = cb.value;
+            document.querySelectorAll('input[type="checkbox"][name="' + name + '"][value="' + val + '"]').forEach(function (peer) {
+                if (peer !== cb && peer.checked !== cb.checked) peer.checked = cb.checked;
+            });
+        });
+    });
 })();
 </script>
 @else
 @if ($editable)
 {{-- Form thêm mới --}}
 <div x-data="{ open: {{ $errors->any() ? 'true' : 'false' }} }" class="mb-5">
-<div class="flex items-center gap-2 flex-wrap">
 <button @click="open = !open" class="px-4 py-2 bg-secondary-container text-on-secondary-container font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
 <span class="material-symbols-outlined text-[20px]" x-text="open ? 'close' : 'add'">add</span>
 <span x-text="open ? 'Đóng' : 'Thêm mới'">Thêm mới</span>
 </button>
-@if ($key === 'nguoi-dung')
-<a href="/{{ $coSo->slug }}/thiet-lap/nguoi-dung/xuat" class="px-4 py-2 bg-surface-container-high text-on-surface font-semibold rounded-lg flex items-center gap-2 hover:opacity-90" title="Xuất danh sách người dùng của cơ sở này (cột Mật khẩu để trống)">
-<span class="material-symbols-outlined text-[20px]">download</span> Xuất cơ sở này
-</a>
-<a href="{{ route('nhansu.all.export') }}" class="px-4 py-2 bg-primary-container text-on-primary-container font-semibold rounded-lg flex items-center gap-2 hover:opacity-90" title="Xuất danh sách nhân sự toàn hệ thống — mỗi cơ sở 1 sheet, có cột Mật khẩu mặc định">
-<span class="material-symbols-outlined text-[20px]">download</span> Xuất toàn hệ thống
-</a>
-@endif
-</div>
 @php $hasRequired = collect($config['fields'])->contains(fn ($ff) => ! empty($ff['required'])); @endphp
 <div x-show="open" x-cloak class="mt-3 bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden shadow-sm">
 <form method="POST" action="{{ $action }}">
@@ -233,12 +262,11 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 </select>
 </div>
 <div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Phòng ban</label>
-<select name="phong_ban_id" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Trạng thái tư vấn</label>
+<select name="is_tu_van" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
 <option value="">— Tất cả —</option>
-@foreach ($userFilters['phongBans'] as $pb)
-<option value="{{ $pb->id }}" @selected(($userFilters['current']['phong_ban_id'] ?? '') == $pb->id)>{{ $pb->ten }}</option>
-@endforeach
+<option value="1" @selected(($userFilters['current']['is_tu_van'] ?? '') === '1')>Bật</option>
+<option value="0" @selected(($userFilters['current']['is_tu_van'] ?? '') === '0')>Tắt</option>
 </select>
 </div>
 </div>
@@ -272,15 +300,7 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 </thead>
 
 @if ($editable)
-@php $ndGroup = null; @endphp
 @forelse ($rows as $r)
-@if ($key === 'nguoi-dung')
-@php $g = is_null($r->co_so_id) ? 'he_thong' : 'co_so'; @endphp
-@if ($g !== $ndGroup)
-@php $ndGroup = $g; @endphp
-<tbody><tr class="bg-surface-container-low border-y border-outline-variant"><td colspan="{{ $colspan }}" class="px-4 py-2 text-label-caps font-label-caps uppercase text-on-surface-variant">{{ $g === 'he_thong' ? 'Tài khoản hệ thống (mọi cơ sở)' : 'Người dùng cơ sở — '.$coSo->ten }}</td></tr></tbody>
-@endif
-@endif
 @php
     $gmo = '08:00'; $gdong = '21:00';
     if ($key === 'phong') {
@@ -317,7 +337,7 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 </tr>
 <tr x-show="edit" x-cloak>
 <td colspan="{{ $colspan }}" class="px-4 py-4 bg-surface-container-low/50">
-@php $vals = []; foreach ($config['fields'] as $fn => $ff) { $vals[$fn] = data_get($r, $fn); } if ($key === 'phong') { $vals['gio_mo'] = $gmo; $vals['gio_dong'] = $gdong; $vals['bac_si_ids'] = $r->bacSis->pluck('id')->all(); } @endphp
+@php $vals = []; foreach ($config['fields'] as $fn => $ff) { $vals[$fn] = data_get($r, $fn); } if ($key === 'phong') { $vals['gio_mo'] = $gmo; $vals['gio_dong'] = $gdong; } @endphp
 <form method="POST" action="{{ $action }}/{{ $r->id }}" class="flex flex-wrap items-end gap-3">
 @csrf @method('PUT')
 @foreach ($config['fields'] as $fn => $ff)

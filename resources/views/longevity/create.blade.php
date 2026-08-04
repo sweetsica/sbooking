@@ -141,11 +141,6 @@
 </div>
 @endif
 
-{{-- Phase C1.b rev8 2026-08-01: block "Trạng thái lịch hẹn" — dùng chung với trang show. --}}
-@if ($editing)
-@include('longevity.partials.trang-thai-lich-hen', ['booking' => $bk])
-@endif
-
 <!-- Main Form Card -->
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden mb-12">
 @php $isDichVu = ($loaiDatLich ?? 'phong_kham') === 'dich_vu'; @endphp
@@ -162,7 +157,7 @@
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn</label>
 <select name="nguon" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-@foreach (['MKT — Marketing','MKT BR — Marketing BR','BDM','BOD — Ban lãnh đạo giới thiệu','SA — Sale Appointment','BA — Booking Appointment','WI — Walk-in'] as $ng)
+@foreach (['Fanpage Facebook','Website','Hotline','Khách giới thiệu','Trực tiếp (Walk-in)'] as $ng)
 <option @selected(old('nguon', $bk?->nguon)===$ng)>{{ $ng }}</option>
 @endforeach
 </select>
@@ -208,25 +203,26 @@
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Họ tên KH <span class="text-error">*</span></label>
-<input name="ho_ten" value="{{ old('ho_ten', $bk?->khachHang?->ho_ten ?? ($prefill['ho_ten'] ?? '')) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập họ và tên..." type="text"/>
+<input name="ho_ten" value="{{ old('ho_ten', $bk?->khachHang?->ho_ten) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập họ và tên..." type="text"/>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số điện thoại <span class="text-error">*</span></label>
-<input id="sdt" name="so_dien_thoai" value="{{ old('so_dien_thoai', $bk?->khachHang?->so_dien_thoai ?? ($prefill['so_dien_thoai'] ?? '')) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot" placeholder="0xxx xxx xxx" type="tel"/>
+<input id="sdt" name="so_dien_thoai" value="{{ old('so_dien_thoai', $bk?->khachHang?->so_dien_thoai) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot" placeholder="0xxx xxx xxx" type="tel"/>
 <p id="sdt-msg" class="hidden mt-1 text-body-sm text-secondary font-medium"></p>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Địa chỉ Email</label>
-<input name="email" value="{{ old('email', $bk?->khachHang?->email ?? ($prefill['email'] ?? '')) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="email (tuỳ chọn)" type="email"/>
-@if(!empty($returnUrl ?? null))
-    <input type="hidden" name="return_url" value="{{ $returnUrl }}"/>
-@endif
-@if(!empty($prefill['khach_ma'] ?? null))
-    <input type="hidden" name="khach_ma" value="{{ $prefill['khach_ma'] }}"/>
-@endif
+<input name="email" value="{{ old('email', $bk?->khachHang?->email) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="email (tuỳ chọn)" type="email"/>
 </div>
 </div>
+<label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+<span class="text-body-md font-medium text-on-surface">Đây có phải lần đầu khách tới không?</span>
+<div class="relative inline-flex items-center cursor-pointer">
+<input class="sr-only peer" type="checkbox" name="lan_dau" value="1" @checked(old('lan_dau', $bk?->lan_dau))/>
+<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
+</div>
+</label>
 </div>
 </div>
 
@@ -245,6 +241,7 @@
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Phòng <span class="text-error">*</span></label>
 <select id="phong" name="phong_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
 @foreach ($phongs as $p)
 <option value="{{ $p->id }}"
     data-kieu="{{ $p->kieu_phong }}"
@@ -352,6 +349,19 @@
 </div>
 </details>
 @endif
+
+@if ($isDichVu)
+<div class="mt-6">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
+<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
+@foreach ($ktvs as $k)
+<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
+@endforeach
+</select>
+<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
+</div>
+@endif
 </div>
 
 @if (! $isDichVu)
@@ -363,7 +373,7 @@
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Chọn bác sĩ <span class="text-on-surface-variant/60 text-[11px]">— bác sĩ của phòng, còn trống khung giờ</span></label>
-<select id="bac_si" name="bac_si_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<select id="bac_si" name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 <option value="">-- Chọn khung giờ trước --</option>
 </select>
 <p id="bs_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
@@ -371,57 +381,7 @@
 </div>
 @endif
 
-@if ($isDichVu)
-<!-- Section 3 (Đặt dịch vụ): Dịch vụ + KTV -->
-<div class="space-y-6 order-1">
-<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
-<span class="material-symbols-outlined text-secondary">medical_services</span>
-<h3 class="text-headline-md font-headline-md">Dịch vụ</h3>
-</div>
-<div class="space-y-4">
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-on-surface-variant/60 text-[11px]">— không bắt buộc</span></label>
-<div class="relative" data-searchable-select>
-<select id="dich_vu" name="dich_vu_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" data-ss-placeholder="-- Chọn dịch vụ --">
-<option value="">-- Chọn dịch vụ --</option>
-@foreach ($dichVus as $dv)
-<option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
-@endforeach
-</select>
-</div>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
-<input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng lọ</label>
-<input name="so_luong_lo" value="{{ old('so_luong_lo', $bk?->so_luong_lo) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1" type="number" min="1"/>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dung tích lọ</label>
-<select name="dung_tich_lo" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach (['8M','10M','16M','20M','450M','1 LT','2 LT'] as $dt)
-<option value="{{ $dt }}" @selected(old('dung_tich_lo', $bk?->dung_tich_lo)===$dt)>{{ $dt }}</option>
-@endforeach
-</select>
-</div>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
-<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach ($ktvs as $k)
-<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
-@endforeach
-</select>
-<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
-</div>
-</div>
-</div>
-@else
+@if (! $isDichVu)
 <!-- Section 3: Chi tiết Dịch vụ (đặt phòng khám) -->
 <div class="space-y-6 order-1">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
@@ -431,32 +391,16 @@
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-error">*</span></label>
-<div class="relative" data-searchable-select>
-<select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" data-ss-placeholder="-- Chọn dịch vụ --">
+<select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
 @foreach ($dichVus as $dv)
 <option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
 @endforeach
 </select>
 </div>
-</div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
 <input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
-</div>
-<div class="grid grid-cols-2 gap-4">
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng lọ</label>
-<input name="so_luong_lo" value="{{ old('so_luong_lo', $bk?->so_luong_lo) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1" type="number" min="1"/>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dung tích lọ</label>
-<select name="dung_tich_lo" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach (['8M','10M','16M','20M','450M','1 LT','2 LT'] as $dt)
-<option value="{{ $dt }}" @selected(old('dung_tich_lo', $bk?->dung_tich_lo)===$dt)>{{ $dt }}</option>
-@endforeach
-</select>
-</div>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV)</label>
@@ -480,8 +424,36 @@
 </div>
 @endif
 
-<!-- Section 4: Admin & Notes -->
+<!-- Section: Khách tặng & Ghi chú -->
 <div class="space-y-6 order-5">
+<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
+<span class="material-symbols-outlined text-secondary">card_giftcard</span>
+<h3 class="text-headline-md font-headline-md">Khách tặng &amp; Ghi chú</h3>
+</div>
+<div class="space-y-4">
+@php $khachTang = old('khach_tang', $bk?->khach_tang ?? 'khong'); @endphp
+<div class="space-y-2">
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
+<input type="radio" name="khach_tang" value="co" @checked($khachTang === 'co') class="w-4 h-4 text-secondary"/>
+<span class="text-body-md">Có</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
+<input type="radio" name="khach_tang" value="khong" @checked($khachTang === 'khong') class="w-4 h-4 text-secondary"/>
+<span class="text-body-md">Không</span>
+</label>
+<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
+<input type="radio" name="khach_tang" value="khac" @checked($khachTang === 'khac') class="w-4 h-4 text-secondary"/>
+<span class="text-body-md">Mục khác</span>
+</label>
+<div id="khach_tang_ghi_chu_wrap" class="{{ $khachTang === 'khac' ? '' : 'hidden' }}">
+<input name="khach_tang_ghi_chu" value="{{ old('khach_tang_ghi_chu', $bk?->khach_tang_ghi_chu) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập ghi chú..." type="text"/>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Section 4: Admin & Notes -->
+<div class="space-y-6 order-6">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">assignment_ind</span>
 <h3 class="text-headline-md font-headline-md">Hành chính &amp; Ghi chú</h3>
@@ -529,7 +501,12 @@
 </button>
 </div>
 </form>
-
+@if ($editing)
+{{-- Phản hồi sau khi sử dụng dịch vụ — chỉ ở edit mode (booking đã tồn tại). Đặt NGOÀI form chính vì có form con riêng. --}}
+<div class="p-8 pt-0">
+@include('longevity._phan_hoi_section', ['booking' => $bk, 'canPhanHoi' => $canPhanHoi ?? false, 'coSo' => $coSo])
+</div>
+@endif
 </div>
 </div>
 </main>
@@ -561,27 +538,31 @@
             } catch (e) {}
         }
         const slots = data.slots || [];
-        khung.innerHTML = '<option value="">-- Chọn --</option>'
-            + (slots.length
-                ? slots.map(s => {
-                    const lbl = `${s.bd} - ${s.kt}` + (s.full ? ' — đã đầy 🔒' : '');
-                    return `<option value="${s.id}" data-bd="${s.bd}" data-kt="${s.kt}" ${s.full ? 'disabled' : ''}>${lbl}</option>`;
-                }).join('')
-                : '');
+        khung.innerHTML = slots.length
+            ? slots.map(s => {
+                const lbl = `${s.bd} - ${s.kt}` + (s.full ? ' — đã đầy 🔒' : '');
+                return `<option value="${s.id}" data-bd="${s.bd}" data-kt="${s.kt}" ${s.full ? 'disabled' : ''}>${lbl}</option>`;
+            }).join('')
+            : '<option value="">(Phòng chưa cấu hình khung giờ)</option>';
         if (oldKhung) { const o = khung.querySelector(`option[value="${oldKhung}"]`); if (o && !o.disabled) khung.value = oldKhung; }
+        if (khung.selectedOptions[0] && khung.selectedOptions[0].disabled) {
+            const avail = khung.querySelector('option:not([disabled])');
+            khung.value = avail ? avail.value : '';
+        }
         applyTimeLocks();
         updateEnd();
         loadBacSi();
+        if (typeof loadKtv === 'function') loadKtv();
     }
 
     // Generate options cho gio_thuc_hien / gio_ket_thuc THEO khung giờ đã chọn (step 5 phút)
     function rebuildGioOptions() {
         const opt = khung.options[khung.selectedIndex];
         if (!batDau || !ketThuc) return;
-        const bd = opt ? opt.getAttribute('data-bd') || '' : '';
-        const kt = opt ? opt.getAttribute('data-kt') || '' : '';
-
-        if (!bd || !kt || !khung.value) {
+        const bd = opt ? (opt.getAttribute('data-bd') || '') : '';
+        const kt = opt ? (opt.getAttribute('data-kt') || '') : '';
+        // Chưa chọn phòng / phòng chưa cấu hình khung → clear giờ để user thấy trạng thái sạch.
+        if (!bd || !kt) {
             batDau.innerHTML = '<option value="">-- Chọn giờ --</option>';
             ketThuc.innerHTML = '<option value="">-- Chọn giờ --</option>';
             return;
@@ -591,18 +572,23 @@
         const fmt = m => String(Math.floor(m / 60)).padStart(2, '0') + ':' + String(m % 60).padStart(2, '0');
         const s = toMin(bd), e = toMin(kt);
 
-        const bdOld = batDau.value || batDau.dataset.old || '';
-        const ktOld = ketThuc.value || ketThuc.dataset.old || '';
+        // Lần đầu (mở form): khôi phục theo data-old từ server. Các lần sau (đổi ngày/phòng/dịch vụ/khung):
+        // luôn đồng bộ theo khung giờ hiện tại — tránh giữ giá trị cũ ngắn hơn khung mới khiến slotLen sai.
+        const bdOld = firstRun ? (batDau.dataset.old || '') : '';
+        const ktOld = firstRun ? (ketThuc.dataset.old || '') : '';
 
+        // Bắt đầu: từ s đến e-5 (bao gồm s, không bao gồm e)
         let opts = '<option value="">-- Chọn giờ --</option>';
         for (let t = s; t < e; t += 5) {
             const v = fmt(t);
             opts += `<option value="${v}">${v}</option>`;
         }
         batDau.innerHTML = opts;
+        // Khôi phục nếu giá trị cũ vẫn fit khung
         if (bdOld && batDau.querySelector(`option[value="${bdOld}"]`)) batDau.value = bdOld;
         else batDau.value = bd;
 
+        // Kết thúc: từ s+5 đến e (bao gồm e)
         opts = '<option value="">-- Chọn giờ --</option>';
         for (let t = s + 5; t <= e; t += 5) {
             const v = fmt(t);
@@ -618,8 +604,8 @@
 
     // updateEnd: khi đổi khung giờ → rebuild + auto-fill bd/kt theo khung
     function updateEnd() {
-        if (firstRun) { firstRun = false; }
         rebuildGioOptions();
+        firstRun = false;
     }
 
     // Auto-fill KTV mặc định + cập nhật meta khi chọn phòng dịch vụ
@@ -655,17 +641,16 @@
         if (hCoKhamCls) hCoKhamCls.value = v === 'kham_ls' ? '1' : '0';
         // Lọc dịch vụ theo nhóm đã chọn (Tư vấn / Khám LS): ẩn dịch vụ khác nhóm.
         if (v && dichVu) {
-            let firstMatch = null;
             [...dichVu.options].forEach(o => {
                 if (!o.value) return;
                 const match = o.dataset.nhom === v;
                 o.hidden = !match;
                 o.disabled = !match;
-                if (match && !firstMatch) firstMatch = o;
             });
-            // Nếu dịch vụ đang chọn không thuộc nhóm → chuyển sang dịch vụ hợp lệ đầu tiên.
+            // Nếu dịch vụ đang chọn không thuộc nhóm mới → reset về "-- Chọn --"
+            // (không tự chọn dịch vụ đầu tiên để user chủ động load dữ liệu).
             const cur = dichVu.selectedOptions[0];
-            if ((!cur || cur.dataset.nhom !== v) && firstMatch) dichVu.value = firstMatch.value;
+            if (cur && cur.value && cur.dataset.nhom !== v) dichVu.value = '';
         }
         loadSlots();
     };
@@ -688,7 +673,7 @@
         let msg = '';
         if (opt && opt.value) {
             if (opt.dataset.nghi === '1') msg = `${nhan} đang nghỉ (ngày nghỉ) vào ngày/ca này.`;
-            else if (!coLich) msg = `${nhan} chưa có lịch làm việc hôm này, vẫn đặt book được nhưng admin cần chú ý.`;
+            else if (!coLich) msg = `${nhan} chưa đăng ký lịch làm việc.`;
             else if (opt.dataset.truc === '0') msg = `${nhan} không làm việc vào thời gian này.`;
         }
         if (msg) { if (msgEl) msgEl.textContent = msg; warnEl.classList.remove('hidden'); }
@@ -807,111 +792,17 @@
         }, 350);
     });
 
+    // Toggle "Mục khác" text input for Khách tặng
+    const khachTangWrap = document.getElementById('khach_tang_ghi_chu_wrap');
+    if (khachTangWrap) {
+        document.querySelectorAll('input[name="khach_tang"]').forEach(r => {
+            r.addEventListener('change', () => {
+                khachTangWrap.classList.toggle('hidden', r.value !== 'khac');
+            });
+        });
+    }
+
     if (window.lucide) lucide.createIcons();
-
-    // Custom searchable dropdown: ẩn native select, build dropdown có ô tìm kiếm bên trong
-    document.querySelectorAll('[data-searchable-select]').forEach(wrap => {
-        const sel = wrap.querySelector('select');
-        if (!sel) return;
-        const placeholder = sel.dataset.ssPlaceholder || '-- Chọn --';
-
-        sel.style.display = 'none';
-
-        // Build UI
-        const trigger = document.createElement('button');
-        trigger.type = 'button';
-        trigger.className = 'w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md text-left flex items-center justify-between';
-        const triggerLabel = document.createElement('span');
-        triggerLabel.className = 'truncate';
-        const triggerArrow = document.createElement('span');
-        triggerArrow.className = 'material-symbols-outlined text-[18px] text-on-surface-variant ml-2 shrink-0';
-        triggerArrow.textContent = 'expand_more';
-        trigger.append(triggerLabel, triggerArrow);
-
-        const dropdown = document.createElement('div');
-        dropdown.className = 'absolute z-50 left-0 right-0 mt-1 bg-surface-container-lowest border border-outline rounded-lg shadow-lg hidden';
-
-        const searchWrap = document.createElement('div');
-        searchWrap.className = 'border-b border-outline-variant p-2';
-        const searchInput = document.createElement('input');
-        searchInput.type = 'text';
-        searchInput.placeholder = 'Tìm dịch vụ...';
-        searchInput.autocomplete = 'off';
-        searchInput.className = 'w-full px-3 py-1.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-sm form-input-focus';
-        searchWrap.appendChild(searchInput);
-
-        const listWrap = document.createElement('div');
-        listWrap.className = 'overflow-y-auto';
-        listWrap.style.maxHeight = '220px';
-
-        dropdown.append(searchWrap, listWrap);
-        wrap.append(trigger, dropdown);
-
-        let items = [];
-
-        function buildItems() {
-            listWrap.innerHTML = '';
-            items = [];
-            [...sel.options].forEach(o => {
-                if (!o.value) return;
-                const item = document.createElement('div');
-                item.className = 'px-4 py-2 text-body-md cursor-pointer hover:bg-surface-container-high transition-colors';
-                item.textContent = o.textContent;
-                item.dataset.value = o.value;
-                item.addEventListener('click', () => {
-                    sel.value = o.value;
-                    sel.dispatchEvent(new Event('change', { bubbles: true }));
-                    close();
-                });
-                listWrap.appendChild(item);
-                items.push({ el: item, option: o, text: o.textContent.toLowerCase() });
-            });
-        }
-        buildItems();
-
-        function syncLabel() {
-            const cur = sel.options[sel.selectedIndex];
-            triggerLabel.textContent = (cur && cur.value) ? cur.textContent : placeholder;
-            triggerLabel.classList.toggle('text-on-surface-variant', !cur || !cur.value);
-            items.forEach(i => {
-                i.el.classList.toggle('bg-secondary-container/30', i.option.value === sel.value);
-                i.el.classList.toggle('font-semibold', i.option.value === sel.value);
-            });
-        }
-        syncLabel();
-
-        let isOpen = false;
-        function open() {
-            dropdown.classList.remove('hidden');
-            isOpen = true;
-            searchInput.value = '';
-            filterItems('');
-            setTimeout(() => searchInput.focus(), 0);
-            const selected = listWrap.querySelector('.font-semibold');
-            if (selected) selected.scrollIntoView({ block: 'nearest' });
-        }
-        function close() {
-            dropdown.classList.add('hidden');
-            isOpen = false;
-        }
-        function filterItems(q) {
-            items.forEach(i => {
-                const hidden = i.option.hidden || (i.option.disabled && !i.option.selected);
-                const match = !q || i.text.includes(q);
-                i.el.style.display = (hidden || !match) ? 'none' : '';
-            });
-        }
-
-        trigger.addEventListener('click', () => { isOpen ? close() : open(); });
-        searchInput.addEventListener('input', () => filterItems(searchInput.value.toLowerCase().trim()));
-        searchInput.addEventListener('keydown', e => { if (e.key === 'Escape') close(); });
-        document.addEventListener('click', e => { if (isOpen && !wrap.contains(e.target)) close(); });
-
-        // Đồng bộ khi select thay đổi từ bên ngoài (lọc nhóm loại chính)
-        const obs = new MutationObserver(() => { buildItems(); syncLabel(); });
-        obs.observe(sel, { childList: true, subtree: true, attributes: true, attributeFilter: ['hidden','disabled'] });
-        sel.addEventListener('change', syncLabel);
-    });
 })();
 </script>
 
@@ -925,7 +816,7 @@
     form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
         const n = el.getAttribute('name');
         // Bỏ qua các field không thuộc danh mục phân quyền (csrf, menu_ids[]).
-        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','so_luong_lo','dung_tich_lo','ket_hop_medical','bac_si_id','ktv_user_id','ghi_chu'];
+        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','lan_dau','khach_tang','khach_tang_ghi_chu','bac_si_user_id','ktv_user_id','ghi_chu'];
         if (! trackable.includes(n)) return;
         if (! allowed.includes(n)) {
             el.disabled = true;

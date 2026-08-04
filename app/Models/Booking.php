@@ -15,11 +15,16 @@ class Booking extends Model
     protected $fillable = [
         'ma_booking',
         'co_so_id', 'loai_dat_lich', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
-        'bac_si_id', 'ktv_user_id', 'sale_id', 'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
-        'so_lieu_trinh', 'so_luong_lo', 'dung_tich_lo', 'nguon', 'ket_hop_medical', 'co_tu_van', 'co_kham_cls',
-        'ghi_chu', 'trang_thai', 'trang_thai_khach', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet', 'crm_khach_ma',
-        'nguoi_tao_id',
-        // Phase 6.25.C — Nút "Đang tiếp đón / Hoàn tất" cho sale được auto-chia từ UPS scrm
+        // 2026-08-05 merge: remote đổi bac_si_id → bac_si_user_id (create_bac_si_and_ktv_tables).
+        // Giữ union cả 2 fillable để code cũ (crm_khach_ma, tiep_don_*, so_luong_lo, dung_tich_lo) không vỡ.
+        'bac_si_user_id', 'ktv_user_id', 'sale_id', 'nguoi_tao_id',
+        'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
+        'so_lieu_trinh', 'so_luong_lo', 'dung_tich_lo',
+        'nguon', 'ket_hop_medical', 'lan_dau', 'khach_tang', 'khach_tang_ghi_chu',
+        'co_tu_van', 'co_kham_cls',
+        'ghi_chu', 'trang_thai', 'trang_thai_khach', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet',
+        'crm_khach_ma',
+        // Phase 6.25.C (local): tiếp đón cho sale auto-chia từ UPS scrm.
         'trang_thai_tiep_don', 'tiep_don_user_id', 'tiep_don_bat_dau', 'tiep_don_hoan_tat',
     ];
 
@@ -27,6 +32,7 @@ class Booking extends Model
         'ngay_dat' => 'date',
         'nguoi_tao_id' => 'integer',
         'ket_hop_medical' => 'boolean',
+        'lan_dau' => 'boolean',
         'co_tu_van' => 'boolean',
         'co_kham_cls' => 'boolean',
         'da_duyet' => 'boolean',
@@ -65,6 +71,26 @@ class Booking extends Model
         return $this->belongsTo(KhungGio::class, 'khung_gio_id');
     }
 
+    /**
+     * User có liên quan tới booking này không? Dùng cho quyền "sửa booking liên quan":
+     * là người tạo, bác sĩ, KTV, hoặc sale phụ trách.
+     */
+    public function laLienQuan(?\App\Models\User $user): bool
+    {
+        if (! $user) return false;
+        return in_array($user->id, array_filter([
+            $this->nguoi_tao_id,
+            $this->bac_si_user_id,
+            $this->ktv_user_id,
+            $this->sale_id,
+        ]), true);
+    }
+
+    public function phanHois(): HasMany
+    {
+        return $this->hasMany(BookingPhanHoi::class, 'booking_id')->latest('id');
+    }
+
     public function dichVu(): BelongsTo
     {
         return $this->belongsTo(DichVu::class, 'dich_vu_id');
@@ -77,7 +103,7 @@ class Booking extends Model
 
     public function ktv(): BelongsTo
     {
-        return $this->belongsTo(User::class, 'ktv_user_id');
+        return $this->belongsTo(Ktv::class, 'ktv_user_id');
     }
 
     public function sale(): BelongsTo

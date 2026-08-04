@@ -9,6 +9,7 @@ use App\Models\CoSo;
 use App\Models\DichVu;
 use App\Models\KhachHang;
 use App\Models\KhungGio;
+use App\Models\Ktv;
 use App\Models\LichHen;
 use App\Models\LichLamViec;
 use App\Models\NgayNghi;
@@ -99,8 +100,9 @@ class BookingController extends Controller
     public function edit(CoSo $co_so, Booking $booking)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('sua_booking');
-        // Phase 6.25.C fix — Sale tiếp nhận (được gán) không mở form Sửa được (chỉ Admin).
+        $this->authorizeEditBooking($booking);
+
+        // Phase 6.25.C (local): Sale tiếp nhận chỉ được xem + ghi trạng thái, không mở form Sửa.
         $u = auth()->user();
         $isTiepDon = ($booking->tiep_don_user_id === $u->id) || ($booking->sale_id === $u->id);
         if ($isTiepDon && ! $u->is_admin) {
@@ -108,15 +110,16 @@ class BookingController extends Controller
                 ->with('warn', 'Sale tiếp nhận chỉ xem + ghi trạng thái. Không được sửa info khách.');
         }
 
-        $booking->load(['khachHang', 'menus', 'binhLuans.nguoiDung.vaiTro']);
+        $booking->load(['khachHang', 'menus', 'phanHois.nguoiDung.vaiTro', 'phanHois.nguoiDung.phongBan']);
 
         return view('longevity.create', $this->formData($co_so) + [
             'bk' => $booking,
             'allowedFields' => $this->allowedFieldKeys(),
-            // Phase C1.b rev8 2026-08-01: gate block "Trạng thái lịch hẹn" trong form edit (share với show).
+            'canPhanHoi' => $this->hasPerm('ghi_chu_phan_hoi'),
+            // Local (Phase C1.b rev8): gate block "Trạng thái lịch hẹn" + bình luận trong form edit.
             'canTrangThai' => $this->hasPerm('cap_nhat_trang_thai_khach'),
             'canBinhLuan' => $this->hasPerm('binh_luan_booking'),
-            'isAdmin' => (bool) auth()->user()?->is_admin,
+            'isAdmin' => (bool) $u?->is_admin,
         ]);
     }
 
@@ -153,10 +156,10 @@ class BookingController extends Controller
             ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
             ->orderBy('ten')->get();
 
-        // KTV thuộc cơ sở
-        $ktvs = User::where('vai_tro_id', $vrKtv?->id)
-            ->where('co_so_id', $co_so->id)
-            ->orderBy('name')->get();
+        // KTV thuộc cơ sở (từ bảng danh mục ktv, không phải users)
+        $ktvs = Ktv::where('co_so_id', $co_so->id)
+            ->where('active', true)
+            ->orderBy('ten')->get();
 
         // Nhân viên Sale: chỉ lấy các vai trò mang tính chất sale/lễ tân/nhân viên
         // (tránh lẫn bác sĩ / KTV / admin vào dropdown sale)
@@ -712,12 +715,11 @@ class BookingController extends Controller
         $truc = $ca ? LichLamViec::bacSiTruc($co_so->id, $phongId, $ngay, $ca) : collect();
         $nghiIds = NgayNghi::nguoiNghiIds($co_so->id, $ngay, $ca);
 
-        $vrKtv = VaiTro::where('ma', 'ktv')->value('id');
-        $ktvs = User::where('vai_tro_id', $vrKtv)->where('co_so_id', $co_so->id)->orderBy('name')->get();
+        $ktvs = Ktv::where('co_so_id', $co_so->id)->where('active', true)->orderBy('ten')->get();
 
         $list = $ktvs->map(fn ($k) => [
             'id'   => $k->id,
-            'name' => $k->ten_day_du,
+            'name' => $k->ten,
             'truc' => $truc->has($k->id),
             'nghi' => $nghiIds->contains($k->id),
         ])->values();
@@ -756,13 +758,16 @@ class BookingController extends Controller
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:\d{2}$/'],
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
-            'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
-            'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
+            'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
+            'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'so_luong_lo'   => ['nullable', 'integer', 'min:1'],
             'dung_tich_lo'  => ['nullable', 'string', 'in:8M,10M,16M,20M,450M,1 LT,2 LT'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],
+            'lan_dau'         => ['nullable', 'boolean'],
+            'khach_tang'      => ['nullable', 'string', 'in:co,khong,khac'],
+            'khach_tang_ghi_chu' => ['nullable', 'string', 'max:500'],
             'co_tu_van'     => ['nullable', 'boolean'],
             'co_kham_cls'   => ['nullable', 'boolean'],
             'ghi_chu'       => ['nullable', 'string'],
@@ -868,6 +873,9 @@ class BookingController extends Controller
             'dung_tich_lo'  => $data['dung_tich_lo'] ?? null,
             'nguon'         => $data['nguon'] ?? null,
             'ket_hop_medical' => $request->boolean('ket_hop_medical'),
+            'lan_dau'       => $request->boolean('lan_dau'),
+            'khach_tang'    => $data['khach_tang'] ?? 'khong',
+            'khach_tang_ghi_chu' => ($data['khach_tang'] ?? 'khong') === 'khac' ? ($data['khach_tang_ghi_chu'] ?? null) : null,
             'co_tu_van'     => $request->boolean('co_tu_van'),
             'co_kham_cls'   => $request->boolean('co_kham_cls'),
             'ghi_chu'       => $data['ghi_chu'] ?? null,
@@ -919,7 +927,7 @@ class BookingController extends Controller
     public function update(CoSo $co_so, Booking $booking, Request $request)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('sua_booking');
+        $this->authorizeEditBooking($booking);
 
         // Phase 6.25.C fix (2026-08-03) — Sale tiếp nhận (được gán manual scrm hoặc auto UPS)
         // chỉ được ghi tình trạng khách + comment, KHÔNG sửa info khách. Admin bypass.
@@ -952,13 +960,16 @@ class BookingController extends Controller
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:(00|30)$/'],
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
             'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
-            'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
-            'ktv_user_id'   => ['nullable', Rule::exists('users', 'id')],
+            'bac_si_user_id' => ['nullable', Rule::exists('users', 'id')],
+            'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
             'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
             'so_luong_lo'   => ['nullable', 'integer', 'min:1'],
             'dung_tich_lo'  => ['nullable', 'string', 'in:8M,10M,16M,20M,450M,1 LT,2 LT'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],
+            'lan_dau'         => ['nullable', 'boolean'],
+            'khach_tang'      => ['nullable', 'string', 'in:co,khong,khac'],
+            'khach_tang_ghi_chu' => ['nullable', 'string', 'max:500'],
             'co_tu_van'     => ['nullable', 'boolean'],
             'co_kham_cls'   => ['nullable', 'boolean'],
             'ghi_chu'       => ['nullable', 'string'],
@@ -1053,6 +1064,9 @@ class BookingController extends Controller
             'dung_tich_lo'    => $data['dung_tich_lo'] ?? null,
             'nguon'           => $data['nguon'] ?? null,
             'ket_hop_medical' => $request->boolean('ket_hop_medical'),
+            'lan_dau'         => $request->boolean('lan_dau'),
+            'khach_tang'      => $data['khach_tang'] ?? 'khong',
+            'khach_tang_ghi_chu' => ($data['khach_tang'] ?? 'khong') === 'khac' ? ($data['khach_tang_ghi_chu'] ?? null) : null,
             'ghi_chu'         => $data['ghi_chu'] ?? null,
         ];
         $payload = ['khach_hang_id' => $kh->id];
@@ -1232,6 +1246,47 @@ class BookingController extends Controller
         $ten = $booking->khachHang?->ho_ten ?? 'khách';
 
         return back()->with('ok', 'Đã lưu phản hồi từ khách cho lịch hẹn của ' . $ten . '.');
+    }
+
+    /**
+     * Cập nhật trạng thái khách (đến đúng giờ / đến muộn / hủy).
+     * Yêu cầu quyền 'ghi_chu_phan_hoi' — tách hẳn với quyền xem/sửa booking để tránh nhầm.
+     */
+    /**
+     * Thêm 1 dòng ghi chú phản hồi. Tác giả = người đang đăng nhập, thời gian tự lưu.
+     */
+    public function themPhanHoi(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('ghi_chu_phan_hoi');
+
+        $data = $request->validate([
+            'noi_dung' => ['required', 'string', 'max:2000'],
+        ]);
+
+        $booking->phanHois()->create([
+            'noi_dung'      => trim($data['noi_dung']),
+            'nguoi_dung_id' => auth()->id(),
+        ]);
+
+        return back()->with('ok', 'Đã thêm ghi chú phản hồi.');
+    }
+
+    /**
+     * Xóa 1 dòng phản hồi. Chỉ tác giả hoặc admin mới xóa được — tránh
+     * người khác cùng quyền 'ghi_chu_phan_hoi' xóa ghi chú của đồng nghiệp.
+     */
+    public function xoaPhanHoi(CoSo $co_so, Booking $booking, int $note)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $this->authorizePerm('ghi_chu_phan_hoi');
+
+        $ph = \App\Models\BookingPhanHoi::where('booking_id', $booking->id)->findOrFail($note);
+        $user = auth()->user();
+        abort_unless($user && ($user->is_admin || $ph->nguoi_dung_id === $user->id), 403);
+        $ph->delete();
+
+        return back()->with('ok', 'Đã xóa ghi chú phản hồi.');
     }
 
     /** Đánh dấu đã xong / hoàn tác về đã duyệt. */
