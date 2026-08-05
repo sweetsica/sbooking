@@ -62,7 +62,7 @@ class DaNangStaffSeeder extends Seeder
             ['ma' => 'dn_full_flow'],
             ['ten' => 'Nhân viên Đà Nẵng (full flow)']
         );
-        foreach (['xem_booking', 'them_booking', 'sua_booking', 'sua_lich_tu_van', 'binh_luan_booking'] as $q) {
+        foreach (['xem_booking_cua_toi', 'them_booking', 'sua_booking', 'sua_lich_tu_van', 'binh_luan_booking', 'cap_nhat_trang_thai_khach'] as $q) {
             PhanQuyen::firstOrCreate(['vai_tro_id' => $vrDnFull->id, 'truong' => $q]);
         }
 

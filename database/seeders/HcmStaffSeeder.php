@@ -38,7 +38,7 @@ class HcmStaffSeeder extends Seeder
             ['ma' => 'dn_full_flow'],
             ['ten' => 'Sale full flow (tele + booking + sale)']
         );
-        foreach (['xem_booking', 'them_booking', 'sua_booking', 'sua_lich_tu_van', 'binh_luan_booking'] as $q) {
+        foreach (['xem_booking_cua_toi', 'them_booking', 'sua_booking', 'sua_lich_tu_van', 'binh_luan_booking', 'cap_nhat_trang_thai_khach'] as $q) {
             PhanQuyen::firstOrCreate(['vai_tro_id' => $vrSaleFull->id, 'truong' => $q]);
         }
 

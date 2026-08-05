@@ -108,6 +108,8 @@ trait AuthorizesByPhanQuyen
         if (in_array('xem_booking_co_so_toi', $allowed, true)) return 'co_so_toi';
         if (in_array('xem_booking_phong_toi', $allowed, true)) return 'phong_toi';
         if (in_array('xem_booking_cua_toi', $allowed, true)) return 'cua_toi';
+        // 2026-08-05: fallback perm 'xem_booking' legacy (Tư vấn viên) → coi như 'cua_toi'.
+        if (in_array('xem_booking', $allowed, true)) return 'cua_toi';
         return null;
     }
 

@@ -20,6 +20,10 @@ return new class extends Migration
                 'admin', 'quan_tri_van_hanh' => 'xem_booking_tat_ca',
                 'ktv'                        => 'xem_booking_phong_toi',
                 'bac_si', 'bac_si_tu_van'    => 'xem_booking_cua_toi',
+                // 2026-08-05: nhan_vien + tu_van_vien = Sale cá nhân → chỉ xem booking của mình
+                //   (trước default co_so_toi = quá rộng, sale nhìn thấy lịch cả cơ sở).
+                'tu_van_vien', 'nhan_vien'   => 'xem_booking_cua_toi',
+                'le_tan'                     => 'xem_booking_co_so_toi',
                 default                      => 'xem_booking_co_so_toi',
             };
 

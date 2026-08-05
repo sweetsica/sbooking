@@ -36,7 +36,7 @@ class LongevitySeeder extends Seeder
 
         // ---- Phân quyền mặc định theo vai trò ----
         $quyenMacDinh = [
-            $vrTuVanVien->id    => ['them_booking', 'xem_booking_cua_toi', 'ghi_chu_phan_hoi'],
+            $vrTuVanVien->id    => ['them_booking', 'xem_booking_cua_toi', 'ghi_chu_phan_hoi', 'binh_luan_booking', 'cap_nhat_trang_thai_khach', 'sua_booking', 'sua_lich_tu_van'],
             $vrSalesLead->id    => ['them_booking', 'xem_booking_phong_toi', 'ghi_chu_phan_hoi'],
             $vrSalesManager->id => ['them_booking', 'xem_booking_co_so_toi', 'ghi_chu_phan_hoi'],
             $vrKtv->id          => ['xem_booking_cua_toi', 'ghi_chu_phan_hoi'],
