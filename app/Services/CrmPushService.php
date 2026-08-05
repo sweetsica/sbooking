@@ -15,6 +15,9 @@ class CrmPushService
 {
     public static function crmUrl(): string
     {
+        // 2026-08-05: đọc AppSetting scrm_url trước (UI /thiet-lap/ket-noi/scrm), fallback config/env.
+        $dbUrl = \App\Models\AppSetting::get('scrm_url');
+        if ($dbUrl) return rtrim($dbUrl, '/');
         return rtrim(config('services.crm.url') ?? env('CRM_URL', 'http://127.0.0.1:1999'), '/');
     }
 
@@ -50,6 +53,15 @@ class CrmPushService
      */
     public static function callbackToken(int $userId = 0): ?string
     {
+        // 2026-08-05: đọc token từ AppSetting scrm_api_token (encrypted, set qua UI /thiet-lap/ket-noi/scrm).
+        //   Fallback env SCRM_API_TOKEN, cuối cùng user.api_token.
+        $enc = \App\Models\AppSetting::get('scrm_api_token');
+        if ($enc) {
+            try {
+                $tok = \Illuminate\Support\Facades\Crypt::decryptString($enc);
+                if ($tok) return $tok;
+            } catch (\Throwable $e) { /* fallthrough */ }
+        }
         $shared = env('SCRM_API_TOKEN');
         if ($shared) return $shared;
         $user = $userId ? \App\Models\User::find($userId) : null;

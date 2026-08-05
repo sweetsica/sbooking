@@ -16,6 +16,20 @@
     <form method="POST" action="{{ route('settings.scrm-connection.update', $coSo) }}" class="space-y-6">
         @csrf
 
+        {{-- 2026-08-05: URL scrm — bắt buộc để sbooking push callback (duyệt/tu chối/check-in) về scrm. --}}
+        <fieldset class="border border-gray-200 rounded-md p-4">
+            <legend class="px-2 text-sm font-semibold text-gray-700">URL SCRM (nhận callback)</legend>
+            <p class="text-xs text-gray-500 mb-3">
+                Origin của lara-scrm (VD <code>http://lara-datasource.test:81</code> — dev; <code>https://crm.longevity.com.vn</code> — prod).
+                Sbooking push callback tới <code>{scrm_url}/api/leads/{ma}/booking-event</code> khi có thay đổi (duyệt/xong/xoá/edit/comment).
+                Bỏ trống → fallback env <code>CRM_URL</code>.
+            </p>
+            <input type="url" name="scrm_url" value="{{ old('scrm_url', $scrmUrl ?? '') }}"
+                   placeholder="http://lara-datasource.test:81"
+                   class="w-full border border-gray-300 rounded-md px-3 py-2 text-sm font-mono">
+            @error('scrm_url')<p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+        </fieldset>
+
         {{-- Token xác thực (Phase B 2026-08-01) --}}
         <fieldset class="border border-gray-200 rounded-md p-4">
             <legend class="px-2 text-sm font-semibold text-gray-700">Token API xác thực (server-to-server)</legend>

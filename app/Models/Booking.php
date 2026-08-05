@@ -86,10 +86,7 @@ class Booking extends Model
         ]), true);
     }
 
-    public function phanHois(): HasMany
-    {
-        return $this->hasMany(BookingPhanHoi::class, 'booking_id')->latest('id');
-    }
+    // 2026-08-05: BỎ BookingPhanHoi (thay bằng BookingBinhLuan qua migration 07_05). Xem binhLuans().
 
     public function dichVu(): BelongsTo
     {

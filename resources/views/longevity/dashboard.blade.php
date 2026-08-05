@@ -56,18 +56,20 @@
     @php
         $widgets = [
             ['key'=>'today',      'label'=>'Lịch hôm nay',            'desc'=>'Tất cả booking ngày hôm nay',                          'value'=>$todayCount,      'color'=>'blue',    'icon'=>'today'],
+            ['key'=>'approval',   'label'=>'Lịch chờ duyệt',          'desc'=>'Tất cả booking đang trạng thái "Chờ duyệt" (mọi ngày)','value'=>$approvalCount,   'color'=>'rose',    'icon'=>'pending_actions'],
             ['key'=>'processing', 'label'=>'Đang xử lý',              'desc'=>'Khách đã tới — đang tiếp đón / khám',                  'value'=>$processingCount, 'color'=>'amber',   'icon'=>'schedule'],
             ['key'=>'upcoming',   'label'=>'Sắp tới (trong 1 giờ)',   'desc'=>'Đã duyệt, giờ hẹn trong vòng 60 phút tới',             'value'=>$upcomingCount,   'color'=>'violet',  'icon'=>'alarm'],
             ['key'=>'done',       'label'=>'Đã hoàn thành',           'desc'=>'Đã khám xong / kết thúc buổi',                          'value'=>$doneCount,       'color'=>'emerald', 'icon'=>'task_alt'],
         ];
         $colorMap = [
             'blue'    => ['bg'=>'bg-blue-50','border'=>'border-blue-200','ring'=>'ring-blue-400','text'=>'text-blue-700'],
+            'rose'    => ['bg'=>'bg-rose-50','border'=>'border-rose-200','ring'=>'ring-rose-400','text'=>'text-rose-700'],
             'amber'   => ['bg'=>'bg-amber-50','border'=>'border-amber-200','ring'=>'ring-amber-400','text'=>'text-amber-700'],
             'violet'  => ['bg'=>'bg-violet-50','border'=>'border-violet-200','ring'=>'ring-violet-400','text'=>'text-violet-700'],
             'emerald' => ['bg'=>'bg-emerald-50','border'=>'border-emerald-200','ring'=>'ring-emerald-400','text'=>'text-emerald-700'],
         ];
     @endphp
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
         @foreach ($widgets as $w)
             @php $c = $colorMap[$w['color']]; $active = $tab === $w['key']; @endphp
             <a href="?tab={{ $w['key'] }}" class="block border-2 rounded-xl p-4 transition-all {{ $c['bg'] }} {{ $active ? $c['ring'].' ring-2 '.$c['border'] : $c['border'].' hover:'.$c['ring'].' hover:ring-2' }}">
@@ -86,7 +88,7 @@
     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
         <div class="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
             <h2 class="font-bold text-base">
-                {{ ['today'=>'Danh sách lịch hôm nay','processing'=>'Đang xử lý','upcoming'=>'Sắp tới trong 1 giờ','done'=>'Đã hoàn thành'][$tab] ?? 'Danh sách' }}
+                {{ ['today'=>'Danh sách lịch hôm nay','approval'=>'Lịch chờ duyệt','processing'=>'Đang xử lý','upcoming'=>'Sắp tới trong 1 giờ','done'=>'Đã hoàn thành'][$tab] ?? 'Danh sách' }}
                 <span class="ml-2 text-xs bg-surface-container-low text-on-surface-variant px-2 py-0.5 rounded">{{ $bookings->count() }}</span>
             </h2>
             @if ($tab !== 'today')

@@ -275,10 +275,19 @@ class PageController extends Controller
             ->where('trang_thai', 'da_xong')
             ->count();
 
-        $tab = in_array($request->query('tab'), ['today', 'processing', 'upcoming', 'done'], true)
+        // 2026-08-05: widget mới "Lịch chờ duyệt" — mọi booking cho_duyet (không giới hạn ngày,
+        // vì chờ duyệt có thể là lịch tương lai user cần biết ngay).
+        $approvalCount = (clone $base())->where('trang_thai', 'cho_duyet')->count();
+
+        $tab = in_array($request->query('tab'), ['today', 'approval', 'processing', 'upcoming', 'done'], true)
             ? $request->query('tab') : 'today';
 
-        $listQ = (clone $base())->whereDate('ngay_dat', $today);
+        $listQ = (clone $base());
+        if ($tab === 'approval') {
+            $listQ->where('trang_thai', 'cho_duyet');
+        } else {
+            $listQ->whereDate('ngay_dat', $today);
+        }
         if ($tab === 'processing') {
             $listQ->where(function ($q) {
                 $q->where('trang_thai_khach', 'da_toi')
@@ -300,8 +309,8 @@ class PageController extends Controller
 
         if ($request->expectsJson() || $request->boolean('json')) {
             return response()->json([
-                'counts' => compact('todayCount', 'processingCount', 'upcomingCount', 'doneCount') + [
-                    'today' => $todayCount, 'processing' => $processingCount,
+                'counts' => compact('todayCount', 'approvalCount', 'processingCount', 'upcomingCount', 'doneCount') + [
+                    'today' => $todayCount, 'approval' => $approvalCount, 'processing' => $processingCount,
                     'upcoming' => $upcomingCount, 'done' => $doneCount,
                 ],
                 'tab' => $tab,
@@ -321,6 +330,7 @@ class PageController extends Controller
 
         return view('longevity.dashboard', [
             'coSo' => $co_so, 'todayCount' => $todayCount,
+            'approvalCount' => $approvalCount,
             'processingCount' => $processingCount,
             'upcomingCount' => $upcomingCount, 'doneCount' => $doneCount,
             'tab' => $tab, 'bookings' => $bookings, 'active' => 'lich-hen',

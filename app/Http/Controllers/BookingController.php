@@ -110,7 +110,7 @@ class BookingController extends Controller
                 ->with('warn', 'Sale tiếp nhận chỉ xem + ghi trạng thái. Không được sửa info khách.');
         }
 
-        $booking->load(['khachHang', 'menus', 'phanHois.nguoiDung.vaiTro', 'phanHois.nguoiDung.phongBan']);
+        $booking->load(['khachHang', 'menus']);
 
         return view('longevity.create', $this->formData($co_so) + [
             'bk' => $booking,
@@ -1248,46 +1248,7 @@ class BookingController extends Controller
         return back()->with('ok', 'Đã lưu phản hồi từ khách cho lịch hẹn của ' . $ten . '.');
     }
 
-    /**
-     * Cập nhật trạng thái khách (đến đúng giờ / đến muộn / hủy).
-     * Yêu cầu quyền 'ghi_chu_phan_hoi' — tách hẳn với quyền xem/sửa booking để tránh nhầm.
-     */
-    /**
-     * Thêm 1 dòng ghi chú phản hồi. Tác giả = người đang đăng nhập, thời gian tự lưu.
-     */
-    public function themPhanHoi(CoSo $co_so, Booking $booking, Request $request)
-    {
-        abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('ghi_chu_phan_hoi');
-
-        $data = $request->validate([
-            'noi_dung' => ['required', 'string', 'max:2000'],
-        ]);
-
-        $booking->phanHois()->create([
-            'noi_dung'      => trim($data['noi_dung']),
-            'nguoi_dung_id' => auth()->id(),
-        ]);
-
-        return back()->with('ok', 'Đã thêm ghi chú phản hồi.');
-    }
-
-    /**
-     * Xóa 1 dòng phản hồi. Chỉ tác giả hoặc admin mới xóa được — tránh
-     * người khác cùng quyền 'ghi_chu_phan_hoi' xóa ghi chú của đồng nghiệp.
-     */
-    public function xoaPhanHoi(CoSo $co_so, Booking $booking, int $note)
-    {
-        abort_unless($booking->co_so_id === $co_so->id, 404);
-        $this->authorizePerm('ghi_chu_phan_hoi');
-
-        $ph = \App\Models\BookingPhanHoi::where('booking_id', $booking->id)->findOrFail($note);
-        $user = auth()->user();
-        abort_unless($user && ($user->is_admin || $ph->nguoi_dung_id === $user->id), 403);
-        $ph->delete();
-
-        return back()->with('ok', 'Đã xóa ghi chú phản hồi.');
-    }
+    // 2026-08-05: BỎ themPhanHoi / xoaPhanHoi (dead code — thay bằng themBinhLuan / xoaBinhLuan qua migration 07_05).
 
     /** Đánh dấu đã xong / hoàn tác về đã duyệt. */
     public function xong(CoSo $co_so, Booking $booking)

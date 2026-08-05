@@ -504,7 +504,7 @@
 @if ($editing)
 {{-- Phản hồi sau khi sử dụng dịch vụ — chỉ ở edit mode (booking đã tồn tại). Đặt NGOÀI form chính vì có form con riêng. --}}
 <div class="p-8 pt-0">
-@include('longevity._phan_hoi_section', ['booking' => $bk, 'canPhanHoi' => $canPhanHoi ?? false, 'coSo' => $coSo])
+@include('longevity.partials.trang-thai-lich-hen', ['booking' => $bk ?? $booking, 'coSo' => $coSo, 'canTrangThai' => $canTrangThai ?? false, 'canBinhLuan' => $canBinhLuan ?? false, 'isAdmin' => $isAdmin ?? (bool)(auth()->user()?->is_admin)])
 </div>
 @endif
 </div>

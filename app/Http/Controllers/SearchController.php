@@ -58,13 +58,17 @@ class SearchController extends Controller
         abort_unless($this->canViewBooking($booking), 403, 'Bạn không có quyền xem booking này.');
 
         $booking->load(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale', 'menus',
-            'phanHois.nguoiDung.vaiTro', 'phanHois.nguoiDung.phongBan']);
+            'binhLuans.nguoiDung']);
 
         return view('longevity.show', [
             'coSo' => $co_so,
             'booking' => $booking,
             'canDuyet' => $this->hasPerm('duyet_booking'),
-            'canPhanHoi' => $this->hasPerm('ghi_chu_phan_hoi'),
+            // 2026-08-05: admin bypass mọi perm (hasPerm không tự bypass — chỉ check row phan_quyen).
+            'canPhanHoi'   => ($__ad = (bool) (auth()->user()?->is_admin)) || $this->hasPerm('ghi_chu_phan_hoi'),
+            'canTrangThai' => $__ad || $this->hasPerm('cap_nhat_trang_thai_khach'),
+            'canBinhLuan'  => $__ad || $this->hasPerm('binh_luan_booking'),
+            'isAdmin'      => $__ad,
         ]);
     }
 }

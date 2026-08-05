@@ -45,8 +45,9 @@ class SyncUsernamesFromCrmSeeder extends Seeder
         'Phan Trần Khánh Quỳn'      => 'hcm.tl01',
 
         // Hà Nội
-        'Nguyễn Booking 1'          => 'hn.book01',
-        'Trần Booking 2'            => 'hn.book02',
+        // 2026-08-05: rename "Nguyễn Booking 1/Trần Booking 2" → "Tài khoản Booking 1/2" (đồng bộ scrm).
+        'Tài khoản Booking 1'       => 'hn.book01',
+        'Tài khoản Booking 2'       => 'hn.book02',
         'CM Booking'                => 'hn.cmb01',
         'CM Booking Team Giang'     => 'hn.cmb02',
         'Trần Thị Thu Giang'        => 'hn.cms01',

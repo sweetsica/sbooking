@@ -67,7 +67,7 @@ body { background-color: #f7f9fb; }
 </div>
 @endif
 
-@include('longevity._phan_hoi_section', ['booking' => $booking, 'canPhanHoi' => $canPhanHoi ?? false, 'coSo' => $coSo])
+@include('longevity.partials.trang-thai-lich-hen', ['booking' => $bk ?? $booking, 'coSo' => $coSo, 'canTrangThai' => $canTrangThai ?? false, 'canBinhLuan' => $canBinhLuan ?? false, 'isAdmin' => $isAdmin ?? (bool)(auth()->user()?->is_admin)])
 
 <div class="mb-6 flex items-center gap-2 p-3 rounded-xl bg-secondary-container/20 border border-secondary/20 text-on-secondary-container text-body-sm">
 <span class="material-symbols-outlined text-[20px]">visibility</span>

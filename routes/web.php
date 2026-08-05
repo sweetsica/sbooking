@@ -93,8 +93,7 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::patch('/phan-hoi-dat-phong/{booking}', [BookingController::class, 'phanHoi'])->name('booking.feedback');
         // Phản hồi sau khi sử dụng dịch vụ (trạng thái khách + note nhiều dòng có tác giả) — GIỮ tên remote booking.tt-khach.
         Route::patch('/trang-thai-khach/{booking}', [BookingController::class, 'capNhatTrangThaiKhach'])->name('booking.tt-khach');
-        Route::post('/them-phan-hoi/{booking}',     [BookingController::class, 'themPhanHoi'])->name('booking.them-phan-hoi');
-        Route::delete('/xoa-phan-hoi/{booking}/{note}', [BookingController::class, 'xoaPhanHoi'])->name('booking.xoa-phan-hoi');
+        // 2026-08-05: BỎ them-phan-hoi / xoa-phan-hoi (dead — thay bằng binh-luan bên dưới).
         // Phase 6.25 (local): tiếp đón + bình luận + GET fallback (tránh 405 khi user copy URL action).
         Route::patch('/tiep-don/{booking}', [BookingController::class, 'capNhatTiepDon'])->name('booking.tiepdon');
         Route::get('/trang-thai-khach/{booking}', function ($co_so_slug, $booking) {
