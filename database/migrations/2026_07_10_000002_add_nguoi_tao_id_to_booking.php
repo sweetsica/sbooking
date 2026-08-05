@@ -14,6 +14,9 @@ return new class extends Migration
 {
     public function up(): void
     {
+        // 2026-08-05: guard — cột có thể đã tồn tại từ migration 07_02_000004 (duplicate).
+        if (Schema::hasColumn('booking', 'nguoi_tao_id')) return;
+
         Schema::table('booking', function (Blueprint $table) {
             $table->foreignId('nguoi_tao_id')->nullable()->after('sale_id')
                 ->constrained('users')->nullOnDelete();
