@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class BacSi extends Model
 {
@@ -25,6 +26,13 @@ class BacSi extends Model
     public function coSo(): BelongsTo
     {
         return $this->belongsTo(CoSo::class, 'co_so_id');
+    }
+
+    // 2026-08-05: LichHenController query $bacSi->caKhams để render slot form đặt lịch tư vấn.
+    //   ca_kham.bac_si_id FK → bac_si.id (schema đã đúng — chỉ thiếu relation).
+    public function caKhams(): HasMany
+    {
+        return $this->hasMany(CaKham::class, 'bac_si_id');
     }
 
     // Tên hiển thị kèm chức danh: "BS. Nguyễn Văn A"

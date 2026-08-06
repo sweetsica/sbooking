@@ -373,7 +373,7 @@
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Chọn bác sĩ <span class="text-on-surface-variant/60 text-[11px]">— bác sĩ của phòng, còn trống khung giờ</span></label>
-<select id="bac_si" name="bac_si_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<select id="bac_si" name="bac_si_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 <option value="">-- Chọn khung giờ trước --</option>
 </select>
 <p id="bs_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
@@ -816,7 +816,7 @@
     form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
         const n = el.getAttribute('name');
         // Bỏ qua các field không thuộc danh mục phân quyền (csrf, menu_ids[]).
-        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','lan_dau','khach_tang','khach_tang_ghi_chu','bac_si_user_id','ktv_user_id','ghi_chu'];
+        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','lan_dau','khach_tang','khach_tang_ghi_chu','bac_si_id','ktv_user_id','ghi_chu'];
         if (! trackable.includes(n)) return;
         if (! allowed.includes(n)) {
             el.disabled = true;

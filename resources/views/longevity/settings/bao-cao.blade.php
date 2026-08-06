@@ -13,63 +13,64 @@
     ]));
 @endphp
 
-{{-- Form lọc --}}
-<form method="GET" action="{{ $action }}" class="mb-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-<div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Loại</label>
-<select name="loai" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
-<option value="all" @selected(($f['loai'] ?? 'all') === 'all')>— Tất cả —</option>
-<option value="booking" @selected(($f['loai'] ?? '') === 'booking')>Chỉ đặt phòng</option>
-<option value="tu_van" @selected(($f['loai'] ?? '') === 'tu_van')>Chỉ tư vấn</option>
-</select>
-</div>
-<div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Từ ngày</label>
-<input type="date" name="tu" value="{{ $f['tu'] }}" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary"/>
-</div>
-<div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Đến ngày</label>
-<input type="date" name="den" value="{{ $f['den'] }}" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary"/>
-</div>
-<div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Bác sĩ / Bác sĩ tư vấn</label>
-<select name="bac_si_id" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
-<option value="">— Tất cả —</option>
-@foreach ($opt['bacSis'] as $u)
-<option value="{{ $u->id }}" @selected(($f['bacSiId'] ?? '') == $u->id)>{{ $u->ten_day_du }}</option>
-@endforeach
-</select>
-</div>
-<div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Nhân viên tư vấn / Sale</label>
-<select name="sale_id" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
-<option value="">— Tất cả —</option>
-@foreach ($opt['sales'] as $u)
-<option value="{{ $u->id }}" @selected(($f['saleId'] ?? '') == $u->id)>{{ $u->name }}</option>
-@endforeach
-</select>
-</div>
-<div class="flex flex-col gap-1">
-<label class="text-label-caps font-label-caps text-on-surface-variant">Kỹ thuật viên (chỉ đặt phòng)</label>
-<select name="ktv_id" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
-<option value="">— Tất cả —</option>
-@foreach ($opt['ktvs'] as $u)
-<option value="{{ $u->id }}" @selected(($f['ktvId'] ?? '') == $u->id)>{{ $u->name }}</option>
-@endforeach
-</select>
-</div>
-</div>
-<div class="flex items-center gap-2 mt-3">
-<button type="submit" class="px-4 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
-<span class="material-symbols-outlined text-[20px]">search</span> Lọc
-</button>
-<a href="{{ $action }}" class="px-4 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg">Xóa lọc</a>
-<a href="{{ $exportUrl }}" class="ml-auto px-4 py-2 bg-tertiary text-on-tertiary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
-<span class="material-symbols-outlined text-[20px]">download</span> Xuất Excel
-</a>
-</div>
-</form>
+{{-- Form lọc — 2026-08-05 refactor: dùng <x-longevity.filter-bar> chuẩn hoá UI. --}}
+@php $filterInputCls = 'w-full h-10 border border-outline-variant rounded-lg px-3 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface'; @endphp
+<x-longevity.filter-bar :action="$action" :cols="4">
+    <x-longevity.filter-field label="LOẠI">
+        <select name="loai" class="{{ $filterInputCls }}">
+            <option value="all" @selected(($f['loai'] ?? 'all') === 'all')>— Tất cả —</option>
+            <option value="booking" @selected(($f['loai'] ?? '') === 'booking')>Chỉ đặt phòng</option>
+            <option value="tu_van" @selected(($f['loai'] ?? '') === 'tu_van')>Chỉ tư vấn</option>
+        </select>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="TỪ NGÀY">
+        <input type="date" name="tu" value="{{ $f['tu'] }}" class="{{ $filterInputCls }}"/>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="ĐẾN NGÀY">
+        <input type="date" name="den" value="{{ $f['den'] }}" class="{{ $filterInputCls }}"/>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="BÁC SĨ / BS TƯ VẤN">
+        <select name="bac_si_id" class="{{ $filterInputCls }}">
+            <option value="">— Tất cả —</option>
+            @foreach ($opt['bacSis'] as $u)
+                <option value="{{ $u->id }}" @selected(($f['bacSiId'] ?? '') == $u->id)>{{ $u->ten_day_du }}</option>
+            @endforeach
+        </select>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="NV TƯ VẤN / SALE">
+        <select name="sale_id" class="{{ $filterInputCls }}">
+            <option value="">— Tất cả —</option>
+            @foreach ($opt['sales'] as $u)
+                <option value="{{ $u->id }}" @selected(($f['saleId'] ?? '') == $u->id)>{{ $u->name }}</option>
+            @endforeach
+        </select>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="KỸ THUẬT VIÊN" hint="Chỉ áp dụng cho đặt phòng">
+        <select name="ktv_id" class="{{ $filterInputCls }}">
+            <option value="">— Tất cả —</option>
+            @foreach ($opt['ktvs'] as $u)
+                <option value="{{ $u->id }}" @selected(($f['ktvId'] ?? '') == $u->id)>{{ $u->name }}</option>
+            @endforeach
+        </select>
+    </x-longevity.filter-field>
+
+    <x-slot:actions>
+        <button type="submit" class="inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-[18px]">search</span> Lọc
+        </button>
+        <a href="{{ $action }}" class="inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors">
+            <span class="material-symbols-outlined text-[18px]">restart_alt</span> Xóa lọc
+        </a>
+        <a href="{{ $exportUrl }}" class="ml-auto inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold bg-tertiary text-on-tertiary rounded-lg hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-[18px]">download</span> Xuất Excel
+        </a>
+    </x-slot:actions>
+</x-longevity.filter-bar>
 
 {{-- Counter --}}
 <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 mb-5">
@@ -142,12 +143,7 @@ $cards = [
 <span>Muộn: <strong class="text-amber-700">{{ $c['booking']['kh_muon'] }}</strong></span>
 <span>Hủy: <strong class="text-red-700">{{ $c['booking']['kh_huy'] }}</strong></span>
 </div>
-<div class="flex flex-wrap gap-x-6 gap-y-1 text-body-sm mt-1 pt-1 border-t border-outline-variant/60">
-<span class="text-on-surface-variant">Khách:</span>
-<span>Đúng giờ: <strong class="text-tertiary">{{ $c['booking']['dung_gio'] }}</strong></span>
-<span>Chậm/Trễ: <strong class="text-amber-600">{{ $c['booking']['tre'] }}</strong></span>
-<span>Hủy: <strong class="text-error">{{ $c['booking']['huy'] }}</strong></span>
-</div>
+{{-- 2026-08-05: BỎ block "Khách:" trùng lặp (key sai dung_gio/tre/huy, controller trả về kh_dung_gio/kh_muon/kh_huy đã render ở block trên). --}}
 </div>
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
 <div class="flex items-center gap-2 mb-2"><span class="material-symbols-outlined text-secondary">medical_services</span><span class="font-semibold">Tư vấn</span></div>

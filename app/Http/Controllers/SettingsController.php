@@ -289,7 +289,7 @@ class SettingsController extends Controller
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
                 ->when($tu, fn ($q) => $q->whereDate('ngay_dat', '>=', $tu))
                 ->when($den, fn ($q) => $q->whereDate('ngay_dat', '<=', $den))
-                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
+                ->when($bacSiId, fn ($q) => $q->where('bac_si_id', $bacSiId))
                 ->when($saleId, fn ($q) => $q->where('sale_id', $saleId))
                 ->when($ktvId, fn ($q) => $q->where('ktv_user_id', $ktvId))
                 ->orderByDesc('ngay_dat')->orderBy('id');
@@ -304,7 +304,7 @@ class SettingsController extends Controller
                 ->with(['khachHang', 'bacSiTuVan', 'caKham', 'sale'])
                 ->when($tu, fn ($q) => $q->whereDate('ngay_hen', '>=', $tu))
                 ->when($den, fn ($q) => $q->whereDate('ngay_hen', '<=', $den))
-                ->when($bacSiId, fn ($q) => $q->where('bac_si_user_id', $bacSiId))
+                ->when($bacSiId, fn ($q) => $q->where('bac_si_id', $bacSiId))
                 ->when($saleId, fn ($q) => $q->where('sale_id', $saleId))
                 ->orderByDesc('ngay_hen')->orderBy('id');
             $lichHens = $ktvId ? collect() : $lq->get();

@@ -38,7 +38,7 @@ class PageController extends Controller
             $month = $this->buildMonthCells($date, function ($from, $to) use ($co_so, $bacSiUserId) {
                 $q = Booking::where('co_so_id', $co_so->id)
                     ->whereBetween('ngay_dat', [$from, $to]);
-                if ($bacSiUserId) $q->where('bac_si_user_id', $bacSiUserId);
+                if ($bacSiUserId) $q->where('bac_si_id', $bacSiUserId);
 
                 return $q->selectRaw('DATE(ngay_dat) d, COUNT(*) c')->groupBy('d')->pluck('c', 'd')->all();
             });
@@ -62,7 +62,7 @@ class PageController extends Controller
         // Mỗi bác sĩ: 5 lịch gần nhất + phân trang riêng (page param "bs{id}").
         $cards = $bacSis->map(function ($bs) use ($co_so, $date) {
             $q = Booking::where('co_so_id', $co_so->id)
-                ->where('bac_si_user_id', $bs->id)
+                ->where('bac_si_id', $bs->id)
                 ->whereDate('ngay_dat', $date)
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
                 ->orderByDesc('gio_thuc_hien')->orderByDesc('id');
@@ -80,7 +80,7 @@ class PageController extends Controller
         $unassigned = null;
         if (! $isDoctorView) {
             $unassigned = Booking::where('co_so_id', $co_so->id)
-                ->whereNull('bac_si_user_id')
+                ->whereNull('bac_si_id')
                 ->whereDate('ngay_dat', $date)
                 ->with(['khachHang', 'phong', 'khungGio', 'dichVu'])
                 ->orderByDesc('gio_thuc_hien')->orderByDesc('id')
@@ -89,7 +89,7 @@ class PageController extends Controller
 
         // Thống kê tổng (mọi lịch của cơ sở trong ngày đã chọn).
         $statQ = Booking::where('co_so_id', $co_so->id)->whereDate('ngay_dat', $date);
-        if ($bacSiUserId) $statQ->where('bac_si_user_id', $bacSiUserId);
+        if ($bacSiUserId) $statQ->where('bac_si_id', $bacSiUserId);
         $total = (clone $statQ)->count();
         $approved = (clone $statQ)->whereIn('trang_thai', ['da_duyet', 'da_xong'])->count();
 
@@ -356,7 +356,7 @@ class PageController extends Controller
         // Mặc định lọc = chính mình nếu người đăng nhập đúng vai trò đó; 0 = tất cả.
         $isDichVu   = $kieu === 'phong_dich_vu';
         $staffParam = $isDichVu ? 'ktv_id' : 'bac_si_id';
-        $staffCol   = $isDichVu ? 'ktv_user_id' : 'bac_si_user_id';
+        $staffCol   = $isDichVu ? 'ktv_user_id' : 'bac_si_id';
         $staffLabel = $isDichVu ? 'KTV' : 'Bác sĩ';
         $authUser   = auth()->user();
 
@@ -590,7 +590,7 @@ class PageController extends Controller
             $query->where('phong_id', $request->query('phong_id'));
         }
         if ($request->filled('bac_si_id')) {
-            $query->where('bac_si_user_id', $request->query('bac_si_id'));
+            $query->where('bac_si_id', $request->query('bac_si_id'));
         }
         if ($request->filled('sale_id')) {
             $query->where('sale_id', $request->query('sale_id'));

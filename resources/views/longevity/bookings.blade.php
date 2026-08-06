@@ -187,6 +187,33 @@
     $isWeek  = $tu === $wStart && $den === $wEnd;
     $isMonth = $tu === $mStart && $den === $mEnd;
     $presetUrl = fn ($from, $to) => request()->fullUrlWithQuery(['ngay_tu' => $from, 'ngay_den' => $to, 'page' => null]);
+
+    // 2026-08-05: move permission compute ra ngoài form filter — bảng bên dưới cũng dùng $canEditBookingRow.
+    $pbId = auth()->user()->phong_ban_id;
+    $vtId = auth()->user()->vai_tro_id;
+    $isAdmin = auth()->user()->is_admin;
+    $canExportBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xuat_lich_dat_phong')->exists();
+    $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_booking')->exists();
+    $mySuaPerms = $isAdmin
+        ? ['sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi']
+        : \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))
+            ->whereIn('truong', ['sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi'])
+            ->pluck('truong')->all();
+    $canEditAll       = in_array('sua_booking', $mySuaPerms, true);
+    $canEditLienQuan  = in_array('sua_booking_lien_quan', $mySuaPerms, true);
+    $canEditDichVuMe  = in_array('sua_booking_dich_vu_cua_toi', $mySuaPerms, true);
+    $authUid = auth()->id();
+    $canEditBookingRow = function ($b) use ($canEditAll, $canEditLienQuan, $canEditDichVuMe, $authUid) {
+        if ($canEditAll) return true;
+        $lienQuan = in_array($authUid, array_filter([$b->nguoi_tao_id, $b->bac_si_id, $b->ktv_user_id, $b->sale_id]), true);
+        if ($canEditLienQuan && $lienQuan) return true;
+        return $canEditDichVuMe && $b->loai_dat_lich === 'dich_vu' && $lienQuan;
+    };
+    $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
+    $canCheckIn = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'cap_nhat_trang_thai_khach')->exists();
+
+    // Class chuẩn cho input trong filter bar — dùng chung mọi field cho đồng đều.
+    $filterInputCls = 'w-full h-10 border border-outline-variant rounded-lg px-3 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface';
 @endphp
 <!-- Khung giờ hiện tại — theo dõi nhanh khách đang / sắp đến, độc lập với bộ lọc phía dưới -->
 @isset ($currentSlotBookings)
@@ -250,121 +277,95 @@
 </div>
 @endisset
 
-<!-- Advanced Filters -->
-<form method="GET" class="bg-surface-container-lowest p-6 rounded-2xl border border-outline-variant shadow-sm space-y-4 mb-8">
-<div class="grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:items-end">
-<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
-<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">MÃ BOOKING / MÃ KH</label>
-<input name="q_ma" value="{{ $filters['q_ma'] ?? '' }}" placeholder="BKG-… / KH-…" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[180px] font-mono" type="search"/>
-</div>
-<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto sm:w-auto">
-<div class="flex items-center justify-between gap-3">
-<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">KHOẢNG THỜI GIAN</label>
-{{-- Preset chip nhỏ, đặt cạnh label để không tăng chiều cao cột --}}
-<div class="inline-flex rounded-lg border border-outline-variant overflow-hidden bg-surface">
-<a href="{{ $presetUrl($today, $today) }}" class="px-2.5 py-0.5 text-[11px] font-semibold border-r border-outline-variant transition-colors {{ $isDay  ? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Ngày</a>
-<a href="{{ $presetUrl($wStart, $wEnd) }}" class="px-2.5 py-0.5 text-[11px] font-semibold border-r border-outline-variant transition-colors {{ $isWeek ? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Tuần</a>
-<a href="{{ $presetUrl($mStart, $mEnd) }}" class="px-2.5 py-0.5 text-[11px] font-semibold transition-colors {{ $isMonth? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Tháng</a>
-</div>
-</div>
-<div class="flex items-center gap-2 w-full">
-<input name="ngay_tu" value="{{ $filters['ngay_tu'] ?? '' }}" class="flex-1 min-w-0 border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface" type="date"/>
-<span class="text-on-surface-variant shrink-0">đến</span>
-<input name="ngay_den" value="{{ $filters['ngay_den'] ?? '' }}" class="flex-1 min-w-0 border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface" type="date"/>
-</div>
-</div>
-<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
-<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">PHÒNG</label>
-<select name="phong_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
-<option value="">Tất cả phòng</option>
-@foreach ($phongs as $p)
-<option value="{{ $p->id }}" @selected(($filters['phong_id'] ?? '')==$p->id)>{{ $p->ten }}</option>
-@endforeach
-</select>
-</div>
-<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
-<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">BÁC SĨ</label>
-<select name="bac_si_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
-<option value="">Tất cả bác sĩ</option>
-@foreach ($bacSis as $bs)
-<option value="{{ $bs->id }}" @selected(($filters['bac_si_id'] ?? '')==$bs->id)>{{ $bs->ten_day_du }}</option>
-@endforeach
-</select>
-</div>
-<div class="flex flex-col gap-1.5 col-span-2 sm:col-auto">
-<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">NV PHỤ TRÁCH</label>
-<select name="sale_id" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
-<option value="">Tất cả NV</option>
-@foreach ($sales as $s)
-<option value="{{ $s->id }}" @selected(($filters['sale_id'] ?? '')==$s->id)>{{ $s->name }}{{ $s->chuc_danh ? ' ('.$s->chuc_danh.')' : '' }}</option>
-@endforeach
-</select>
-</div>
-<div class="flex flex-col gap-1.5">
-<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">NGUỒN</label>
-<select name="nguon" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
-<option value="">Tất cả nguồn</option>
-@foreach ($nguons as $ng)
-<option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ $ng }}</option>
-@endforeach
-</select>
-</div>
-@unless ($approvalMode)
-<div class="flex flex-col gap-1.5">
-<label class="text-label-caps font-label-caps text-on-surface-variant ml-1">TRẠNG THÁI</label>
-<select name="trang_thai" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all bg-surface sm:min-w-[160px]">
-<option value="">Tất cả</option>
-<option value="cho_duyet" @selected(($filters['trang_thai'] ?? '')==='cho_duyet')>Chờ duyệt</option>
-<option value="da_duyet" @selected(($filters['trang_thai'] ?? '')==='da_duyet')>Đã duyệt</option>
-<option value="da_xong" @selected(($filters['trang_thai'] ?? '')==='da_xong')>Đã xong</option>
-<option value="tu_choi" @selected(($filters['trang_thai'] ?? '')==='tu_choi')>Từ chối</option>
-</select>
-</div>
-@endunless
-@php
-    $pbId = auth()->user()->phong_ban_id;
-    $vtId = auth()->user()->vai_tro_id;
-    $isAdmin = auth()->user()->is_admin;
-    $canExportBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xuat_lich_dat_phong')->exists();
-    $canDeleteBooking = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'xoa_booking')->exists();
-    // 3 mức quyền sửa, từ rộng → hẹp. Gộp query để 1 lần lấy tất cả perm keys của user.
-    $mySuaPerms = $isAdmin
-        ? ['sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi']
-        : \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))
-            ->whereIn('truong', ['sua_booking', 'sua_booking_lien_quan', 'sua_booking_dich_vu_cua_toi'])
-            ->pluck('truong')->all();
-    $canEditAll       = in_array('sua_booking', $mySuaPerms, true);
-    $canEditLienQuan  = in_array('sua_booking_lien_quan', $mySuaPerms, true);
-    $canEditDichVuMe  = in_array('sua_booking_dich_vu_cua_toi', $mySuaPerms, true);
-    $authUid = auth()->id();
-    $canEditBookingRow = function ($b) use ($canEditAll, $canEditLienQuan, $canEditDichVuMe, $authUid) {
-        if ($canEditAll) return true;
-        $lienQuan = in_array($authUid, array_filter([$b->nguoi_tao_id, $b->bac_si_user_id, $b->ktv_user_id, $b->sale_id]), true);
-        if ($canEditLienQuan && $lienQuan) return true;
-        return $canEditDichVuMe && $b->loai_dat_lich === 'dich_vu' && $lienQuan;
-    };
-    $canDuyet = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'duyet_booking')->exists();
-    $canCheckIn = $isAdmin || \App\Models\PhanQuyen::where(fn($q) => $q->where('phong_ban_id', $pbId)->orWhere('vai_tro_id', $vtId))->where('truong', 'cap_nhat_trang_thai_khach')->exists();
-@endphp
-<div class="col-span-2 sm:col-auto flex flex-wrap items-center gap-2 w-full sm:w-auto sm:ml-auto">
-<a href="/{{ $coSo->slug }}/{{ $approvalMode ? 'duyet-lich' : 'danh-sach' }}" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-variant transition-colors whitespace-nowrap">
-<span class="material-symbols-outlined text-[18px]">restart_alt</span> Đặt lại
-</a>
-<button type="submit" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap">
-<span class="material-symbols-outlined text-[18px]">filter_list</span> Lọc dữ liệu
-</button>
-@if ($canExportBooking)
-<a href="/{{ $coSo->slug }}/xuat-booking" class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold bg-on-tertiary-container text-on-primary rounded-lg hover:opacity-90 transition-opacity whitespace-nowrap">
-<span class="material-symbols-outlined text-[18px]">download</span> Xuất Excel
-</a>
-<label class="flex items-center gap-2 px-4 py-2.5 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-variant transition-colors whitespace-nowrap">
-<span class="material-symbols-outlined text-[18px]">upload</span> Chọn file
-<input type="file" name="file" form="import-booking" accept=".xlsx,.xls,.csv" class="hidden" onchange="this.form.submit()"/>
-</label>
-@endif
-</div>
-</div>
-</form>
+{{-- Advanced Filters — 2026-08-05 refactor: dùng x-longevity.filter-bar chuẩn hoá UI. --}}
+<x-longevity.filter-bar :cols="4">
+    <x-slot:toolbar>
+        <span class="text-label-caps font-label-caps text-on-surface-variant">Preset thời gian:</span>
+        <div class="inline-flex rounded-lg border border-outline-variant overflow-hidden bg-surface">
+            <a href="{{ $presetUrl($today, $today) }}" class="px-3 py-1 text-[12px] font-semibold border-r border-outline-variant transition-colors {{ $isDay  ? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Ngày</a>
+            <a href="{{ $presetUrl($wStart, $wEnd) }}" class="px-3 py-1 text-[12px] font-semibold border-r border-outline-variant transition-colors {{ $isWeek ? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Tuần</a>
+            <a href="{{ $presetUrl($mStart, $mEnd) }}" class="px-3 py-1 text-[12px] font-semibold transition-colors {{ $isMonth? 'bg-secondary-container/60 text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low' }}">Tháng</a>
+        </div>
+    </x-slot:toolbar>
+
+    <x-longevity.filter-field label="MÃ BOOKING / MÃ KH">
+        <input type="search" name="q_ma" value="{{ $filters['q_ma'] ?? '' }}" placeholder="BKG-… / KH-…" class="{{ $filterInputCls }} font-mono"/>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="TỪ NGÀY">
+        <input type="date" name="ngay_tu" value="{{ $filters['ngay_tu'] ?? '' }}" class="{{ $filterInputCls }}"/>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="ĐẾN NGÀY">
+        <input type="date" name="ngay_den" value="{{ $filters['ngay_den'] ?? '' }}" class="{{ $filterInputCls }}"/>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="PHÒNG">
+        <select name="phong_id" class="{{ $filterInputCls }}">
+            <option value="">Tất cả phòng</option>
+            @foreach ($phongs as $p)
+                <option value="{{ $p->id }}" @selected(($filters['phong_id'] ?? '')==$p->id)>{{ $p->ten }}</option>
+            @endforeach
+        </select>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="BÁC SĨ">
+        <select name="bac_si_id" class="{{ $filterInputCls }}">
+            <option value="">Tất cả bác sĩ</option>
+            @foreach ($bacSis as $bs)
+                <option value="{{ $bs->id }}" @selected(($filters['bac_si_id'] ?? '')==$bs->id)>{{ $bs->ten_day_du }}</option>
+            @endforeach
+        </select>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="NV PHỤ TRÁCH">
+        <select name="sale_id" class="{{ $filterInputCls }}">
+            <option value="">Tất cả NV</option>
+            @foreach ($sales as $s)
+                <option value="{{ $s->id }}" @selected(($filters['sale_id'] ?? '')==$s->id)>{{ $s->name }}{{ $s->chuc_danh ? ' ('.$s->chuc_danh.')' : '' }}</option>
+            @endforeach
+        </select>
+    </x-longevity.filter-field>
+
+    <x-longevity.filter-field label="NGUỒN">
+        <select name="nguon" class="{{ $filterInputCls }}">
+            <option value="">Tất cả nguồn</option>
+            @foreach ($nguons as $ng)
+                <option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ $ng }}</option>
+            @endforeach
+        </select>
+    </x-longevity.filter-field>
+
+    @unless ($approvalMode)
+        <x-longevity.filter-field label="TRẠNG THÁI">
+            <select name="trang_thai" class="{{ $filterInputCls }}">
+                <option value="">Tất cả</option>
+                <option value="cho_duyet" @selected(($filters['trang_thai'] ?? '')==='cho_duyet')>Chờ duyệt</option>
+                <option value="da_duyet" @selected(($filters['trang_thai'] ?? '')==='da_duyet')>Đã duyệt</option>
+                <option value="da_xong" @selected(($filters['trang_thai'] ?? '')==='da_xong')>Đã xong</option>
+                <option value="tu_choi" @selected(($filters['trang_thai'] ?? '')==='tu_choi')>Từ chối</option>
+            </select>
+        </x-longevity.filter-field>
+    @endunless
+
+    <x-slot:actions>
+        <button type="submit" class="inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+            <span class="material-symbols-outlined text-[18px]">filter_list</span> Lọc dữ liệu
+        </button>
+        <a href="/{{ $coSo->slug }}/{{ $approvalMode ? 'duyet-lich' : 'danh-sach' }}" class="inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg hover:bg-surface-container-low transition-colors">
+            <span class="material-symbols-outlined text-[18px]">restart_alt</span> Đặt lại
+        </a>
+        @if ($canExportBooking)
+            <a href="/{{ $coSo->slug }}/xuat-booking" class="ml-auto inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold bg-on-tertiary-container text-on-primary rounded-lg hover:opacity-90 transition-opacity">
+                <span class="material-symbols-outlined text-[18px]">download</span> Xuất Excel
+            </a>
+            <label class="inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold text-on-surface-variant bg-surface border border-outline-variant rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
+                <span class="material-symbols-outlined text-[18px]">upload</span> Chọn file
+                <input type="file" name="file" form="import-booking" accept=".xlsx,.xls,.csv" class="hidden" onchange="this.form.submit()"/>
+            </label>
+        @endif
+    </x-slot:actions>
+</x-longevity.filter-bar>
 @if ($canExportBooking)
 <form id="import-booking" method="POST" action="/{{ $coSo->slug }}/nhap-booking" enctype="multipart/form-data" class="hidden">@csrf</form>
 @endif

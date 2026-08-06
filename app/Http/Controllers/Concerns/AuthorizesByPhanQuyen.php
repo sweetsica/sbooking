@@ -136,7 +136,7 @@ trait AuthorizesByPhanQuyen
             $teamUserIds = User::where('phong_ban_id', $user->phong_ban_id)->pluck('id');
             return $query->where(function ($q) use ($teamUserIds) {
                 $q->whereIn('nguoi_tao_id', $teamUserIds)
-                  ->orWhereIn('bac_si_user_id', $teamUserIds)
+                  ->orWhereIn('bac_si_id', $teamUserIds)
                   ->orWhereIn('ktv_user_id', $teamUserIds)
                   ->orWhereIn('sale_id', $teamUserIds);
             });
@@ -146,7 +146,7 @@ trait AuthorizesByPhanQuyen
         $userId = $user->id;
         return $query->where(function ($q) use ($userId) {
             $q->where('nguoi_tao_id', $userId)
-              ->orWhere('bac_si_user_id', $userId)
+              ->orWhere('bac_si_id', $userId)
               ->orWhere('ktv_user_id', $userId)
               ->orWhere('sale_id', $userId);
         });
@@ -166,7 +166,7 @@ trait AuthorizesByPhanQuyen
             $teamUserIds = User::where('phong_ban_id', $user->phong_ban_id)->pluck('id')->all();
             return $booking->laLienQuan($user)
                 || in_array($booking->nguoi_tao_id, $teamUserIds, true)
-                || in_array($booking->bac_si_user_id, $teamUserIds, true)
+                || in_array($booking->bac_si_id, $teamUserIds, true)
                 || in_array($booking->ktv_user_id, $teamUserIds, true)
                 || in_array($booking->sale_id, $teamUserIds, true);
         }

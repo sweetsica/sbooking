@@ -15,9 +15,8 @@ class Booking extends Model
     protected $fillable = [
         'ma_booking',
         'co_so_id', 'loai_dat_lich', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
-        // 2026-08-05 merge: remote đổi bac_si_id → bac_si_user_id (create_bac_si_and_ktv_tables).
-        // Giữ union cả 2 fillable để code cũ (crm_khach_ma, tiep_don_*, so_luong_lo, dung_tich_lo) không vỡ.
-        'bac_si_user_id', 'ktv_user_id', 'sale_id', 'nguoi_tao_id',
+        // 2026-08-05: bac_si_id FK → bac_si.id (bảng danh mục, KHÔNG phải users). ktv_user_id/sale_id/nguoi_tao_id FK → users.id.
+        'bac_si_id', 'ktv_user_id', 'sale_id', 'nguoi_tao_id',
         'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
         'so_lieu_trinh', 'so_luong_lo', 'dung_tich_lo',
         'nguon', 'ket_hop_medical', 'lan_dau', 'khach_tang', 'khach_tang_ghi_chu',
@@ -80,7 +79,7 @@ class Booking extends Model
         if (! $user) return false;
         return in_array($user->id, array_filter([
             $this->nguoi_tao_id,
-            $this->bac_si_user_id,
+            $this->bac_si_id,
             $this->ktv_user_id,
             $this->sale_id,
         ]), true);
