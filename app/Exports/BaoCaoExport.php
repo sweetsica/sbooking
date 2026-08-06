@@ -81,7 +81,7 @@ class BaoCaoBookingSheet implements FromCollection, WithHeadings, WithTitle
     public function headings(): array
     {
         return ['ID', 'Ngày', 'Khách', 'SĐT', 'Phòng', 'Khung giờ', 'Giờ thực hiện', 'Giờ kết thúc',
-                'Bác sĩ', 'KTV', 'Sale', 'Dịch vụ', 'Số lượng lọ', 'Dung tích lọ', 'Nguồn', 'Ghi chú', 'Trạng thái', 'Trạng thái khách'];
+                'Bác sĩ', 'KTV', 'Sale', 'Dịch vụ', 'Số lượng', 'Nguồn', 'Ghi chú', 'Trạng thái', 'Trạng thái khách'];
     }
 
     public function collection()
@@ -99,8 +99,7 @@ class BaoCaoBookingSheet implements FromCollection, WithHeadings, WithTitle
             $bk->ktv?->name,
             $bk->sale?->name,
             $bk->dichVu?->ten,
-            $bk->so_luong_lo,
-            $bk->dung_tich_lo,
+            $bk->so_luong,
             $bk->nguon,
             $bk->ghi_chu,
             match ($bk->trang_thai) {

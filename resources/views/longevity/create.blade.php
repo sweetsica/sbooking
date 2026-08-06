@@ -149,10 +149,22 @@
 @csrf
 @if ($editing) @method('PUT') @endif
 <!-- System Info -->
-<div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="mb-10 grid grid-cols-1 md:grid-cols-3 gap-8">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dấu thời gian</label>
 <input class="w-full px-4 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-body-md text-on-surface-variant cursor-not-allowed" readonly type="text" value="{{ ($editing ? $bk->created_at : now())->format('d/m/Y - h:i:s') }} ({{ ($editing ? $bk->created_at : now())->hour < 12 ? 'sáng' : 'tối' }})"/>
+</div>
+{{-- 2026-08-07: Địa điểm — dropdown reload cơ sở (chống book chéo). Disabled khi edit (không cho chuyển cơ sở của lịch đã có). --}}
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Địa điểm <span class="text-error">*</span></label>
+<select id="co-so-selector" @if($editing) disabled @endif
+    onchange="if(this.value && this.value!=='{{ $coSo->slug }}') { window.location.href='/'+this.value+'{{ $isDichVu ? '/dat-lich-dich-vu' : '/tao-moi' }}'; }"
+    class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md @if($editing) opacity-70 cursor-not-allowed @endif">
+    @foreach ($allCoSos as $cs)
+        <option value="{{ $cs->slug }}" @selected($cs->slug === $coSo->slug)>{{ $cs->ten }}</option>
+    @endforeach
+</select>
+@if($editing)<p class="text-body-sm text-on-surface-variant/70 mt-1">Không thể đổi cơ sở của lịch đã có.</p>@endif
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn</label>
@@ -193,9 +205,13 @@
 </div>
 @endif
 
-<div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-10">
-<!-- Section 1: Customer -->
-<div class="space-y-6 order-4">
+{{-- 2026-08-07: Layout 3 cột theo yêu cầu PKD. Customer info tách full-width bên trên (không nằm trong grid).
+     Col 1: Địa điểm + Phòng + Bác sĩ (order-1)
+     Col 2: Dịch vụ + Số lượng (order-2)
+     Col 3: Ngày + Khung giờ (order-3) --}}
+<div class="grid grid-cols-1 md:grid-cols-3 gap-x-8 gap-y-10">
+<!-- Section 1: Customer (full-width row via col-span-3) -->
+<div class="space-y-6 md:col-span-3 order-1">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">person</span>
 <h3 class="text-headline-md font-headline-md">Thông tin Khách hàng</h3>
@@ -226,18 +242,13 @@
 </div>
 </div>
 
-<!-- Section 2: Schedule & Room -->
+<!-- 2026-08-07: Col 1 — Phòng + KTV (Địa điểm đã có ở top). -->
 <div class="space-y-6 order-2">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
-<span class="material-symbols-outlined text-secondary">calendar_today</span>
-<h3 class="text-headline-md font-headline-md">Lịch trình &amp; Phòng <span class="text-error">*</span></h3>
+<span class="material-symbols-outlined text-secondary">meeting_room</span>
+<h3 class="text-headline-md font-headline-md">Phòng <span class="text-error">*</span></h3>
 </div>
 <div class="space-y-4">
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Ngày đặt lịch <span class="text-error">*</span></label>
-<input name="ngay_dat" value="{{ old('ngay_dat', $bk ? $bk->ngay_dat->toDateString() : now()->toDateString()) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" type="date"/>
-</div>
-<div class="grid grid-cols-2 gap-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Phòng <span class="text-error">*</span></label>
 <select id="phong" name="phong_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
@@ -251,23 +262,49 @@
 @endforeach
 </select>
 </div>
+@if ($isDichVu)
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV)</label>
+<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<option value="">-- Chọn --</option>
+@foreach ($ktvs as $k)
+<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
+@endforeach
+</select>
+<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
+</div>
+@endif
+</div>
+</div>
+
+<!-- 2026-08-07: Col 3 — Ngày + Khung giờ + Giờ TH/KT -->
+<div class="space-y-6 order-4">
+<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
+<span class="material-symbols-outlined text-secondary">schedule</span>
+<h3 class="text-headline-md font-headline-md">Khung giờ <span class="text-error">*</span></h3>
+</div>
+<div class="space-y-4">
+<div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Ngày đặt lịch <span class="text-error">*</span></label>
+<input name="ngay_dat" value="{{ old('ngay_dat', $bk ? $bk->ngay_dat->toDateString() : now()->toDateString()) }}" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" type="date"/>
+</div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Khung giờ <span class="text-error">*</span></label>
 <select id="khung_gio" name="khung_gio_id" required data-old="{{ old('khung_gio_id', $bk?->khung_gio_id) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot"></select>
 </div>
-</div>
-<div class="grid grid-cols-2 gap-4">
+<div class="grid grid-cols-2 gap-3">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ thực hiện DV <span class="text-on-surface-variant/60 text-[11px]">(theo khung giờ)</span></label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ thực hiện <span class="text-on-surface-variant/60 text-[11px]">(theo khung giờ)</span></label>
 <select id="gio_thuc_hien" name="gio_thuc_hien" data-old="{{ old('gio_thuc_hien', $bk && $bk->gio_thuc_hien ? substr($bk->gio_thuc_hien,0,5) : '') }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot">
 <option value="">-- Chọn giờ --</option>
 </select>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ dự kiến kết thúc <span class="text-on-surface-variant/60 text-[11px]">(theo khung giờ)</span></label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ kết thúc <span class="text-on-surface-variant/60 text-[11px]">(theo khung giờ)</span></label>
 <select id="gio_ket_thuc" name="gio_ket_thuc" data-old="{{ old('gio_ket_thuc', $bk && $bk->gio_ket_thuc ? substr($bk->gio_ket_thuc,0,5) : '') }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md font-time-slot">
 <option value="">-- Chọn giờ --</option>
 </select>
+</div>
 </div>
 </div>
 </div>
@@ -350,23 +387,11 @@
 </details>
 @endif
 
-@if ($isDichVu)
-<div class="mt-6">
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV) <span class="text-on-surface-variant/60 text-[11px]">— tự chọn theo phòng</span></label>
-<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach ($ktvs as $k)
-<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
-@endforeach
-</select>
-<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
-</div>
-@endif
 </div>
 
+{{-- 2026-08-07: Bác sĩ (phong_kham) — append vào Col 1 dưới Phòng (dùng order-2 giống Phòng để Grid gộp cùng cột theo thứ tự DOM). --}}
 @if (! $isDichVu)
-<!-- Section: Bác sĩ (chọn sau khung giờ, lọc theo phòng + còn trống) -->
-<div class="space-y-6 order-3">
+<div class="space-y-6 order-2">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">stethoscope</span>
 <h3 class="text-headline-md font-headline-md">Bác sĩ <span class="text-on-surface-variant/60 text-[11px]" id="bs_hint"></span></h3>
@@ -381,17 +406,16 @@
 </div>
 @endif
 
-@if (! $isDichVu)
-<!-- Section 3: Chi tiết Dịch vụ (đặt phòng khám) -->
-<div class="space-y-6 order-1">
+{{-- 2026-08-07: Col 2 — Dịch vụ + Số lượng (áp cho cả phong_kham và dich_vu). --}}
+<div class="space-y-6 order-3">
 <div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
 <span class="material-symbols-outlined text-secondary">medical_information</span>
-<h3 class="text-headline-md font-headline-md">Chi tiết Dịch vụ</h3>
+<h3 class="text-headline-md font-headline-md">Dịch vụ @if (! $isDichVu)<span class="text-error">*</span>@endif</h3>
 </div>
 <div class="space-y-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ <span class="text-error">*</span></label>
-<select id="dich_vu" name="dich_vu_id" required class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Dịch vụ @if (! $isDichVu)<span class="text-error">*</span>@endif</label>
+<select id="dich_vu" name="dich_vu_id" @if (! $isDichVu) required @endif class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
 <option value="">-- Chọn --</option>
 @foreach ($dichVus as $dv)
 <option value="{{ $dv->id }}" data-nhom="{{ $dv->thuoc_nhom }}" data-phut="{{ $dv->thoi_gian_phut }}" @selected(old('dich_vu_id', $bk?->dich_vu_id)==$dv->id)>{{ $dv->ten }}</option>
@@ -399,97 +423,26 @@
 </select>
 </div>
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
-<input name="so_lieu_trinh" value="{{ old('so_lieu_trinh', $bk?->so_lieu_trinh) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="VD: 1/10" type="text"/>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV)</label>
-<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach ($ktvs as $k)
-<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
-@endforeach
-</select>
-</div>
-<div class="pt-2 space-y-2">
-<label class="flex items-center justify-between p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors">
-<span class="text-body-md font-medium text-on-surface">KH có SD kết hợp Medical không?</span>
-<div class="relative inline-flex items-center cursor-pointer">
-<input class="sr-only peer" type="checkbox" name="ket_hop_medical" value="1" @checked(old('ket_hop_medical', $bk?->ket_hop_medical))/>
-<div class="w-11 h-6 bg-outline-variant peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"></div>
-</div>
-</label>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng <span class="text-on-surface-variant/60 text-[11px]">(≥ 1)</span></label>
+<input name="so_luong" value="{{ old('so_luong', $bk?->so_luong) }}" min="1" step="1" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="1" type="number"/>
 </div>
 </div>
 </div>
-@endif
+{{-- 2026-08-07: hidden ket_hop_medical (schema vẫn giữ, form không hiện toggle) --}}
+<input type="hidden" name="ket_hop_medical" value="{{ old('ket_hop_medical', $bk?->ket_hop_medical ? 1 : 0) }}"/>
 
-<!-- Section: Khách tặng & Ghi chú -->
-<div class="space-y-6 order-5">
-<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
-<span class="material-symbols-outlined text-secondary">card_giftcard</span>
-<h3 class="text-headline-md font-headline-md">Khách tặng &amp; Ghi chú</h3>
-</div>
-<div class="space-y-4">
-@php $khachTang = old('khach_tang', $bk?->khach_tang ?? 'khong'); @endphp
-<div class="space-y-2">
-<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
-<input type="radio" name="khach_tang" value="co" @checked($khachTang === 'co') class="w-4 h-4 text-secondary"/>
-<span class="text-body-md">Có</span>
-</label>
-<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
-<input type="radio" name="khach_tang" value="khong" @checked($khachTang === 'khong') class="w-4 h-4 text-secondary"/>
-<span class="text-body-md">Không</span>
-</label>
-<label class="flex items-center gap-3 p-3 bg-surface border border-outline rounded-lg cursor-pointer hover:bg-surface-container-low transition-colors has-[:checked]:border-secondary has-[:checked]:bg-secondary-container/20">
-<input type="radio" name="khach_tang" value="khac" @checked($khachTang === 'khac') class="w-4 h-4 text-secondary"/>
-<span class="text-body-md">Mục khác</span>
-</label>
-<div id="khach_tang_ghi_chu_wrap" class="{{ $khachTang === 'khac' ? '' : 'hidden' }}">
-<input name="khach_tang_ghi_chu" value="{{ old('khach_tang_ghi_chu', $bk?->khach_tang_ghi_chu) }}" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" placeholder="Nhập ghi chú..." type="text"/>
-</div>
-</div>
-</div>
-</div>
-
-<!-- Section 4: Admin & Notes -->
-<div class="space-y-6 order-6">
-<div class="flex items-center gap-2 pb-2 border-b border-outline-variant">
-<span class="material-symbols-outlined text-secondary">assignment_ind</span>
-<h3 class="text-headline-md font-headline-md">Hành chính &amp; Ghi chú</h3>
-</div>
-<div class="space-y-4">
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Sale phụ trách @if (! $isDichVu)<span class="text-error">*</span>@else<span class="text-on-surface-variant/60 text-[11px]">— không bắt buộc</span>@endif</label>
-<select name="sale_id" @if (! $isDichVu) required @endif class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn nhân viên Sales --</option>
-@foreach ($sales as $s)
-<option value="{{ $s->id }}" @selected(old('sale_id', $bk?->sale_id)==$s->id)>{{ $s->name }}{{ $s->chuc_danh ? ' ('.$s->chuc_danh.')' : '' }}</option>
-@endforeach
-</select>
-@if ($sales->isEmpty())
-<p class="mt-1 text-body-sm text-error">Chưa có nhân viên thuộc phòng ban Sales cho cơ sở này.</p>
+{{-- 2026-08-07: Section "Khách tặng" + "Hành chính" ẨN theo yêu cầu — nhưng vẫn giữ hidden inputs để backend nhận value hợp lệ.
+     Sale_id fallback auth()->id() ở controller khi rỗng.
+     Menu (multi-select) và Ghi chú tạm thời không edit được ở form này. Muốn edit → dùng edit page riêng. --}}
+<input type="hidden" name="khach_tang" value="khong"/>
+@if ($editing)
+    {{-- Giữ nguyên values cũ khi edit --}}
+    <input type="hidden" name="sale_id" value="{{ old('sale_id', $bk?->sale_id) }}"/>
+    <input type="hidden" name="ghi_chu" value="{{ old('ghi_chu', $bk?->ghi_chu) }}"/>
+    @foreach (($bk ? $bk->menus->pluck('id')->all() : []) as $mid)
+        <input type="hidden" name="menu_ids[]" value="{{ $mid }}"/>
+    @endforeach
 @endif
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Menu (chọn nhiều)</label>
-<div class="grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-surface border border-outline rounded-lg max-h-48 overflow-auto">
-@forelse ($menus as $mn)
-<label class="flex items-center gap-2 px-2 py-1.5 rounded-md hover:bg-surface-container-low cursor-pointer">
-<input type="checkbox" name="menu_ids[]" value="{{ $mn->id }}" @checked(collect(old('menu_ids', $bk ? $bk->menus->pluck('id')->all() : []))->contains($mn->id)) class="w-4 h-4 rounded border-outline text-secondary focus:ring-secondary"/>
-<span class="text-body-md">{{ $mn->ten }}</span>
-</label>
-@empty
-<p class="text-body-sm text-on-surface-variant">Chưa có menu nào.</p>
-@endforelse
-</div>
-</div>
-<div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Ghi chú</label>
-<textarea name="ghi_chu" rows="3" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md resize-none" placeholder="Ghi chú thêm cho lịch hẹn...">{{ old('ghi_chu', $bk?->ghi_chu) }}</textarea>
-</div>
-</div>
-</div>
 </div>
 
 <!-- Footer Actions -->
@@ -816,7 +769,7 @@
     form.querySelectorAll('input[name], select[name], textarea[name]').forEach(function (el) {
         const n = el.getAttribute('name');
         // Bỏ qua các field không thuộc danh mục phân quyền (csrf, menu_ids[]).
-        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_lieu_trinh','ket_hop_medical','lan_dau','khach_tang','khach_tang_ghi_chu','bac_si_id','ktv_user_id','ghi_chu'];
+        const trackable = ['ho_ten','so_dien_thoai','email','ngay_dat','phong_id','khung_gio_id','gio_thuc_hien','gio_ket_thuc','nguon','sale_id','dich_vu_id','so_luong','ket_hop_medical','lan_dau','khach_tang','khach_tang_ghi_chu','bac_si_id','ktv_user_id','ghi_chu'];
         if (! trackable.includes(n)) return;
         if (! allowed.includes(n)) {
             el.disabled = true;

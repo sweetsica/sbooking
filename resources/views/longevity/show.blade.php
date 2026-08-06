@@ -159,8 +159,8 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 </div>
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số liệu trình</label>
-<div class="ro">{{ $booking->so_lieu_trinh ?? '—' }}</div>
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Số lượng</label>
+<div class="ro">{{ $booking->so_luong ?? '—' }}</div>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ</label>

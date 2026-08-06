@@ -210,7 +210,7 @@ trait BookingTestSetup
             'sale_id'       => $this->sale->id,
             'bac_si_id'     => null,
             'ktv_user_id'   => null,
-            'so_lieu_trinh' => null,
+            'so_luong'      => null,
             'nguon'         => 'Hotline',
             'ghi_chu'       => null,
         ], $overrides);

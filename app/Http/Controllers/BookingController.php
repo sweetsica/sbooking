@@ -193,6 +193,9 @@ class BookingController extends Controller
             'menus' => $co_so->menus,
             'sales' => $sales,
             'slots' => $slots,
+            // 2026-08-07: list cơ sở cho dropdown "Địa điểm" — user đổi cơ sở → reload sang slug khác
+            //   (chống nhầm cơ sở khi tele HN book cho ĐN).
+            'allCoSos' => CoSo::orderBy('ten')->get(['id', 'slug', 'ten']),
         ];
     }
 
@@ -757,12 +760,12 @@ class BookingController extends Controller
             'gio_thuc_hien' => ['nullable', 'regex:/^\d{2}:\d{2}$/'],
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:\d{2}$/'],
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
-            'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
+            // 2026-08-07: sale_id giờ nullable — form ẩn Sale select, fallback auth()->id() phía dưới.
+            'sale_id'       => ['nullable', Rule::exists('users', 'id')],
             'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
             'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
-            'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
-            'so_luong_lo'   => ['nullable', 'integer', 'min:1'],
-            'dung_tich_lo'  => ['nullable', 'string', 'in:8M,10M,16M,20M,450M,1 LT,2 LT'],
+            // 2026-08-07: đổi so_lieu_trinh (text "1/10") → so_luong (int ≥ 1). Bỏ so_luong_lo + dung_tich_lo.
+            'so_luong'      => ['nullable', 'integer', 'min:1'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],
             'lan_dau'         => ['nullable', 'boolean'],
@@ -779,8 +782,9 @@ class BookingController extends Controller
             'phong_id.required'      => 'Vui lòng chọn phòng.',
             'khung_gio_id.required'  => 'Vui lòng chọn khung giờ.',
             'dich_vu_id.required'    => 'Vui lòng chọn liệu pháp/dịch vụ.',
-            'sale_id.required'       => 'Vui lòng chọn sale phụ trách.',
             'gio_thuc_hien.regex'    => 'Giờ thực hiện phải là HH:MM.',
+            'so_luong.integer'       => 'Số lượng phải là số nguyên.',
+            'so_luong.min'           => 'Số lượng phải ≥ 1 (không âm hoặc 0).',
         ]);
 
         // Giờ thực hiện / kết thúc phải nằm trong khung_gio cha
@@ -863,14 +867,13 @@ class BookingController extends Controller
             'dich_vu_id'    => $data['dich_vu_id'] ?? null,
             'bac_si_id' => $data['bac_si_id'] ?? null,
             'ktv_user_id'   => $data['ktv_user_id'] ?? null,
-            'sale_id'       => $data['sale_id'] ?? null,
+            // 2026-08-07: fallback sale_id = auth user khi form ẩn Sale select.
+            'sale_id'       => $data['sale_id'] ?? auth()->id(),
             'nguoi_tao_id'  => auth()->id(),
             'ngay_dat'      => $data['ngay_dat'],
             'gio_thuc_hien' => $gioBatDau,
             'gio_ket_thuc'  => $gioKetThuc,
-            'so_lieu_trinh' => $data['so_lieu_trinh'] ?? null,
-            'so_luong_lo'   => $data['so_luong_lo'] ?? null,
-            'dung_tich_lo'  => $data['dung_tich_lo'] ?? null,
+            'so_luong'      => $data['so_luong'] ?? null,
             'nguon'         => $data['nguon'] ?? null,
             'ket_hop_medical' => $request->boolean('ket_hop_medical'),
             'lan_dau'       => $request->boolean('lan_dau'),
@@ -959,12 +962,12 @@ class BookingController extends Controller
             'gio_thuc_hien' => ['nullable', 'regex:/^\d{2}:(00|30)$/'],
             'gio_ket_thuc'  => ['nullable', 'regex:/^\d{2}:(00|30)$/'],
             'dich_vu_id'    => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('dich_vu', 'id')],
-            'sale_id'       => [$request->input('loai_dat_lich') === 'dich_vu' ? 'nullable' : 'required', Rule::exists('users', 'id')],
+            // 2026-08-07: sale_id giờ nullable — form ẩn Sale select, fallback auth()->id() phía dưới.
+            'sale_id'       => ['nullable', Rule::exists('users', 'id')],
             'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
             'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
-            'so_lieu_trinh' => ['nullable', 'string', 'max:50'],
-            'so_luong_lo'   => ['nullable', 'integer', 'min:1'],
-            'dung_tich_lo'  => ['nullable', 'string', 'in:8M,10M,16M,20M,450M,1 LT,2 LT'],
+            // 2026-08-07: đổi so_lieu_trinh (text "1/10") → so_luong (int ≥ 1). Bỏ so_luong_lo + dung_tich_lo.
+            'so_luong'      => ['nullable', 'integer', 'min:1'],
             'nguon'         => ['nullable', 'string', 'max:100'],
             'ket_hop_medical' => ['nullable', 'boolean'],
             'lan_dau'         => ['nullable', 'boolean'],
@@ -981,8 +984,9 @@ class BookingController extends Controller
             'phong_id.required'      => 'Vui lòng chọn phòng.',
             'khung_gio_id.required'  => 'Vui lòng chọn khung giờ.',
             'dich_vu_id.required'    => 'Vui lòng chọn liệu pháp/dịch vụ.',
-            'sale_id.required'       => 'Vui lòng chọn sale phụ trách.',
             'gio_thuc_hien.regex'    => 'Giờ thực hiện phải là HH:MM.',
+            'so_luong.integer'       => 'Số lượng phải là số nguyên.',
+            'so_luong.min'           => 'Số lượng phải ≥ 1 (không âm hoặc 0).',
         ]);
 
         // Giờ thực hiện / kết thúc phải nằm trong khung_gio cha
@@ -1055,13 +1059,12 @@ class BookingController extends Controller
             'dich_vu_id'      => $data['dich_vu_id'],
             'bac_si_id'  => $data['bac_si_id'] ?? null,
             'ktv_user_id'     => $data['ktv_user_id'] ?? null,
-            'sale_id'         => $data['sale_id'],
+            // 2026-08-07: fallback auth user cho sale_id ẩn.
+            'sale_id'         => $data['sale_id'] ?? auth()->id(),
             'ngay_dat'        => $data['ngay_dat'],
             'gio_thuc_hien'   => ! empty($data['gio_thuc_hien']) ? $data['gio_thuc_hien'] . ':00' : null,
             'gio_ket_thuc'    => ! empty($data['gio_ket_thuc']) ? $data['gio_ket_thuc'] . ':00' : null,
-            'so_lieu_trinh'   => $data['so_lieu_trinh'] ?? null,
-            'so_luong_lo'     => $data['so_luong_lo'] ?? null,
-            'dung_tich_lo'    => $data['dung_tich_lo'] ?? null,
+            'so_luong'        => $data['so_luong'] ?? null,
             'nguon'           => $data['nguon'] ?? null,
             'ket_hop_medical' => $request->boolean('ket_hop_medical'),
             'lan_dau'         => $request->boolean('lan_dau'),

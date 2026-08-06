@@ -18,7 +18,7 @@ class Booking extends Model
         // 2026-08-05: bac_si_id FK → bac_si.id (bảng danh mục, KHÔNG phải users). ktv_user_id/sale_id/nguoi_tao_id FK → users.id.
         'bac_si_id', 'ktv_user_id', 'sale_id', 'nguoi_tao_id',
         'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
-        'so_lieu_trinh', 'so_luong_lo', 'dung_tich_lo',
+        'so_luong',
         'nguon', 'ket_hop_medical', 'lan_dau', 'khach_tang', 'khach_tang_ghi_chu',
         'co_tu_van', 'co_kham_cls',
         'ghi_chu', 'trang_thai', 'trang_thai_khach', 'ly_do_tu_choi', 'phan_hoi_khach', 'da_duyet',

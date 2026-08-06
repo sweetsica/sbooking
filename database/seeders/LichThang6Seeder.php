@@ -113,7 +113,7 @@ class LichThang6Seeder extends Seeder
                             'gio_thuc_hien'  => $kg->gio_bat_dau,
                             'gio_ket_thuc'   => $kg->gio_ket_thuc,
                             'nguon'          => $this->nguons[array_rand($this->nguons)],
-                            'so_lieu_trinh'  => rand(1, 8) . '/10',
+                            'so_luong'  => rand(1, 8),
                             'co_tu_van'      => $coTuVan,
                             'co_kham_cls'    => $coKhamCls,
                             // Marker "[seed-t6]" trong ghi_chu để cleanup idempotent.

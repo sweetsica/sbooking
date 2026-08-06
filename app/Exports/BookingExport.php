@@ -25,7 +25,7 @@ class BookingExport implements FromQuery, WithHeadings, WithMapping, WithTitle
         return [
             'ID', 'Dấu thời gian', 'Họ tên KH', 'Số điện thoại', 'Email',
             'Ngày đặt', 'Phòng', 'Khung giờ', 'Giờ thực hiện', 'Giờ kết thúc',
-            'Nguồn', 'Sale phụ trách', 'Dịch vụ', 'Số liệu trình',
+            'Nguồn', 'Sale phụ trách', 'Dịch vụ', 'Số lượng',
             'Bác sĩ / Điều dưỡng', 'Ghi chú', 'Trạng thái',
         ];
     }
@@ -46,7 +46,7 @@ class BookingExport implements FromQuery, WithHeadings, WithMapping, WithTitle
             $bk->nguon,
             $bk->sale?->name,
             $bk->dichVu?->ten,
-            $bk->so_lieu_trinh,
+            $bk->so_luong,
             $bk->bacSi?->ten_day_du ?? '',
             $bk->ghi_chu,
             $bk->trang_thai === 'da_duyet' ? 'Đã duyệt' : ($bk->trang_thai === 'tu_choi' ? 'Từ chối' : 'Chờ duyệt'),

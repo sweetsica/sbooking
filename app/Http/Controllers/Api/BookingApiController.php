@@ -116,9 +116,8 @@ class BookingApiController extends Controller
             'nguon'          => ['nullable', 'string', 'max:60'],
             'crm_khach_ma'   => ['nullable', 'string', 'max:60'],
             'ghi_chu'        => ['nullable', 'string', 'max:2000'],
-            'so_lieu_trinh'   => ['nullable', 'string', 'max:40'],
-            'so_luong_lo'     => ['nullable', 'string', 'max:40'],
-            'dung_tich_lo'    => ['nullable', 'string', 'max:40'],
+            // 2026-08-07: đổi so_lieu_trinh + bỏ so_luong_lo/dung_tich_lo.
+            'so_luong'        => ['nullable', 'integer', 'min:1'],
             'ket_hop_medical' => ['nullable', 'boolean'],
             'co_tu_van'       => ['nullable', 'boolean'],
             'co_kham_cls'     => ['nullable', 'boolean'],
@@ -168,9 +167,7 @@ class BookingApiController extends Controller
                     'nguon'         => $data['nguon'] ?? 'SCRM',
                     'crm_khach_ma'  => $data['crm_khach_ma'] ?? null,
                     'ghi_chu'       => $data['ghi_chu'] ?? null,
-                    'so_lieu_trinh'   => $data['so_lieu_trinh'] ?? null,
-                    'so_luong_lo'     => $data['so_luong_lo'] ?? null,
-                    'dung_tich_lo'    => $data['dung_tich_lo'] ?? null,
+                    'so_luong'        => $data['so_luong'] ?? null,
                     'ket_hop_medical' => $data['ket_hop_medical'] ?? false,
                     'co_tu_van'       => $data['co_tu_van'] ?? false,
                     'co_kham_cls'     => $data['co_kham_cls'] ?? false,
@@ -213,7 +210,7 @@ class BookingApiController extends Controller
 
     /**
      * PUT /api/bookings/{booking} — Phase C1.e (2026-08-02).
-     * Nhận edit từ scrm: note, sale, ngay/gio, dich_vu, bac_si, phong, so_lieu_trinh/lo/dung_tich/medical.
+     * Nhận edit từ scrm: note, sale, ngay/gio, dich_vu, bac_si, phong, so_luong/medical.
      * Nếu đổi slot (ngay+gio) → re-check capacity phòng. Nếu conflict → 409.
      */
     public function update(Booking $booking, Request $request): JsonResponse
@@ -229,9 +226,8 @@ class BookingApiController extends Controller
             'khung_gio_id'    => ['nullable', 'integer', 'exists:khung_gio,id'],
             'tiep_don_user_id' => ['nullable', 'integer', 'exists:users,id'],
             'gio_ket_thuc'    => ['nullable', 'string'],
-            'so_lieu_trinh'   => ['nullable', 'string', 'max:40'],
-            'so_luong_lo'     => ['nullable', 'string', 'max:40'],
-            'dung_tich_lo'    => ['nullable', 'string', 'max:40'],
+            // 2026-08-07: đổi so_lieu_trinh + bỏ so_luong_lo/dung_tich_lo.
+            'so_luong'        => ['nullable', 'integer', 'min:1'],
             'ket_hop_medical' => ['nullable', 'boolean'],
             'co_tu_van'       => ['nullable', 'boolean'],
             'co_kham_cls'     => ['nullable', 'boolean'],

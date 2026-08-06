@@ -38,7 +38,7 @@ class BookingImport implements ToModel, WithHeadingRow, WithValidation
             'gio_thuc_hien' => $row['gio_thuc_hien'] ?? null,
             'gio_ket_thuc' => $row['gio_ket_thuc'] ?? null,
             'nguon' => $row['nguon'] ?? null,
-            'so_lieu_trinh' => $row['so_lieu_trinh'] ?? null,
+            'so_luong' => $row['so_luong'] ?? $row['so_lieu_trinh'] ?? null,
             'ghi_chu' => $row['ghi_chu'] ?? null,
             'trang_thai' => 'cho_duyet',
         ]);

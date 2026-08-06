@@ -13,6 +13,9 @@
         <div class="mb-4 p-3 bg-green-50 border border-green-200 text-green-800 rounded">{{ session('ok') }}</div>
     @endif
 
+    {{-- 2026-08-07: form xóa token phải ĐỨNG NGOÀI form update (không nested form). Button trỏ vào bằng attribute form="scrm-clear-token-form". --}}
+    <form id="scrm-clear-token-form" method="POST" action="{{ route('settings.scrm-connection.clear-token', $coSo) }}">@csrf</form>
+
     <form method="POST" action="{{ route('settings.scrm-connection.update', $coSo) }}" class="space-y-6">
         @csrf
 
@@ -40,10 +43,12 @@
             @if ($tokenSet)
                 <div class="mb-2 p-2 bg-blue-50 border border-blue-200 rounded text-sm text-blue-800 flex items-center gap-2">
                     <span>✅ Đang dùng token DB: <code>{{ $tokenMasked }}</code></span>
-                    <button type="button" onclick="if(confirm('Xoá token khỏi DB? Middleware sẽ fallback về env SCRM_API_TOKEN.')) document.getElementById('scrm-clear-token-form').submit();"
+                    {{-- 2026-08-07: submit trực tiếp bằng formaction để không nested form (HTML invalid). --}}
+                    <button type="submit"
+                            form="scrm-clear-token-form"
+                            onclick="return confirm('Xoá token khỏi DB? Middleware sẽ fallback về env SCRM_API_TOKEN.');"
                             class="ml-auto text-xs text-red-600 hover:text-red-800">[Xoá token DB]</button>
                 </div>
-                <form id="scrm-clear-token-form" method="POST" action="{{ route('settings.scrm-connection.clear-token', $coSo) }}" class="hidden">@csrf</form>
             @elseif ($envTokenSet)
                 <div class="mb-2 p-2 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
                     ⚠️ Đang dùng token từ <code>.env SCRM_API_TOKEN</code> (chưa lưu DB). Nhập bên dưới để chuyển sang DB.
