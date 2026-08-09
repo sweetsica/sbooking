@@ -133,12 +133,14 @@ trait AuthorizesByPhanQuyen
         }
 
         if ($scope === 'phong_toi') {
+            // 2026-08-09: thêm tiep_don_user_id — Sale tiếp đón phải thấy booking họ được gán.
             $teamUserIds = User::where('phong_ban_id', $user->phong_ban_id)->pluck('id');
             return $query->where(function ($q) use ($teamUserIds) {
                 $q->whereIn('nguoi_tao_id', $teamUserIds)
                   ->orWhereIn('bac_si_id', $teamUserIds)
                   ->orWhereIn('ktv_user_id', $teamUserIds)
-                  ->orWhereIn('sale_id', $teamUserIds);
+                  ->orWhereIn('sale_id', $teamUserIds)
+                  ->orWhereIn('tiep_don_user_id', $teamUserIds);
             });
         }
 
@@ -148,7 +150,8 @@ trait AuthorizesByPhanQuyen
             $q->where('nguoi_tao_id', $userId)
               ->orWhere('bac_si_id', $userId)
               ->orWhere('ktv_user_id', $userId)
-              ->orWhere('sale_id', $userId);
+              ->orWhere('sale_id', $userId)
+              ->orWhere('tiep_don_user_id', $userId);
         });
     }
 
@@ -168,7 +171,8 @@ trait AuthorizesByPhanQuyen
                 || in_array($booking->nguoi_tao_id, $teamUserIds, true)
                 || in_array($booking->bac_si_id, $teamUserIds, true)
                 || in_array($booking->ktv_user_id, $teamUserIds, true)
-                || in_array($booking->sale_id, $teamUserIds, true);
+                || in_array($booking->sale_id, $teamUserIds, true)
+                || in_array($booking->tiep_don_user_id, $teamUserIds, true);
         }
 
         return $booking->laLienQuan($user);

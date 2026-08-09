@@ -11,10 +11,11 @@ class Phong extends Model
 {
     protected $table = 'phong';
 
-    protected $fillable = ['co_so_id', 'ten', 'loai', 'kieu_phong', 'so_slot_toi_da', 'phut_moi_khach', 'ktv_mac_dinh_id', 'trang_thai'];
+    protected $fillable = ['co_so_id', 'ten', 'loai', 'kieu_phong', 'duoc_dat_tu_van', 'so_slot_toi_da', 'phut_moi_khach', 'ktv_mac_dinh_id', 'trang_thai'];
 
     protected $casts = [
         'phut_moi_khach' => 'integer',
+        'duoc_dat_tu_van' => 'boolean',
     ];
 
     public function coSo(): BelongsTo

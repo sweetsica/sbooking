@@ -533,6 +533,17 @@
 </button>
 </form>
 @endif
+{{-- 2026-08-09: link sang SCRM lead detail theo crm_khach_ma. --}}
+@if (! empty($b->crm_khach_ma))
+    @php $__scrmUrl = rtrim(\App\Models\AppSetting::get('scrm_url', (string) (config('services.crm.url') ?? env('CRM_URL', ''))), '/'); @endphp
+    @if ($__scrmUrl)
+        <a href="{{ $__scrmUrl }}/leads/by-code/{{ urlencode($b->crm_khach_ma) }}" target="_blank" rel="noopener"
+           title="Xem thông tin khách bên Data Source ({{ $b->crm_khach_ma }})"
+           class="p-1.5 rounded-lg text-primary hover:bg-primary-container transition-colors">
+            <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+        </a>
+    @endif
+@endif
 </div>
 </td>
 </tr>

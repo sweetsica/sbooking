@@ -282,28 +282,28 @@ class PageController extends Controller
         $tab = in_array($request->query('tab'), ['today', 'approval', 'processing', 'upcoming', 'done'], true)
             ? $request->query('tab') : 'today';
 
+        // 2026-08-09: default list = tất cả lịch hẹn (newest first), không giới hạn hôm nay.
+        // Các tab con (approval/processing/upcoming/done) vẫn giữ filter riêng như cũ.
         $listQ = (clone $base());
         if ($tab === 'approval') {
             $listQ->where('trang_thai', 'cho_duyet');
-        } else {
-            $listQ->whereDate('ngay_dat', $today);
-        }
-        if ($tab === 'processing') {
-            $listQ->where(function ($q) {
+        } elseif ($tab === 'processing') {
+            $listQ->whereDate('ngay_dat', $today)->where(function ($q) {
                 $q->where('trang_thai_khach', 'da_toi')
                   ->orWhere('trang_thai_khach', 'toi_tre')
                   ->orWhere('trang_thai_tiep_don', 'dang_tiep_don');
             })->where('trang_thai', '!=', 'da_xong');
         } elseif ($tab === 'upcoming') {
-            $listQ->where('trang_thai', 'da_duyet')
+            $listQ->whereDate('ngay_dat', $today)->where('trang_thai', 'da_duyet')
                 ->whereNull('trang_thai_khach')
                 ->whereBetween('gio_thuc_hien', [$now->format('H:i:s'), $in1h->format('H:i:s')]);
         } elseif ($tab === 'done') {
-            $listQ->where('trang_thai', 'da_xong');
+            $listQ->whereDate('ngay_dat', $today)->where('trang_thai', 'da_xong');
         }
+        // tab === 'today' (default): không lọc theo ngày, show tất cả.
 
         $bookings = $listQ->with(['khachHang', 'dichVu', 'sale'])
-            ->orderBy('gio_thuc_hien')
+            ->orderByDesc('id')
             ->limit(100)
             ->get();
 
@@ -597,6 +597,10 @@ class PageController extends Controller
         }
         if ($request->filled('nguon')) {
             $query->where('nguon', $request->query('nguon'));
+        }
+        // 2026-08-09: filter theo mã khách CRM (SCRM lead code). Dùng khi từ SCRM click "Mở PM Booking".
+        if ($request->filled('crm_khach_ma')) {
+            $query->where('crm_khach_ma', $request->query('crm_khach_ma'));
         }
         if ($approvalMode) {
             $query->where('trang_thai', 'cho_duyet'); // khóa cứng chỉ đơn chờ duyệt

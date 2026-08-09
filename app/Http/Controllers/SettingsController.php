@@ -63,6 +63,7 @@ class SettingsController extends Controller
             'phong' => $catalog(Phong::class, [
                 'ten'            => ['label' => 'Tên phòng', 'type' => 'text', 'rules' => ['required', 'string', 'max:255']],
                 'kieu_phong'    => ['label' => 'Kiểu phòng', 'type' => 'select', 'options' => ['phong_kham' => 'Phòng khám', 'phong_dich_vu' => 'Phòng dịch vụ'], 'rules' => ['required', Rule::in(['phong_kham', 'phong_dich_vu'])]],
+                'duoc_dat_tu_van' => ['label' => 'Được đặt tư vấn', 'type' => 'toggle', 'rules' => ['nullable', 'boolean'], 'hint' => 'Bật để phòng này hiển thị khi khách chọn bucket "Tư vấn" bên scrm.'],
                 'loai'          => ['label' => 'Loại', 'type' => 'select', 'options' => ['kham' => 'Khám', 'vip' => 'VIP', 'cong_dong' => 'Cộng đồng'], 'rules' => ['required', 'string', 'max:30']],
                 'so_slot_toi_da' => ['label' => 'Số slot tối đa', 'type' => 'number', 'rules' => ['required', 'integer', 'min:1', 'max:99']],
                 'phut_moi_khach' => ['label' => 'Phút/khách (phòng dịch vụ)', 'type' => 'number', 'rules' => ['nullable', 'integer', 'min:1', 'max:240'], 'min' => 1, 'max' => 240, 'placeholder' => 'vd: 30', 'hint' => 'Chỉ dùng cho phòng dịch vụ'],

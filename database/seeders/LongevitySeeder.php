@@ -106,20 +106,22 @@ class LongevitySeeder extends Seeder
         );
 
         // =============================================
-        // TÀI KHOẢN ADMIN HỆ THỐNG (giữ nguyên)
+        // TÀI KHOẢN ADMIN HỆ THỐNG
+        // 2026-08-09: đồng bộ email @longevity.com.vn khớp SCRM. Match key = name (không phải
+        // username) để idempotent kể cả khi username thay đổi qua admin UI.
         // =============================================
-        User::updateOrCreate(['username' => 'admin'], [
-            'name'         => 'Admin Hệ thống',
-            'email'        => 'admin@sweetsica.com',
+        User::updateOrCreate(['name' => 'Admin Hệ thống'], [
+            'username'     => 'admin',
+            'email'        => 'admin@longevity.com.vn',
             'password'     => Hash::make('59ntn'),
             'co_so_id'     => null,
             'phong_ban_id' => null,
             'vai_tro_id'   => $vrAdmin->id,
             'is_admin'     => true,
         ]);
-        User::updateOrCreate(['username' => 'adminvh'], [
-            'name'         => 'Admin Vận hành',
-            'email'        => 'adminvh@sweetsica.com',
+        User::updateOrCreate(['name' => 'Admin Vận hành'], [
+            'username'     => 'adminvh',
+            'email'        => 'adminvh@longevity.com.vn',
             'password'     => Hash::make('59@ntn'),
             'co_so_id'     => null,
             'phong_ban_id' => null,
@@ -132,9 +134,9 @@ class LongevitySeeder extends Seeder
             ['username' => 'baoit', 'name' => 'Bảo IT'],
             ['username' => 'tumod', 'name' => 'Tú MOD'],
         ] as $a) {
-            User::updateOrCreate(['username' => $a['username']], [
-                'name'         => $a['name'],
-                'email'        => $a['username'] . '@sweetsica.com',
+            User::updateOrCreate(['name' => $a['name']], [
+                'username'     => $a['username'],
+                'email'        => $a['username'] . '@longevity.com.vn',
                 'password'     => Hash::make($a['username']),
                 'co_so_id'     => null,
                 'phong_ban_id' => null,
@@ -147,29 +149,30 @@ class LongevitySeeder extends Seeder
         $matKhauHcm = Hash::make('207nvt');
 
         // =============================================
-        // SALES HÀ NỘI — Team Giang (STT 1–7)
+        // SALES HÀ NỘI — Team Giang (Team Giang HN, cơ sở 59 NTN)
+        // 2026-08-09: username + email theo pattern SCRM (hn.cms01, hn.sale03...).
         // =============================================
         $salesGiang = [
-            ['username' => 'tttg1',  'name' => 'Trần Thị Thu Giang',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
-            ['username' => 'thk2',   'name' => 'Trần Huy Kiên',       'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'nhg3',   'name' => 'Nguyễn Hương Giang',  'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'nta5',   'name' => 'Nguyễn Thị Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'ntn6',   'name' => 'Nguyễn Thị Nga',      'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'ctla7',  'name' => 'Cao Thị Lan Anh',     'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.cms01',  'name' => 'Trần Thị Thu Giang',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
+            ['username' => 'hn.sale03', 'name' => 'Trần Huy Kiên',       'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale04', 'name' => 'Nguyễn Hương Giang',  'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale06', 'name' => 'Nguyễn Thị Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale07', 'name' => 'Nguyễn Thị Nga',      'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale08', 'name' => 'Cao Thị Lan Anh',     'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
         ];
         foreach ($salesGiang as $s) {
-            User::updateOrCreate(['username' => $s['username']], [
-                'name' => $s['name'], 'email' => $s['username'] . '@59ntn.local',
+            User::updateOrCreate(['name' => $s['name']], [
+                'username' => $s['username'], 'email' => $s['username'] . '@longevity.com.vn',
                 'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHn,
                 'co_so_id' => $cs59ntn->id, 'phong_ban_id' => $pbTeamGiang->id,
                 'vai_tro_id' => $s['vai_tro_id'], 'is_admin' => false,
             ]);
         }
 
-        // NMP4 — KTV Da liễu (không thuộc sales team)
-        User::updateOrCreate(['username' => 'nmp4'], [
-            'name'         => 'Nguyễn Minh Phương',
-            'email'        => 'nmp4@59ntn.local',
+        // Nguyễn Minh Phương — KTV Da liễu (không thuộc sales team). SCRM username hn.sale05.
+        User::updateOrCreate(['name' => 'Nguyễn Minh Phương'], [
+            'username'     => 'hn.sale05',
+            'email'        => 'hn.sale05@longevity.com.vn',
             'chuc_danh'    => 'KTV',
             'password'     => $matKhauHn,
             'co_so_id'     => $cs59ntn->id,
@@ -179,21 +182,23 @@ class LongevitySeeder extends Seeder
         ]);
 
         // =============================================
-        // SALES HÀ NỘI — Team Hợi (STT 8–15)
+        // SALES HÀ NỘI — Team Hợi (cơ sở 59 NTN)
+        // 2026-08-09: username theo pattern SCRM. Lương Thị Kim Phấn giờ là dn.cms01
+        // (SCRM đặt scope Đà Nẵng) — sbooking vẫn để cơ sở 59ntn/team_hoi vì sbooking không có DN cơ sở.
         // =============================================
         $salesHoi = [
-            ['username' => 'tvh8',   'name' => 'Tạ Văn Hợi',          'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
-            ['username' => 'ptt9',   'name' => 'Phạm Thanh Trúc',     'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'ntt10',  'name' => 'Nguyễn Thị Thúy',     'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'nhd11',  'name' => 'Nguyễn Hoành Đức',    'chuc_danh' => 'TL',  'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'pta12',  'name' => 'Phạm Tú Anh',         'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'ntm13',  'name' => 'Nguyễn Trà My',       'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'nma14',  'name' => 'Nguyễn Mai Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'ltkp15', 'name' => 'Lương Thị Kim Phấn',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.cms02',  'name' => 'Tạ Văn Hợi',          'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
+            ['username' => 'hn.sale09', 'name' => 'Phạm Thanh Trúc',     'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale10', 'name' => 'Nguyễn Thị Thúy',     'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.tl01',   'name' => 'Nguyễn Hoành Đức',    'chuc_danh' => 'TL',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale11', 'name' => 'Phạm Tú Anh',         'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale12', 'name' => 'Nguyễn Trà My',       'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'hn.sale13', 'name' => 'Nguyễn Mai Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
+            ['username' => 'dn.cms01',  'name' => 'Lương Thị Kim Phấn',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrTuVanVien->id],
         ];
         foreach ($salesHoi as $s) {
-            User::updateOrCreate(['username' => $s['username']], [
-                'name' => $s['name'], 'email' => $s['username'] . '@59ntn.local',
+            User::updateOrCreate(['name' => $s['name']], [
+                'username' => $s['username'], 'email' => $s['username'] . '@longevity.com.vn',
                 'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHn,
                 'co_so_id' => $cs59ntn->id, 'phong_ban_id' => $pbTeamHoi->id,
                 'vai_tro_id' => $s['vai_tro_id'], 'is_admin' => false,
@@ -204,10 +209,10 @@ class LongevitySeeder extends Seeder
         // SALES HCM — Team HCM (STT 19–30 + Ashley)
         // =============================================
 
-        // Kim Ngân — DM (Quản lý kinh doanh, quản lý toàn bộ HCM)
-        User::updateOrCreate(['username' => 'tnkn19'], [
-            'name'         => 'Trần Nguyễn Kim Ngân',
-            'email'        => 'tnkn19@207nvt.local',
+        // Kim Ngân — DM (Quản lý kinh doanh, quản lý toàn bộ HCM). SCRM = hcm.dm01.
+        User::updateOrCreate(['name' => 'Trần Nguyễn Kim Ngân'], [
+            'username'     => 'hcm.dm01',
+            'email'        => 'hcm.dm01@longevity.com.vn',
             'chuc_danh'    => 'DM',
             'password'     => $matKhauHcm,
             'co_so_id'     => $cs207nvt->id,
@@ -216,10 +221,10 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // Ashley — CM (Team lead HCM)
-        User::updateOrCreate(['username' => 'ashley34'], [
-            'name'         => 'Ashley',
-            'email'        => 'ashley34@207nvt.local',
+        // Ashley — CM (Team lead HCM). Chưa có SCRM counterpart → giữ username cũ.
+        User::updateOrCreate(['name' => 'Ashley'], [
+            'username'     => 'ashley34',
+            'email'        => 'ashley34@longevity.com.vn',
             'chuc_danh'    => 'CM',
             'password'     => $matKhauHcm,
             'co_so_id'     => $cs207nvt->id,
@@ -228,22 +233,24 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
+        // 2026-08-09: SCRM username theo pattern hcm.sale*/hcm.cms*. ptkq20 chưa có SCRM
+        // counterpart nên giữ nguyên. ltpt26 (Trợ lý KD) → hn.tlkd01 (SCRM đặt scope HN).
         $salesHcm = [
-            ['username' => 'ptkq20', 'name' => 'Phan Trần Khánh Quỳnh', 'chuc_danh' => 'TL'],
-            ['username' => 'ttyn21', 'name' => 'Trương Thị Yến Nhi',    'chuc_danh' => 'SHC'],
-            ['username' => 'nthn22', 'name' => 'Nguyễn Thị Hoài Như',    'chuc_danh' => 'SHC'],
-            ['username' => 'htmm23', 'name' => 'Huỳnh Thị My My',       'chuc_danh' => 'HC'],
-            ['username' => 'ntth24', 'name' => 'Nguyễn Thị Thanh',      'chuc_danh' => 'HC'],
-            ['username' => 'ntkc25', 'name' => 'Nguyễn Thị Kim Chi',    'chuc_danh' => 'HC'],
-            ['username' => 'ltpt26', 'name' => 'Lê Thị Phương Tự',      'chuc_danh' => 'Trợ lý KD'],
-            ['username' => 'ttbt27', 'name' => 'Trần Thị Bích Trâm',    'chuc_danh' => 'CM'],
-            ['username' => 'ntmt28', 'name' => 'Nguyễn Thị Minh Thư',   'chuc_danh' => 'Trợ lý KD/CM HCM'],
-            ['username' => 'lpd29',  'name' => 'Lê Phát Đạt',           'chuc_danh' => 'SHC'],
-            ['username' => 'hbtl30', 'name' => 'Huỳnh Bùi Thanh Lan',   'chuc_danh' => 'CM'],
+            ['username' => 'ptkq20',     'name' => 'Phan Trần Khánh Quỳnh', 'chuc_danh' => 'TL'],
+            ['username' => 'hcm.sale01', 'name' => 'Trương Thị Yến Nhi',    'chuc_danh' => 'SHC'],
+            ['username' => 'hcm.sale02', 'name' => 'Nguyễn Thị Hoài Như',   'chuc_danh' => 'SHC'],
+            ['username' => 'hcm.sale03', 'name' => 'Huỳnh Thị My My',       'chuc_danh' => 'HC'],
+            ['username' => 'hcm.sale04', 'name' => 'Nguyễn Thị Thanh',      'chuc_danh' => 'HC'],
+            ['username' => 'hcm.sale05', 'name' => 'Nguyễn Thị Kim Chi',    'chuc_danh' => 'HC'],
+            ['username' => 'hn.tlkd01',  'name' => 'Lê Thị Phương Tự',      'chuc_danh' => 'Trợ lý KD'],
+            ['username' => 'hcm.cms01',  'name' => 'Trần Thị Bích Trâm',    'chuc_danh' => 'CM'],
+            ['username' => 'hcm.cms02',  'name' => 'Nguyễn Thị Minh Thư',   'chuc_danh' => 'Trợ lý KD/CM HCM'],
+            ['username' => 'hcm.sale06', 'name' => 'Lê Phát Đạt',           'chuc_danh' => 'SHC'],
+            ['username' => 'hcm.cms03',  'name' => 'Huỳnh Bùi Thanh Lan',   'chuc_danh' => 'CM'],
         ];
         foreach ($salesHcm as $s) {
-            User::updateOrCreate(['username' => $s['username']], [
-                'name' => $s['name'], 'email' => $s['username'] . '@207nvt.local',
+            User::updateOrCreate(['name' => $s['name']], [
+                'username' => $s['username'], 'email' => $s['username'] . '@longevity.com.vn',
                 'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHcm,
                 'co_so_id' => $cs207nvt->id, 'phong_ban_id' => $pbTeamHcm->id,
                 'vai_tro_id' => $vrTuVanVien->id, 'is_admin' => false,
@@ -262,9 +269,12 @@ class LongevitySeeder extends Seeder
             ['username' => 'lt207nvt',  'name' => 'Lễ tân 207 NVT',    'co_so' => $cs207nvt, 'vai_tro' => $vrLeTan,  'pw' => '207nvt'],
         ];
         foreach ($sharedAccounts as $a) {
-            User::updateOrCreate(['username' => $a['username']], [
-                'name'         => $a['name'],
-                'email'        => $a['username'] . '@local',
+            // 2026-08-09: BS chung có SCRM counterpart → email @longevity.com.vn.
+            // KTV / Lễ tân giữ @local (system account, không có SCRM user).
+            $isBs = str_starts_with($a['username'], 'bsi');
+            User::updateOrCreate(['name' => $a['name']], [
+                'username'     => $a['username'],
+                'email'        => $a['username'] . ($isBs ? '@longevity.com.vn' : '@local'),
                 'password'     => Hash::make($a['pw']),
                 'co_so_id'     => $a['co_so']->id,
                 'phong_ban_id' => null,
@@ -280,7 +290,8 @@ class LongevitySeeder extends Seeder
             ['username' => 'adminl23tdn', 'name' => 'Admin Lô 2+3 TĐN',  'co_so' => $cslo23tdn, 'pw' => 'l23tdn'],
         ];
         foreach ($adminCoSos as $a) {
-            User::updateOrCreate(['username' => $a['username']], [
+            User::updateOrCreate(['name' => $a['name']], [
+                'username'     => $a['username'],
                 'name'         => $a['name'],
                 'email'        => $a['username'] . '@local',
                 'password'     => Hash::make($a['pw']),
@@ -291,19 +302,20 @@ class LongevitySeeder extends Seeder
             ]);
         }
 
-        // ---- Quyền xem (viewer) ----
+        // ---- Quyền xem (viewer) — phòng Vận hành / Giám sát bên SCRM ----
+        // 2026-08-09: username + email theo pattern SCRM (vh.obs01..05).
         $viewers = [
-            ['username' => 'huyently', 'name' => 'Ms Huyền',     'chuc_danh' => 'Trợ lý kinh doanh'],
-            ['username' => 'hangktt',  'name' => 'Ms Hằng KTT',  'chuc_danh' => 'Kế toán trưởng'],
-            ['username' => 'lyktdt',   'name' => 'Ms Ly',        'chuc_danh' => 'Kế toán doanh thu'],
-            ['username' => 'msan',     'name' => 'Ms An',        'chuc_danh' => 'COO'],
-            ['username' => 'mstuyet',  'name' => 'Ms Tuyết',     'chuc_danh' => 'CEO'],
+            ['username' => 'vh.obs01', 'name' => 'Ms Huyền',     'chuc_danh' => 'Trợ lý kinh doanh'],
+            ['username' => 'vh.obs02', 'name' => 'Ms Hằng KTT',  'chuc_danh' => 'Kế toán trưởng'],
+            ['username' => 'vh.obs03', 'name' => 'Ms Ly',        'chuc_danh' => 'Kế toán doanh thu'],
+            ['username' => 'vh.obs04', 'name' => 'Ms An',        'chuc_danh' => 'COO'],
+            ['username' => 'vh.obs05', 'name' => 'Ms Tuyết',     'chuc_danh' => 'CEO'],
         ];
         foreach ($viewers as $v) {
-            User::updateOrCreate(['username' => $v['username']], [
-                'name'         => $v['name'],
+            User::updateOrCreate(['name' => $v['name']], [
+                'username'     => $v['username'],
                 'chuc_danh'    => $v['chuc_danh'],
-                'email'        => $v['username'] . '@sweetsica.com',
+                'email'        => $v['username'] . '@longevity.com.vn',
                 'password'     => Hash::make('123'),
                 'co_so_id'     => null,
                 'phong_ban_id' => null,
@@ -420,13 +432,18 @@ class LongevitySeeder extends Seeder
         $menus = ['Trà', 'Hoa quả', 'Bánh kẹo'];
 
         // --- 1. Danh mục thăm khám ---
+        // 2026-08-09: reclassify tất cả sang kham_ls (bỏ 'khac' cho khối thăm khám). Bổ sung 3 chuyên khoa mới
+        //   (Nội / Sản / Da liễu) đánh dấu "(sắp triển khai)" — chờ PKD chốt dịch vụ chi tiết.
         $thamKham = [
             ['ten' => 'Thăm khám lâm sàng (trừ tim mạch)', 'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
-            ['ten' => 'Thăm khám tim mạch',                'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 30],
+            ['ten' => 'Thăm khám tim mạch',                'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 30],
             ['ten' => 'Thực hiện lâm sàng',                'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 5],
-            ['ten' => 'Siêu âm',                           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 25],
-            ['ten' => 'Chụp XQuang',                       'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 15],
-            ['ten' => 'Lấy máu',                           'thuoc_nhom' => 'khac',    'thoi_gian_phut' => 10],
+            ['ten' => 'Siêu âm',                           'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 25],
+            ['ten' => 'Chụp XQuang',                       'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 15],
+            ['ten' => 'Lấy máu',                           'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 10],
+            ['ten' => 'Khám Nội (sắp triển khai)',         'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 30],
+            ['ten' => 'Khám Sản (sắp triển khai)',         'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 30],
+            ['ten' => 'Khám Da liễu (sắp triển khai)',     'thuoc_nhom' => 'kham_ls', 'thoi_gian_phut' => 30],
             ['ten' => 'Đọc kết quả Gene',                  'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
             ['ten' => 'Tư vấn - đọc kết quả',              'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
             ['ten' => 'Tư vấn',                            'thuoc_nhom' => 'tu_van',  'thoi_gian_phut' => 30],
@@ -505,6 +522,8 @@ class LongevitySeeder extends Seeder
             $attrs = [
                 'loai' => 'kham',
                 'kieu_phong' => $cfg['kieu'] ?? 'phong_kham',
+                // 2026-08-09: mặc định tick "được đặt tư vấn" cho mọi phòng (PKD yêu cầu seed all true).
+                'duoc_dat_tu_van' => $cfg['duoc_dat_tu_van'] ?? true,
                 'so_slot_toi_da' => $cfg['so_slot'] ?? 1,
                 'phut_moi_khach' => $cfg['phut'] ?? null,
                 'trang_thai' => 'hoat_dong',

@@ -103,7 +103,7 @@ class SyncApiController extends Controller
             ->where('co_so_id', $data['co_so_id'])
             ->where('trang_thai', 'hoat_dong')
             ->orderBy('ten')
-            ->get(['id', 'co_so_id', 'ten', 'loai', 'kieu_phong', 'so_slot_toi_da', 'phut_moi_khach', 'trang_thai', 'updated_at']);
+            ->get(['id', 'co_so_id', 'ten', 'loai', 'kieu_phong', 'duoc_dat_tu_van', 'so_slot_toi_da', 'phut_moi_khach', 'trang_thai', 'updated_at']);
 
         $withStatus = ! empty($data['ngay']) && ! empty($data['gio']);
         $result = $rooms->map(function (Phong $p) use ($data, $withStatus) {
@@ -113,6 +113,7 @@ class SyncApiController extends Controller
                 'ten'             => $p->ten,
                 'loai'            => $p->loai,
                 'kieu_phong'      => $p->kieu_phong,
+                'duoc_dat_tu_van' => (bool) $p->duoc_dat_tu_van,
                 'so_slot_toi_da'  => (int) $p->so_slot_toi_da,
                 'phut_moi_khach'  => (int) $p->phut_moi_khach,
                 'trang_thai'      => $p->trang_thai,

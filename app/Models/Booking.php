@@ -82,6 +82,7 @@ class Booking extends Model
             $this->bac_si_id,
             $this->ktv_user_id,
             $this->sale_id,
+            $this->tiep_don_user_id, // 2026-08-09: Sale tiếp đón được gán qua UPS auto phải liên quan.
         ]), true);
     }
 

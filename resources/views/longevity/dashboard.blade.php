@@ -88,11 +88,11 @@
     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
         <div class="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
             <h2 class="font-bold text-base">
-                {{ ['today'=>'Danh sách lịch hôm nay','approval'=>'Lịch chờ duyệt','processing'=>'Đang xử lý','upcoming'=>'Sắp tới trong 1 giờ','done'=>'Đã hoàn thành'][$tab] ?? 'Danh sách' }}
+                {{ ['today'=>'Danh sách lịch hẹn (mới nhất trên đầu)','approval'=>'Lịch chờ duyệt','processing'=>'Đang xử lý','upcoming'=>'Sắp tới trong 1 giờ','done'=>'Đã hoàn thành'][$tab] ?? 'Danh sách' }}
                 <span class="ml-2 text-xs bg-surface-container-low text-on-surface-variant px-2 py-0.5 rounded">{{ $bookings->count() }}</span>
             </h2>
             @if ($tab !== 'today')
-                <a href="?tab=today" class="text-xs text-secondary hover:underline">← Về tất cả hôm nay</a>
+                <a href="?tab=today" class="text-xs text-secondary hover:underline">← Về tất cả lịch hẹn</a>
             @endif
         </div>
         <div class="overflow-x-auto">
