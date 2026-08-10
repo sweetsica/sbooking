@@ -26,11 +26,16 @@
     })->where('truong', 'quyen_ngay_nghi')->exists();
 
     $items = [
-        ['key' => 'lich-hen',  'label' => 'Đặt lịch phòng khám', 'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
-        ['key' => 'dich-vu',   'label' => 'Đặt lịch dịch vụ',    'icon' => 'spa',            'href' => '/'.$coSo->slug.'/lich-hen?kieu=dich_vu'],
-        ['key' => 'bac-si',    'label' => 'Bác sĩ',              'icon' => 'stethoscope',    'href' => '/'.$coSo->slug.'/bac-si'],
-        ['key' => 'phong',     'label' => 'Phòng Dịch vụ',       'icon' => 'meeting_room',   'href' => '/'.$coSo->slug.'/phong'],
+        ['key' => 'lich-hen',  'label' => 'Lịch khám',        'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
+        ['key' => 'dich-vu',   'label' => 'Lịch dịch vụ',     'icon' => 'spa',            'href' => '/'.$coSo->slug.'/lich-hen?kieu=dich_vu'],
     ];
+
+    // 2026-08-10: gom Bác sĩ + Phòng dịch vụ vào dropdown "Khác" cho gọn menu chính.
+    $otherItems = [
+        ['key' => 'bac-si',  'label' => 'Bác sĩ',        'icon' => 'stethoscope',  'href' => '/'.$coSo->slug.'/bac-si'],
+        ['key' => 'phong',   'label' => 'Phòng Dịch vụ', 'icon' => 'meeting_room', 'href' => '/'.$coSo->slug.'/phong'],
+    ];
+    $otherActive = in_array($active, ['bac-si', 'phong'], true);
 
     // "Duyệt lịch": chỉ hiện cho người có quyền duyệt.
     if ($canDuyet) {
@@ -85,6 +90,24 @@
 <span class="hidden lg:inline">{{ $it['label'] }}</span>
 </a>
 @endforeach
+{{-- 2026-08-10: dropdown "Khác" — gom Bác sĩ + Phòng dịch vụ. --}}
+@if (! empty($otherItems))
+<details class="relative shrink-0">
+<summary class="list-none cursor-pointer select-none px-1.5 sm:px-2.5 lg:px-3 py-2 text-body-md rounded-lg flex items-center gap-2 whitespace-nowrap transition-colors {{ $otherActive ? 'font-bold bg-secondary-container text-on-secondary-container' : 'text-on-surface-variant hover:bg-surface-container-low hover:text-on-surface' }} [&::-webkit-details-marker]:hidden">
+<span class="material-symbols-outlined text-[20px]" @if($otherActive) style="font-variation-settings: 'FILL' 1;" @endif>more_horiz</span>
+<span class="hidden lg:inline">Khác</span>
+<span class="material-symbols-outlined text-[16px]">expand_more</span>
+</summary>
+<div class="absolute left-0 mt-2 w-52 bg-surface-container-lowest border border-outline-variant rounded-xl shadow-lg py-1 z-50">
+@foreach ($otherItems as $oi)
+@php $ooOn = $active === $oi['key']; @endphp
+<a href="{{ $oi['href'] }}" class="flex items-center gap-3 px-4 py-2.5 text-body-md transition-colors {{ $ooOn ? 'bg-secondary-container/40 text-on-secondary-container font-semibold' : 'text-on-surface hover:bg-surface-container-low' }}">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">{{ $oi['icon'] }}</span> {{ $oi['label'] }}
+</a>
+@endforeach
+</div>
+</details>
+@endif
 </nav>
 <!-- Search and Actions -->
 <div class="ml-auto flex items-center gap-1 sm:gap-2 xl:gap-3 min-w-0">

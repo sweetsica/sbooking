@@ -177,10 +177,14 @@ class BookingApiController extends Controller
                     ['ho_ten' => $data['ho_ten'], 'co_so_id' => $data['co_so_id']]
                 );
 
+                // 2026-08-10: Thăm khám (phong_kham) không cần duyệt — auto da_duyet. Dịch vụ cần duyệt.
+                $loaiDatLich = $data['loai_dat_lich'] ?? 'phong_kham';
+                $autoDuyet = $loaiDatLich === 'phong_kham';
+
                 $booking = Booking::create([
                     'co_so_id'      => $data['co_so_id'],
                     'khach_hang_id' => $kh->id,
-                    'loai_dat_lich' => $data['loai_dat_lich'] ?? 'phong_kham',
+                    'loai_dat_lich' => $loaiDatLich,
                     'dich_vu_id'    => $data['dich_vu_id'] ?? null,
                     'bac_si_id'     => $data['bac_si_id'] ?? null,
                     'phong_id'      => $data['phong_id'] ?? null,
@@ -197,8 +201,8 @@ class BookingApiController extends Controller
                     'co_kham_cls'     => $data['co_kham_cls'] ?? false,
                     'sale_id'         => $data['sale_id'] ?? null,
                     'tiep_don_user_id' => $data['tiep_don_user_id'] ?? null,
-                    'trang_thai'    => 'cho_duyet',
-                    'da_duyet'      => false,
+                    'trang_thai'    => $autoDuyet ? 'da_duyet' : 'cho_duyet',
+                    'da_duyet'      => $autoDuyet,
                 ]);
 
                 return [$booking, $kh];

@@ -858,9 +858,13 @@ class BookingController extends Controller
             ? $this->bacSiTrungLich($co_so, (int) $data['bac_si_id'], $data['ngay_dat'], (int) $data['khung_gio_id'], $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null)
             : null;
 
+        $loaiDatLich = in_array($request->input('loai_dat_lich'), ['phong_kham', 'dich_vu'], true) ? $request->input('loai_dat_lich') : 'phong_kham';
+        // 2026-08-10: Thăm khám (phong_kham) không cần duyệt — auto da_duyet. Dịch vụ cần duyệt.
+        $autoDuyet = $loaiDatLich === 'phong_kham';
+
         $booking = Booking::create([
             'co_so_id'      => $co_so->id,
-            'loai_dat_lich' => in_array($request->input('loai_dat_lich'), ['phong_kham', 'dich_vu'], true) ? $request->input('loai_dat_lich') : 'phong_kham',
+            'loai_dat_lich' => $loaiDatLich,
             'khach_hang_id' => $kh->id,
             'phong_id'      => $data['phong_id'],
             'khung_gio_id'  => $data['khung_gio_id'],
@@ -882,7 +886,8 @@ class BookingController extends Controller
             'co_tu_van'     => $request->boolean('co_tu_van'),
             'co_kham_cls'   => $request->boolean('co_kham_cls'),
             'ghi_chu'       => $data['ghi_chu'] ?? null,
-            'trang_thai'    => 'cho_duyet',
+            'trang_thai'    => $autoDuyet ? 'da_duyet' : 'cho_duyet',
+            'da_duyet'      => $autoDuyet,
             'crm_khach_ma'  => trim((string) $request->input('khach_ma', '')) ?: null,
         ]);
 

@@ -84,15 +84,40 @@
         @endforeach
     </div>
 
+    {{-- 2026-08-10: filter nhóm dịch vụ (tất cả / tư vấn / thăm khám). Giữ tab hiện tại khi đổi nhóm. --}}
+    @php
+        $nhom = $nhom ?? null;
+        $baseQs = 'tab=' . urlencode($tab);
+        $nhomBtns = [
+            ''        => ['Tất cả',   'apps'],
+            'tu_van'  => ['Tư vấn',   'chat'],
+            'kham_ls' => ['Thăm khám','medical_information'],
+        ];
+    @endphp
+    <div class="flex items-center gap-2 mb-3 flex-wrap">
+        @foreach ($nhomBtns as $k => [$lb, $ico])
+            @php
+                $on = ($nhom ?? '') === $k;
+                $href = '?' . $baseQs . ($k ? '&nhom=' . $k : '');
+            @endphp
+            <a href="{{ $href }}"
+               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-body-sm transition-colors {{ $on ? 'bg-secondary-container text-on-secondary-container border-secondary font-semibold' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low' }}">
+                <span class="material-symbols-outlined text-[18px]">{{ $ico }}</span> {{ $lb }}
+            </a>
+        @endforeach
+    </div>
+
     {{-- List booking --}}
     <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
         <div class="px-5 py-3 border-b border-outline-variant flex items-center justify-between">
             <h2 class="font-bold text-base">
                 {{ ['today'=>'Danh sách lịch hẹn (mới nhất trên đầu)','approval'=>'Lịch chờ duyệt','processing'=>'Đang xử lý','upcoming'=>'Sắp tới trong 1 giờ','done'=>'Đã hoàn thành'][$tab] ?? 'Danh sách' }}
+                @if ($nhom)<span class="ml-1 text-xs bg-secondary-container/40 text-on-secondary-container px-2 py-0.5 rounded">{{ $nhom === 'tu_van' ? 'Tư vấn' : 'Thăm khám' }}</span>@endif
                 <span class="ml-2 text-xs bg-surface-container-low text-on-surface-variant px-2 py-0.5 rounded">{{ $bookings->count() }}</span>
             </h2>
             @if ($tab !== 'today')
-                <a href="?tab=today" class="text-xs text-secondary hover:underline">← Về tất cả lịch hẹn</a>
+                @php $backHref = '?tab=today' . ($nhom ? '&nhom=' . $nhom : ''); @endphp
+                <a href="{{ $backHref }}" class="text-xs text-secondary hover:underline">← Về tất cả lịch hẹn</a>
             @endif
         </div>
         <div class="overflow-x-auto">

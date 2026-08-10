@@ -282,9 +282,15 @@ class PageController extends Controller
         $tab = in_array($request->query('tab'), ['today', 'approval', 'processing', 'upcoming', 'done'], true)
             ? $request->query('tab') : 'today';
 
+        // 2026-08-10: filter theo nhóm dịch vụ (tu_van / kham_ls). null = tất cả.
+        $nhom = in_array($request->query('nhom'), ['tu_van', 'kham_ls'], true) ? $request->query('nhom') : null;
+
         // 2026-08-09: default list = tất cả lịch hẹn (newest first), không giới hạn hôm nay.
         // Các tab con (approval/processing/upcoming/done) vẫn giữ filter riêng như cũ.
         $listQ = (clone $base());
+        if ($nhom) {
+            $listQ->whereHas('dichVu', fn ($q) => $q->where('thuoc_nhom', $nhom));
+        }
         if ($tab === 'approval') {
             $listQ->where('trang_thai', 'cho_duyet');
         } elseif ($tab === 'processing') {
@@ -333,7 +339,7 @@ class PageController extends Controller
             'approvalCount' => $approvalCount,
             'processingCount' => $processingCount,
             'upcomingCount' => $upcomingCount, 'doneCount' => $doneCount,
-            'tab' => $tab, 'bookings' => $bookings, 'active' => 'lich-hen',
+            'tab' => $tab, 'nhom' => $nhom, 'bookings' => $bookings, 'active' => 'lich-hen',
         ]);
     }
 
