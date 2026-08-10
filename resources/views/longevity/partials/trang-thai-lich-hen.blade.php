@@ -25,7 +25,15 @@
         ? ' Trạng thái này sẽ được đẩy sang CRM khách hàng ' . $booking->crm_khach_ma . '.'
         : '';
 @endphp
-@foreach (['da_toi' => ['Khách đã tới', 'how_to_reg'], 'toi_tre' => ['Khách tới trễ', 'schedule'], 'huy' => ['Khách hủy', 'person_off']] as $val => $meta)
+@php
+    // 2026-08-10 — Sale (HC/SHC/CM/DM) chỉ được bấm "Khách đã tới" + "Đã xong".
+    // Ẩn "Khách tới trễ" + "Khách hủy" — chỉ Admin/Lễ tân mới được đổi 2 trạng thái đó.
+    $__saleOnlyBasic = in_array(auth()->user()?->chuc_danh, ['HC', 'SHC', 'CM', 'DM'], true) && ! (bool) auth()->user()?->is_admin;
+    $__ttOptions = $__saleOnlyBasic
+        ? ['da_toi' => ['Khách đã tới', 'how_to_reg']]
+        : ['da_toi' => ['Khách đã tới', 'how_to_reg'], 'toi_tre' => ['Khách tới trễ', 'schedule'], 'huy' => ['Khách hủy', 'person_off']];
+@endphp
+@foreach ($__ttOptions as $val => $meta)
 <form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $booking->id }}"
       onsubmit="return confirm('Xác nhận đổi trạng thái sang: {{ $meta[0] }}?{{ $confirmSuffix }}');">
 @csrf @method('PATCH')
@@ -35,6 +43,20 @@
 </button>
 </form>
 @endforeach
+{{-- 2026-08-10 — Nút "Đang tiếp đón / Hoàn tất" hiện cho sale được gán (tiep_don_user_id hoặc sale_id). --}}
+@if ($booking->tiep_don_user_id === auth()->id() || $booking->sale_id === auth()->id())
+    @php $__tdBusy = $booking->trang_thai_tiep_don === 'dang_tiep_don'; @endphp
+    <form method="POST" action="/{{ $coSo->slug }}/tiep-don/{{ $booking->id }}"
+          onsubmit="return confirm('Xác nhận: {{ $__tdBusy ? 'Hoàn tất tiếp đón' : 'Bắt đầu tiếp đón khách' }}?');">
+        @csrf @method('PATCH')
+        <input type="hidden" name="trang_thai_tiep_don" value="{{ $__tdBusy ? 'hoan_tat' : 'dang_tiep_don' }}">
+        <button type="submit" class="h-[38px] px-4 rounded-lg font-semibold text-body-sm flex items-center gap-1.5 border transition-colors {{ $__tdBusy ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600' : 'border-outline text-on-surface-variant hover:bg-surface-container-high' }}">
+            <span class="material-symbols-outlined text-[18px]">{{ $__tdBusy ? 'done_all' : 'record_voice_over' }}</span>
+            {{ $__tdBusy ? 'Hoàn tất tiếp đón' : 'Đang tiếp đón' }}
+        </button>
+    </form>
+@endif
+
 <form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $booking->id }}"
       onsubmit="return confirm('Xác nhận: {{ $done ? 'Bỏ trạng thái Đã xong' : 'Đánh dấu Đã xong' }}?{{ $confirmSuffix }}');">
 @csrf @method('PATCH')

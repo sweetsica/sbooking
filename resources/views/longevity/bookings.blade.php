@@ -577,11 +577,14 @@ Không có kết quả
 </div>
 </div>
 </main>
-<!-- Floating Action Button -->
+<!-- Floating Action Button — 2026-08-10: ẩn với sale (HC/SHC/CM/DM), chỉ Admin/Lễ tân được tạo mới. -->
+@php $__saleHideCreate = in_array(auth()->user()?->chuc_danh, ['HC', 'SHC', 'CM', 'DM'], true) && ! (bool) auth()->user()?->is_admin; @endphp
+@if (! $__saleHideCreate)
 <a href="/{{ $coSo->slug }}/tao-moi" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50 group">
 <span class="material-symbols-outlined text-[28px]">add</span>
 <span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Thêm lịch hẹn mới</span>
 </a>
+@endif
 <script>
     // Simple table interaction enhancement
     const tableContainer = document.querySelector('.overflow-x-auto');
