@@ -163,7 +163,8 @@
 <div class="max-w-[1650px] mx-auto">
 <!-- Header & View Switcher -->
 <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-3 sm:gap-4">
-<h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">{{ $approvalMode ? 'Duyệt lịch — đơn chờ duyệt' : 'Quản lý Đặt lịch' }}</h2>
+@php $__isDichVu = ($kieu ?? 'phong_kham') === 'phong_dich_vu'; @endphp
+<h2 class="text-headline-lg font-extrabold text-on-surface uppercase tracking-tight">{{ $approvalMode ? 'Duyệt lịch — đơn chờ duyệt' : ($__isDichVu ? 'Quản lý Lịch dịch vụ' : 'Quản lý Lịch khám') }}</h2>
 @unless ($approvalMode)
 <div class="flex items-stretch gap-1 bg-surface-container-low p-1 rounded-xl w-full sm:w-fit">
 <a href="/{{ $coSo->slug }}/lich-hen" class="flex-1 sm:flex-none px-6 py-2 text-body-md font-semibold text-on-surface-variant hover:text-on-surface transition-all inline-flex items-center justify-center whitespace-nowrap">Lịch trình</a>

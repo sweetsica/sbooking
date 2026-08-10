@@ -579,8 +579,12 @@ class PageController extends Controller
             if ($scope === null) abort(403, 'Bạn không có quyền xem booking.');
         }
 
+        // 2026-08-10 — Tab "Lịch khám" (mặc định) vs "Lịch dịch vụ" (?kieu=dich_vu) → lọc theo phong.kieu_phong.
+        $kieu = $request->query('kieu') === 'dich_vu' ? 'phong_dich_vu' : 'phong_kham';
+
         $query = Booking::where('co_so_id', $co_so->id)
-            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale']);
+            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
+            ->whereHas('phong', fn ($q) => $q->where('kieu_phong', $kieu));
 
         if (! $approvalMode) {
             $this->applyViewScope($query);
@@ -677,6 +681,7 @@ class PageController extends Controller
             'currentSlotBookings' => $currentSlotBookings,
             'currentSlotLabel' => $hStart . ' - ' . $hEnd,
             'approvalMode' => $approvalMode,
+            'kieu' => $kieu,
         ]);
     }
 }
