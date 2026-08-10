@@ -17,6 +17,25 @@ body { background-color: #f7f9fb; }
 @include('partials.topnav', ['active' => 'lich-hen'])
 <main class="pt-16 min-h-screen">
 <div class="p-container-margin max-w-[1650px] mx-auto">
+{{-- 2026-08-10: flash message hiển thị sau khi POST duyệt/từ chối/... redirect back. --}}
+@if (session('error'))
+<div class="mt-4 flex items-start gap-2 p-3 rounded-xl bg-red-50 border border-red-300 text-red-800 text-body-sm">
+<span class="material-symbols-outlined text-red-600 text-[20px]">error</span>
+<div>{{ session('error') }}</div>
+</div>
+@endif
+@if (session('ok'))
+<div class="mt-4 flex items-start gap-2 p-3 rounded-xl bg-emerald-50 border border-emerald-300 text-emerald-800 text-body-sm">
+<span class="material-symbols-outlined text-emerald-600 text-[20px]">check_circle</span>
+<div>{{ session('ok') }}</div>
+</div>
+@endif
+@if (session('warning'))
+<div class="mt-4 flex items-start gap-2 p-3 rounded-xl bg-amber-50 border border-amber-300 text-amber-800 text-body-sm">
+<span class="material-symbols-outlined text-amber-600 text-[20px]">warning</span>
+<div>{{ session('warning') }}</div>
+</div>
+@endif
 @php
     $canDuyet = $canDuyet ?? false;
     $approved = in_array($booking->trang_thai, ['da_duyet', 'da_xong'], true);

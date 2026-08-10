@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Controllers\Concerns\BookingCapacityChecks;
 use App\Models\Booking;
 use App\Models\KhachHang;
 use App\Notifications\LichNotification;
@@ -17,6 +18,8 @@ use Throwable;
 
 class BookingApiController extends Controller
 {
+    use BookingCapacityChecks;
+
     /**
      * GET /api/bookings
      * Server-to-server cho Lara-SCRM pull dữ liệu.
@@ -143,6 +146,27 @@ class BookingApiController extends Controller
                         'error'   => 'room_full',
                     ], 409);
                 }
+            }
+        }
+
+        // 2026-08-10: capacity guard BS+DV+khung — trước đây chỉ check ở duyet() bên web,
+        // SCRM tạo booking không biết → admin duyệt bên sbooking mới bị chặn (UX kém).
+        // Check tại đây: nếu fail → 422 với message, SCRM markFailed(sync_error) và show cho user.
+        if (! empty($data['bac_si_id']) && ! empty($data['dich_vu_id']) && ! empty($data['khung_gio_id'])) {
+            $err = $this->bccCheckBacSiCapacity(
+                (int) $data['bac_si_id'],
+                (int) $data['khung_gio_id'],
+                (int) $data['dich_vu_id'],
+                $data['ngay_dat'],
+                null,
+                $data['gio_thuc_hien'] ?? null,
+                $data['gio_ket_thuc'] ?? null,
+            );
+            if ($err) {
+                return response()->json([
+                    'message' => $err,
+                    'error'   => 'bs_capacity',
+                ], 422);
             }
         }
 
