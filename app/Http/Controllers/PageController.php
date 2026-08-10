@@ -247,7 +247,12 @@ class PageController extends Controller
         $now = now();
         $in1h = $now->copy()->addHour();
 
-        $base = fn () => Booking::where('co_so_id', $co_so->id)->visibleTo(auth()->user());
+        // 2026-08-10 — Tab "Lịch khám" (mặc định) vs "Lịch dịch vụ" (?kieu=dich_vu) → lọc theo phong.kieu_phong.
+        $kieu = $request->query('kieu') === 'dich_vu' ? 'phong_dich_vu' : 'phong_kham';
+
+        $base = fn () => Booking::where('co_so_id', $co_so->id)
+            ->visibleTo(auth()->user())
+            ->whereHas('phong', fn ($q) => $q->where('kieu_phong', $kieu));
 
         $todayCount = (clone $base())->whereDate('ngay_dat', $today)->count();
 
@@ -340,6 +345,7 @@ class PageController extends Controller
             'processingCount' => $processingCount,
             'upcomingCount' => $upcomingCount, 'doneCount' => $doneCount,
             'tab' => $tab, 'nhom' => $nhom, 'bookings' => $bookings, 'active' => 'lich-hen',
+            'kieu' => $kieu,
         ]);
     }
 
