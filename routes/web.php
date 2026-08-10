@@ -158,6 +158,8 @@ Route::prefix('{co_so:slug}')->group(function () {
                 Route::get('/ket-noi/scrm', [\App\Http\Controllers\ScrmConnectionController::class, 'edit'])->name('scrm-connection.edit');
                 Route::post('/ket-noi/scrm', [\App\Http\Controllers\ScrmConnectionController::class, 'update'])->name('scrm-connection.update');
                 Route::post('/ket-noi/scrm/xoa-token', [\App\Http\Controllers\ScrmConnectionController::class, 'clearToken'])->name('scrm-connection.clear-token');
+                Route::get('/ket-noi/scrm/xuat', [\App\Http\Controllers\ScrmConnectionController::class, 'export'])->name('scrm-connection.export');
+                Route::post('/ket-noi/scrm/nhap', [\App\Http\Controllers\ScrmConnectionController::class, 'import'])->name('scrm-connection.import');
                 Route::post('/{section}', [SettingsController::class, 'store'])->name('store');
                 Route::put('/{section}/{id}', [SettingsController::class, 'update'])->name('update');
                 Route::delete('/{section}/{id}', [SettingsController::class, 'destroy'])->name('destroy');

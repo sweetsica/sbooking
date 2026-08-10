@@ -82,5 +82,25 @@
 
         <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-5 py-2 rounded-md">Lưu cấu hình</button>
     </form>
+
+    {{-- Xuất / Nhập cấu hình kết nối --}}
+    <div class="mt-6 border border-gray-200 rounded-md p-4">
+        <h2 class="text-sm font-semibold text-gray-700 mb-2">Xuất / Nhập cấu hình kết nối</h2>
+        <p class="text-xs text-gray-500 mb-3">Xuất cấu hình ra file JSON để backup hoặc chuyển sang môi trường khác. Nhập file JSON để áp dụng cấu hình đã xuất.</p>
+        <div class="flex flex-wrap items-end gap-4">
+            <a href="{{ route('settings.scrm-connection.export', $coSo) }}"
+               class="inline-block border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold text-sm px-4 py-2 rounded-md">
+                Xuất JSON
+            </a>
+            <form method="POST" action="{{ route('settings.scrm-connection.import', $coSo) }}" enctype="multipart/form-data" class="flex items-end gap-2">
+                @csrf
+                <label class="text-sm">
+                    <span class="block text-gray-600 mb-1 font-semibold">Nhập từ file</span>
+                    <input type="file" name="file" accept=".json" class="text-sm">
+                </label>
+                <button type="submit" class="border border-gray-300 text-gray-700 hover:bg-gray-50 font-semibold text-sm px-4 py-2 rounded-md">Nhập JSON</button>
+            </form>
+        </div>
+    </div>
 </div>
 @endsection

@@ -54,6 +54,45 @@ class ScrmConnectionController extends Controller
         return back()->with('ok', 'Đã lưu cấu hình SCRM.');
     }
 
+    public function export(CoSo $co_so)
+    {
+        $payload = [
+            'system' => 'sbooking',
+            'exported_at' => now()->toIso8601String(),
+            'scrm_url' => AppSetting::get('scrm_url', (string) (config('services.crm.url') ?? env('CRM_URL', ''))),
+            'scrm_api_token' => $this->tryDecrypt(AppSetting::get('scrm_api_token')) ?: (string) env('SCRM_API_TOKEN'),
+            'scrm_callback_hosts' => AppSetting::get('scrm_callback_hosts', implode("\n", (array) config('services.scrm.callback_hosts', []))),
+        ];
+
+        return response()->streamDownload(
+            fn () => print(json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)),
+            'sbooking-connection-' . now()->format('Ymd-His') . '.json',
+            ['Content-Type' => 'application/json; charset=utf-8'],
+        );
+    }
+
+    public function import(CoSo $co_so, Request $request)
+    {
+        $request->validate(['file' => 'required|file|mimes:json,txt|max:1024']);
+
+        $data = json_decode(file_get_contents($request->file('file')->getRealPath()), true);
+        if (! is_array($data)) {
+            return back()->with('ok', 'File JSON không hợp lệ.');
+        }
+
+        if (! empty($data['scrm_url'])) {
+            AppSetting::set('scrm_url', rtrim($data['scrm_url'], '/'));
+        }
+        if (! empty($data['scrm_api_token'])) {
+            AppSetting::set('scrm_api_token', Crypt::encryptString($data['scrm_api_token']));
+        }
+        if (isset($data['scrm_callback_hosts'])) {
+            AppSetting::set('scrm_callback_hosts', $data['scrm_callback_hosts']);
+        }
+
+        return back()->with('ok', 'Đã nhập cấu hình kết nối từ file JSON.');
+    }
+
     public function clearToken(CoSo $co_so)
     {
         AppSetting::set('scrm_api_token', null);

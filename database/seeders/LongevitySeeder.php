@@ -285,15 +285,15 @@ class LongevitySeeder extends Seeder
 
         // ---- Admin cơ sở ----
         $adminCoSos = [
-            ['username' => 'admin59ntn',  'name' => 'Admin 59 NTN',       'co_so' => $cs59ntn,   'pw' => '59ntn'],
-            ['username' => 'admin207nvt', 'name' => 'Admin 207 NVT',      'co_so' => $cs207nvt,  'pw' => '207nvt'],
-            ['username' => 'adminl23tdn', 'name' => 'Admin Lô 2+3 TĐN',  'co_so' => $cslo23tdn, 'pw' => 'l23tdn'],
+            ['username' => 'admin59ntn',  'name' => 'Admin Cơ sở Hà Nội',  'email' => 'admin.hn@longevity.com.vn',  'co_so' => $cs59ntn,   'pw' => '59@ntn'],
+            ['username' => 'admin207nvt', 'name' => 'Admin Cơ sở HCM',     'email' => 'admin.hcm@longevity.com.vn', 'co_so' => $cs207nvt,  'pw' => '207@nvt'],
+            ['username' => 'adminl23tdn', 'name' => 'Admin Cơ sở Đà Nẵng', 'email' => 'admin.dn@longevity.com.vn',  'co_so' => $cslo23tdn, 'pw' => '23@tdn'],
         ];
         foreach ($adminCoSos as $a) {
-            User::updateOrCreate(['name' => $a['name']], [
+            User::updateOrCreate(['username' => $a['username']], [
                 'username'     => $a['username'],
                 'name'         => $a['name'],
-                'email'        => $a['username'] . '@local',
+                'email'        => $a['email'],
                 'password'     => Hash::make($a['pw']),
                 'co_so_id'     => $a['co_so']->id,
                 'phong_ban_id' => null,
