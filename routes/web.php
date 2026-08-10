@@ -44,6 +44,9 @@ Route::middleware('auth')->group(function () {
     // Xuất danh sách nhân sự toàn hệ thống (mỗi cơ sở 1 sheet). Gate admin trong controller.
     Route::get('/nhan-su-toan-he-thong/xuat', [\App\Http\Controllers\NhanSuAllController::class, 'export'])
         ->name('nhansu.all.export');
+
+    // 2026-08-10 — Sale tự tick "Dừng nhận lead" / "Nhận lead lại" từ topbar → push scrm.
+    Route::post('/dung-nhan-lead', [AuthController::class, 'toggleDungNhanLead'])->name('user.dungnhanlead');
 });
 
 Route::prefix('{co_so:slug}')->group(function () {
@@ -96,6 +99,8 @@ Route::prefix('{co_so:slug}')->group(function () {
         // 2026-08-05: BỎ them-phan-hoi / xoa-phan-hoi (dead — thay bằng binh-luan bên dưới).
         // Phase 6.25 (local): tiếp đón + bình luận + GET fallback (tránh 405 khi user copy URL action).
         Route::patch('/tiep-don/{booking}', [BookingController::class, 'capNhatTiepDon'])->name('booking.tiepdon');
+        // 2026-08-10 — Admin (BO / cơ sở / vận hành) tick "Booking trễ".
+        Route::patch('/booking-tre/{booking}', [BookingController::class, 'toggleBookingTre'])->name('booking.tre');
         Route::get('/trang-thai-khach/{booking}', function ($co_so_slug, $booking) {
             return redirect("/{$co_so_slug}/xem-dat-phong/{$booking}");
         });

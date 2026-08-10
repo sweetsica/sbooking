@@ -1346,6 +1346,22 @@ class BookingController extends Controller
         return back()->with($push['ok'] ? 'ok' : 'warn', $label . '. ' . $push['msg']);
     }
 
+    /**
+     * 2026-08-10 — Toggle cờ "Booking trễ" (Admin cơ sở / Quản trị vận hành / is_admin BO).
+     */
+    public function toggleBookingTre(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $u = auth()->user();
+        $allowed = $u?->is_admin || in_array($u?->vaiTro?->ma, ['admin_co_so', 'quan_tri_van_hanh'], true);
+        abort_unless($allowed, 403, 'Chỉ Admin cơ sở / Quản trị vận hành mới được tick Booking trễ.');
+
+        $booking->update(['booking_tre' => ! (bool) $booking->booking_tre]);
+        $label = $booking->booking_tre ? 'Đã đánh dấu Booking trễ.' : 'Đã bỏ đánh dấu Booking trễ.';
+
+        return back()->with('ok', $label);
+    }
+
     /** Thêm bình luận "sau dịch vụ" (nhiều vai trò được phép). */
     public function themBinhLuan(CoSo $co_so, Booking $booking, Request $request)
     {

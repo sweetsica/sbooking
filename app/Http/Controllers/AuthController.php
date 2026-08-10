@@ -81,6 +81,25 @@ class AuthController extends Controller
         return back()->with('ok', 'Đã đổi mật khẩu thành công.');
     }
 
+    /**
+     * 2026-08-10 — Sale tự tick "Dừng nhận lead" / "Nhận lead lại" từ topbar.
+     * Toggle cột local `users.dung_nhan_lead` + push scrm cùng lúc.
+     */
+    public function toggleDungNhanLead(Request $request)
+    {
+        $user = $request->user();
+        $moi = ! (bool) $user->dung_nhan_lead;
+        $user->update([
+            'dung_nhan_lead' => $moi,
+            'dung_nhan_lead_since' => $moi ? now() : null,
+        ]);
+
+        $push = \App\Services\CrmPushService::pushDungNhanLead($user->id, $moi);
+        $label = $moi ? 'Đã dừng nhận lead — bạn tạm loại khỏi vòng chia UPS.' : 'Đã nhận lead lại — quay về vòng chia UPS.';
+
+        return back()->with($push['ok'] ? 'ok' : 'warn', $label . ' ' . $push['msg']);
+    }
+
     // Trang chủ theo người dùng: bác sĩ → lịch tư vấn, còn lại → đặt phòng
     private function homeFor($user): string
     {

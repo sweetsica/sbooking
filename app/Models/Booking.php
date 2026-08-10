@@ -25,6 +25,8 @@ class Booking extends Model
         'crm_khach_ma',
         // Phase 6.25.C (local): tiếp đón cho sale auto-chia từ UPS scrm.
         'trang_thai_tiep_don', 'tiep_don_user_id', 'tiep_don_bat_dau', 'tiep_don_hoan_tat',
+        // 2026-08-10: Admin BO/cơ sở/vận hành tick khi booking quá muộn.
+        'booking_tre',
     ];
 
     protected $casts = [
@@ -37,6 +39,7 @@ class Booking extends Model
         'da_duyet' => 'boolean',
         'tiep_don_bat_dau' => 'datetime',
         'tiep_don_hoan_tat' => 'datetime',
+        'booking_tre' => 'boolean',
     ];
 
     protected static function booted(): void

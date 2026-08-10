@@ -349,6 +349,14 @@
         </x-longevity.filter-field>
     @endunless
 
+    {{-- 2026-08-10 — Filter "Chỉ Booking trễ". --}}
+    <x-longevity.filter-field label="BOOKING TRỄ">
+        <label class="inline-flex items-center gap-2 h-10 px-3 rounded-lg border border-outline-variant bg-surface text-body-sm cursor-pointer hover:bg-surface-container-low">
+            <input type="checkbox" name="booking_tre" value="1" @checked(! empty($filters['booking_tre'])) class="w-4 h-4 accent-rose-600">
+            <span>Chỉ booking trễ</span>
+        </label>
+    </x-longevity.filter-field>
+
     <x-slot:actions>
         <button type="submit" class="inline-flex items-center gap-1.5 px-4 h-10 text-body-sm font-semibold bg-primary text-on-primary rounded-lg hover:opacity-90 transition-opacity">
             <span class="material-symbols-outlined text-[18px]">filter_list</span> Lọc dữ liệu

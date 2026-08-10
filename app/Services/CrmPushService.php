@@ -196,8 +196,40 @@ class CrmPushService
             if ($r->successful()) {
                 return ['ok' => true, 'msg' => $isBusy ? 'Đã báo đang tiếp đón.' : 'Đã báo hoàn tất.'];
             }
-            return ['ok' => false, 'msg' => 'CRM trả HTTP ' . $r->status() . '.'];
+            $body = $r->json();
+            $reason = $body['reason'] ?? ('HTTP ' . $r->status());
+            Log::warning('CrmPush pushTiepDon fail', ['status' => $r->status(), 'body' => $r->body(), 'email' => $u?->email]);
+            return ['ok' => false, 'msg' => 'CRM từ chối: ' . $reason];
         } catch (\Throwable $e) {
+            Log::warning('CrmPush pushTiepDon exception: ' . $e->getMessage());
+            return ['ok' => false, 'msg' => 'Lỗi mạng CRM: ' . $e->getMessage()];
+        }
+    }
+
+    /** 2026-08-10 — Push "Dừng nhận lead" / "Nhận lead lại" sang scrm. */
+    public static function pushDungNhanLead(int $userId, bool $isPaused): array
+    {
+        $token = self::callbackToken($userId);
+        if (! $token) {
+            return ['ok' => false, 'msg' => 'Chưa cấu hình SCRM_API_TOKEN.'];
+        }
+        $u = \App\Models\User::find($userId);
+        $endpoint = $isPaused ? '/api/ups/pause' : '/api/ups/resume';
+        try {
+            $r = Http::withToken($token)->acceptJson()->timeout(6)
+                ->post(self::crmUrl() . $endpoint, [
+                    'sale_email' => $u?->email,
+                    'work_date'  => now()->toDateString(),
+                ]);
+            if ($r->successful()) {
+                return ['ok' => true, 'msg' => $isPaused ? 'Đã báo Dừng nhận lead sang CRM.' : 'Đã báo Nhận lead lại sang CRM.'];
+            }
+            $body = $r->json();
+            $reason = $body['reason'] ?? ('HTTP ' . $r->status());
+            Log::warning('CrmPush pushDungNhanLead fail', ['status' => $r->status(), 'body' => $r->body(), 'email' => $u?->email]);
+            return ['ok' => false, 'msg' => 'CRM từ chối: ' . $reason];
+        } catch (\Throwable $e) {
+            Log::warning('CrmPush pushDungNhanLead exception: ' . $e->getMessage());
             return ['ok' => false, 'msg' => 'Lỗi mạng CRM: ' . $e->getMessage()];
         }
     }

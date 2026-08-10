@@ -39,6 +39,8 @@ class User extends Authenticatable
         'thoi_gian_kham',
         'gio_bat_dau',
         'gio_ket_thuc',
+        'dung_nhan_lead',
+        'dung_nhan_lead_since',
     ];
 
     public function coSo(): BelongsTo
@@ -112,6 +114,8 @@ class User extends Authenticatable
             'nhan_kham_ls' => 'boolean',
             'phut_tu_van' => 'integer',
             'phut_kham_ls' => 'integer',
+            'dung_nhan_lead' => 'boolean',
+            'dung_nhan_lead_since' => 'datetime',
         ];
     }
 }

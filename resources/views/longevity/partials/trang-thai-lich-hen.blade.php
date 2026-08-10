@@ -18,7 +18,7 @@
 
 {{-- Phần 1: nút trạng thái --}}
 @if ($canTrangThai)
-<div class="px-5 py-4 flex flex-wrap gap-2 border-b border-outline-variant">
+<div class="px-5 py-4 flex flex-wrap items-center gap-2 border-b border-outline-variant">
 @php
     $hasCrmLink = ! empty($booking->crm_khach_ma);
     $confirmSuffix = $hasCrmLink
@@ -33,6 +33,8 @@
         ? ['da_toi' => ['Khách đã tới', 'how_to_reg']]
         : ['da_toi' => ['Khách đã tới', 'how_to_reg'], 'toi_tre' => ['Khách tới trễ', 'schedule'], 'huy' => ['Khách hủy', 'person_off']];
 @endphp
+{{-- 2026-08-10 — Group 1: nút tiếp tân. Group 2 (sale, ml-auto): "Đang tiếp đón" + "Đã xong". --}}
+<div class="flex flex-wrap items-center gap-2">
 @foreach ($__ttOptions as $val => $meta)
 <form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $booking->id }}"
       onsubmit="return confirm('Xác nhận đổi trạng thái sang: {{ $meta[0] }}?{{ $confirmSuffix }}');">
@@ -43,6 +45,23 @@
 </button>
 </form>
 @endforeach
+</div>
+<div class="flex flex-wrap items-center gap-2 ml-auto">
+{{-- 2026-08-10 — Nút "Booking trễ" chỉ Admin cơ sở / Quản trị vận hành (hoặc is_admin BO) mới tick được. --}}
+@php
+    $__canTre = auth()->user()?->is_admin || in_array(auth()->user()?->vaiTro?->ma, ['admin_co_so', 'quan_tri_van_hanh'], true);
+    $__isTre = (bool) $booking->booking_tre;
+@endphp
+@if ($__canTre)
+    <form method="POST" action="/{{ $coSo->slug }}/booking-tre/{{ $booking->id }}"
+          onsubmit="return confirm('{{ $__isTre ? 'Bỏ đánh dấu Booking trễ?' : 'Đánh dấu Booking trễ cho đơn này?' }}');">
+        @csrf @method('PATCH')
+        <button type="submit" class="h-[38px] px-4 rounded-lg font-semibold text-body-sm flex items-center gap-1.5 border transition-colors {{ $__isTre ? 'bg-rose-600 text-white border-rose-600 hover:bg-rose-700' : 'border-outline text-on-surface-variant hover:bg-surface-container-high' }}">
+            <span class="material-symbols-outlined text-[18px]">schedule</span>
+            {{ $__isTre ? 'Booking trễ ✓' : 'Booking trễ' }}
+        </button>
+    </form>
+@endif
 {{-- 2026-08-10 — Nút "Đang tiếp đón / Hoàn tất" hiện cho sale được gán (tiep_don_user_id hoặc sale_id). --}}
 @if ($booking->tiep_don_user_id === auth()->id() || $booking->sale_id === auth()->id())
     @php $__tdBusy = $booking->trang_thai_tiep_don === 'dang_tiep_don'; @endphp
@@ -64,6 +83,7 @@
 <span class="material-symbols-outlined text-[18px]">task_alt</span> {{ $done ? 'Đã xong ✓' : 'Đã xong' }}
 </button>
 </form>
+</div>
 </div>
 @endif
 

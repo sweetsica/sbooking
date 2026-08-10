@@ -138,7 +138,25 @@
 <span class="material-symbols-outlined absolute right-1.5 top-1/2 -translate-y-1/2 text-on-surface-variant text-[18px] pointer-events-none">expand_more</span>
 </div>
 @endif
-@php $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0; @endphp
+@php
+    $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
+    // 2026-08-10 — Nút "Dừng nhận lead" chỉ cho sale (chức danh HC/SHC/CM/DM), không cho admin.
+    $__saleChucDanh = in_array(auth()->user()?->chuc_danh, ['HC', 'SHC', 'CM', 'DM'], true);
+    $__showDungNhanLead = auth()->check() && $__saleChucDanh && ! auth()->user()->is_admin;
+    $__isPaused = (bool) (auth()->user()->dung_nhan_lead ?? false);
+@endphp
+@if ($__showDungNhanLead)
+    <form method="POST" action="/dung-nhan-lead" class="shrink-0"
+          onsubmit="return confirm('{{ $__isPaused ? 'Nhận lead lại — bạn sẽ quay về vòng chia UPS?' : 'Dừng nhận lead — tạm loại bạn khỏi vòng chia UPS?' }}');">
+        @csrf
+        <button type="submit"
+                title="{{ $__isPaused ? 'Bạn đang tạm dừng — bấm để nhận lead lại' : 'Tạm dừng nhận lead (loại khỏi UPS)' }}"
+                class="px-2.5 py-1.5 rounded-full flex items-center gap-1.5 text-body-sm font-semibold transition-all whitespace-nowrap {{ $__isPaused ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' }}">
+            <span class="material-symbols-outlined text-[18px]">{{ $__isPaused ? 'pause_circle' : 'notifications_active' }}</span>
+            <span class="hidden lg:inline">{{ $__isPaused ? 'Đang tạm dừng' : 'Nhận lead' }}</span>
+        </button>
+    </form>
+@endif
 <div class="flex items-center gap-0.5 sm:gap-2 border-l border-outline-variant pl-1 sm:pl-2 xl:pl-4 shrink-0">
 <details class="relative shrink-0" id="thongbao-details">
 <summary title="Thông báo" class="list-none cursor-pointer select-none p-1.5 sm:p-2 text-on-surface-variant hover:bg-surface-container-low transition-all rounded-full flex relative [&::-webkit-details-marker]:hidden">

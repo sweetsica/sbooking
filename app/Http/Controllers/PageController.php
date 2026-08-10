@@ -623,6 +623,10 @@ class PageController extends Controller
         } elseif ($request->filled('trang_thai')) {
             $query->where('trang_thai', $request->query('trang_thai'));
         }
+        // 2026-08-10 — Filter "Chỉ booking trễ".
+        if ($request->boolean('booking_tre')) {
+            $query->where('booking_tre', true);
+        }
 
         // Sort: mặc định latest('id'); cho phép sort theo ngay_dat hoặc khung_gio (gio_thuc_hien).
         $sort = in_array($request->query('sort'), ['ngay_dat', 'khung_gio'], true) ? $request->query('sort') : null;
@@ -681,7 +685,7 @@ class PageController extends Controller
             'sales' => $sales,
             'nguons' => Booking::where('co_so_id', $co_so->id)
                 ->whereNotNull('nguon')->distinct()->pluck('nguon'),
-            'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai']),
+            'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai', 'booking_tre']),
             'sort' => $sort,
             'dir' => $dir,
             'currentSlotBookings' => $currentSlotBookings,
