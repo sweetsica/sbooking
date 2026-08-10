@@ -149,20 +149,42 @@ class Booking extends Model
     public function scopeVisibleTo(Builder $q, ?User $user): Builder
     {
         $table = $q->getModel()->getTable();
+        $uid = $user?->id ?? 0;
 
-        // Mức cao nhất: xem tất cả trong cơ sở.
-        if ($user && $user->coQuyen('xem_booking')) {
+        if (! $user) return $q->whereRaw('1=0');
+
+        // 2026-08-10 sync với AuthorizesByPhanQuyen::bookingViewScope — 4 cấp perm mới:
+        //   xem_booking_tat_ca > xem_booking_co_so_toi > xem_booking_phong_toi > xem_booking_cua_toi
+        //   Legacy: xem_booking / xem_booking_phong_ban (nếu còn sót vai_tro/phong_ban dùng).
+        //   "Cua toi" giờ bao gồm: nguoi_tao / bac_si / ktv / sale / tiep_don_user (Sale được UPS auto-chia).
+        //   Trước đây chỉ check nguoi_tao_id → Sale tiếp đón admin giao qua UPS không thấy lịch mình được gán.
+
+        if ($user->coQuyen('xem_booking_tat_ca') || $user->coQuyen('xem_booking')) {
             return $q;
         }
 
-        // Mức nhánh con: người cùng phòng ban tạo. Cần có phong_ban_id mới xác định được nhánh.
-        if ($user && $user->phong_ban_id && $user->coQuyen('xem_booking_phong_ban')) {
-            return $q->whereIn($table . '.nguoi_tao_id', function ($sub) use ($user) {
-                $sub->select('id')->from('users')->where('phong_ban_id', $user->phong_ban_id);
+        if ($user->coQuyen('xem_booking_co_so_toi')) {
+            return $q->where($table . '.co_so_id', $user->co_so_id);
+        }
+
+        if ($user->phong_ban_id && ($user->coQuyen('xem_booking_phong_toi') || $user->coQuyen('xem_booking_phong_ban'))) {
+            $teamUserIds = \App\Models\User::where('phong_ban_id', $user->phong_ban_id)->pluck('id');
+            return $q->where(function ($qq) use ($teamUserIds, $table) {
+                $qq->whereIn($table . '.nguoi_tao_id', $teamUserIds)
+                   ->orWhereIn($table . '.bac_si_id', $teamUserIds)
+                   ->orWhereIn($table . '.ktv_user_id', $teamUserIds)
+                   ->orWhereIn($table . '.sale_id', $teamUserIds)
+                   ->orWhereIn($table . '.tiep_don_user_id', $teamUserIds);
             });
         }
 
-        // Mặc định: chỉ booking mình tạo.
-        return $q->where($table . '.nguoi_tao_id', $user?->id ?? 0);
+        // Cua toi (mặc định + xem_booking_cua_toi): mọi field user liên quan.
+        return $q->where(function ($qq) use ($uid, $table) {
+            $qq->where($table . '.nguoi_tao_id', $uid)
+               ->orWhere($table . '.bac_si_id', $uid)
+               ->orWhere($table . '.ktv_user_id', $uid)
+               ->orWhere($table . '.sale_id', $uid)
+               ->orWhere($table . '.tiep_don_user_id', $uid);
+        });
     }
 }
