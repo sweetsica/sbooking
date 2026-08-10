@@ -39,9 +39,9 @@
 
     // "Duyệt lịch": chỉ hiện cho người có quyền duyệt.
     if ($canDuyet) {
-        array_splice($items, 1, 0, [
-            ['key' => 'duyet-lich', 'label' => 'Duyệt lịch', 'icon' => 'fact_check', 'href' => '/'.$coSo->slug.'/duyet-lich'],
-        ]);
+        array_unshift($items,
+            ['key' => 'duyet-lich', 'label' => 'Duyệt lịch', 'icon' => 'fact_check', 'href' => '/'.$coSo->slug.'/duyet-lich']
+        );
     }
 
     // Nhân viên: chỉ thấy 2 loại đặt lịch.
