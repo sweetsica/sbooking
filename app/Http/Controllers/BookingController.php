@@ -1177,7 +1177,20 @@ class BookingController extends Controller
                 }
             }
             if ($booking->bac_si_id && $booking->dich_vu_id && $booking->khung_gio_id) {
-                $err = $this->checkBacSiCapacity((int) $booking->bac_si_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, $ngayStr, $booking->id);
+                // 2026-08-11 fix: truyền gio_thuc_hien/gio_ket_thuc từ booking để check dùng
+                // slot thực (khớp với check ở API create). Nếu chỉ truyền khung_gio_id →
+                // check dùng khoảng của khung table (có thể chênh với slot thực do khung
+                // seed sai) → báo "khung 5' cần 25'" dù booking gio_thuc_hien/gio_ket_thuc
+                // đã đủ 25'.
+                $err = $this->checkBacSiCapacity(
+                    (int) $booking->bac_si_id,
+                    (int) $booking->khung_gio_id,
+                    (int) $booking->dich_vu_id,
+                    $ngayStr,
+                    $booking->id,
+                    $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null,
+                    $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null,
+                );
                 if ($err) {
                     \App\Services\CrmPushService::pushValidationErrorAsync($booking, auth()->id(), $err);
                     return back()->with('error', 'Không duyệt được: '.$err);
