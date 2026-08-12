@@ -10,3 +10,6 @@ Artisan::command('inspire', function () {
 
 // Quét lịch sắp diễn ra trong ~60-70 phút tới, gửi nhắc hẹn cho BS/KTV.
 Schedule::command('lich:nhac-hen')->everyTenMinutes()->withoutOverlapping();
+
+// #10 (2026-08-12) — Auto hủy booking cho_duyet quá 10' giờ hẹn mà Admin chưa duyệt.
+Schedule::command('bookings:auto-cancel-overdue')->everyFiveMinutes()->withoutOverlapping();
