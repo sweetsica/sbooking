@@ -1363,6 +1363,38 @@ class BookingController extends Controller
     }
 
     /**
+     * 2026-08-12 — Admin cơ sở / Quản trị vận hành sửa tay Giờ đến (tiep_don_bat_dau) +
+     * Giờ hoàn thành (tiep_don_hoan_tat) — dùng khi sale quên bấm, hoặc admin điều chỉnh.
+     * Nhận input HH:mm, combine với ngày booking để build datetime.
+     */
+    public function capNhatThoiGianTiepDonManual(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        $u = auth()->user();
+        $allowed = $u?->is_admin || in_array($u?->vaiTro?->ma, ['admin_co_so', 'quan_tri_van_hanh'], true);
+        abort_unless($allowed, 403, 'Chỉ Admin cơ sở / Quản trị vận hành mới sửa được giờ đến/hoàn thành.');
+
+        $data = $request->validate([
+            'gio_den'        => ['nullable', 'date_format:H:i'],
+            'gio_hoan_thanh' => ['nullable', 'date_format:H:i'],
+        ]);
+
+        $ngay = $booking->ngay_dat?->format('Y-m-d') ?: now()->format('Y-m-d');
+        $updates = [];
+        if (array_key_exists('gio_den', $data)) {
+            $updates['tiep_don_bat_dau'] = $data['gio_den'] ? "{$ngay} {$data['gio_den']}:00" : null;
+        }
+        if (array_key_exists('gio_hoan_thanh', $data)) {
+            $updates['tiep_don_hoan_tat'] = $data['gio_hoan_thanh'] ? "{$ngay} {$data['gio_hoan_thanh']}:00" : null;
+        }
+        if ($updates) {
+            $booking->update($updates);
+        }
+
+        return back()->with('ok', 'Đã cập nhật giờ đến / hoàn thành.');
+    }
+
+    /**
      * 2026-08-10 — Toggle cờ "Booking trễ" (Admin cơ sở / Quản trị vận hành / is_admin BO).
      */
     public function toggleBookingTre(CoSo $co_so, Booking $booking, Request $request)

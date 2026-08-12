@@ -101,6 +101,8 @@ Route::prefix('{co_so:slug}')->group(function () {
         Route::patch('/tiep-don/{booking}', [BookingController::class, 'capNhatTiepDon'])->name('booking.tiepdon');
         // 2026-08-10 — Admin (BO / cơ sở / vận hành) tick "Booking trễ".
         Route::patch('/booking-tre/{booking}', [BookingController::class, 'toggleBookingTre'])->name('booking.tre');
+        // 2026-08-12 — Admin sửa tay giờ đến / giờ hoàn thành (khi khách đến muộn / quên bấm).
+        Route::patch('/thoi-gian-tiep-don/{booking}', [BookingController::class, 'capNhatThoiGianTiepDonManual'])->name('booking.tiepdon.time');
         Route::get('/trang-thai-khach/{booking}', function ($co_so_slug, $booking) {
             return redirect("/{$co_so_slug}/xem-dat-phong/{$booking}");
         });

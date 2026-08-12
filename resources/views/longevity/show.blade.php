@@ -162,6 +162,41 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="ro font-time-slot">{{ $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc,0,5) : '—' }}</div>
 </div>
 </div>
+
+{{-- 2026-08-12 — Giờ đến / Giờ hoàn thành (thời gian tiếp đón thực tế).
+     Admin cơ sở / Quản trị vận hành / is_admin sửa được; user khác chỉ đọc. --}}
+@php
+    $__canEditTiepDon = auth()->user()?->is_admin || in_array(auth()->user()?->vaiTro?->ma, ['admin_co_so', 'quan_tri_van_hanh'], true);
+    $__gioDen = $booking->tiep_don_bat_dau?->format('H:i');
+    $__gioHT = $booking->tiep_don_hoan_tat?->format('H:i');
+@endphp
+@if ($__canEditTiepDon)
+    <form method="POST" action="/{{ $coSo->slug }}/thoi-gian-tiep-don/{{ $booking->id }}" class="grid grid-cols-2 gap-4 pt-2 border-t border-outline-variant/60">
+        @csrf @method('PATCH')
+        <div>
+            <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ đến (khách tới)</label>
+            <input type="time" name="gio_den" value="{{ $__gioDen }}" class="w-full h-[42px] px-3 rounded-lg border border-outline-variant bg-surface font-time-slot text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none">
+        </div>
+        <div>
+            <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ hoàn thành</label>
+            <div class="flex items-center gap-2">
+                <input type="time" name="gio_hoan_thanh" value="{{ $__gioHT }}" class="flex-1 h-[42px] px-3 rounded-lg border border-outline-variant bg-surface font-time-slot text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none">
+                <button type="submit" class="h-[42px] px-4 rounded-lg bg-primary text-on-primary text-body-sm font-semibold hover:opacity-90">Lưu</button>
+            </div>
+        </div>
+    </form>
+@else
+    <div class="grid grid-cols-2 gap-4">
+        <div>
+            <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ đến</label>
+            <div class="ro font-time-slot">{{ $__gioDen ?? '—' }}</div>
+        </div>
+        <div>
+            <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Giờ hoàn thành</label>
+            <div class="ro font-time-slot">{{ $__gioHT ?? '—' }}</div>
+        </div>
+    </div>
+@endif
 </div>
 </div>
 
