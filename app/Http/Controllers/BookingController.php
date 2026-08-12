@@ -1171,12 +1171,15 @@ class BookingController extends Controller
             if ($booking->ktv_user_id && $booking->khung_gio_id) {
                 $busy = $this->ktvBanKhoangGio($co_so, (int) $booking->ktv_user_id, $ngayStr, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
                 if ($busy) {
-                    return back()->with('error', 'Không duyệt được: KTV đã được đặt cho khung giờ này bởi đơn khác.');
+                    $ktvErr = 'KTV đã được đặt cho khung giờ này bởi đơn khác.';
+                    \App\Services\CrmPushService::pushValidationErrorAsync($booking, auth()->id(), $ktvErr);
+                    return back()->with('error', 'Không duyệt được: '.$ktvErr);
                 }
             }
             if ($booking->bac_si_id && $booking->dich_vu_id && $booking->khung_gio_id) {
                 $err = $this->checkBacSiCapacity((int) $booking->bac_si_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, $ngayStr, $booking->id);
                 if ($err) {
+                    \App\Services\CrmPushService::pushValidationErrorAsync($booking, auth()->id(), $err);
                     return back()->with('error', 'Không duyệt được: '.$err);
                 }
                 $msg = $this->bacSiTrungLich($co_so, (int) $booking->bac_si_id, $ngayStr, (int) $booking->khung_gio_id, $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null, $booking->gio_ket_thuc ? substr($booking->gio_ket_thuc, 0, 5) : null, $booking->id);
