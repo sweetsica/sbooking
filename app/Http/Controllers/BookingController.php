@@ -1154,7 +1154,13 @@ class BookingController extends Controller
         abort_unless($booking->co_so_id === $co_so->id, 404);
         $this->authorizePerm('duyet_booking');
 
-        $approve = ! $booking->da_duyet;
+        // 2026-08-13 fix: dùng trang_thai làm nguồn duy nhất (đồng bộ với badge UI +
+        // button label). Trước đây dựa vào $booking->da_duyet — nếu 2 cột lệch
+        // (VD trang_thai='cho_duyet' nhưng da_duyet=true do CRM push cũ auto-duyệt)
+        // → user bấm Duyệt nhưng controller tính $approve=false → skip check capacity
+        // → return "Đã bỏ duyệt" (không phản hồi rõ). Chỉ khi hủy duyệt rồi bấm lại
+        // (lúc này 2 cột đã sync) mới hiện lỗi capacity.
+        $approve = $booking->trang_thai !== 'da_duyet';
 
         // Phase C1.d (2026-08-02): guard capacity mỗi lần duyệt (không chỉ re-approve
         // đơn từ chối). Đơn từ CRM push sang có thể trải qua thời gian chờ nên slot có
