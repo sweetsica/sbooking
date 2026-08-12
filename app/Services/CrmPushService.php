@@ -68,6 +68,27 @@ class CrmPushService
         return $user?->api_token;
     }
 
+    /**
+     * 2026-08-12 — Khi admin sbooking bấm Duyệt nhưng bị chặn bởi capacity/KTV check,
+     * bắn về SCRM để BookingLog.sync_status='failed' + sync_error=<message>.
+     * SCRM caller sẽ hiển thị lỗi trên card booking để user biết & sửa.
+     */
+    public static function pushValidationErrorAsync(Booking $booking, int $userId, string $err): void
+    {
+        if (! $booking->crm_khach_ma) return;
+        $bookingId = $booking->id;
+        \Illuminate\Support\Facades\App::terminating(function () use ($bookingId, $userId, $err) {
+            $b = Booking::find($bookingId);
+            if (! $b) return;
+            self::push($b, $userId, [
+                'type' => 'validation_error',
+                'booking_ma' => $b->ma_booking,
+                'sbooking_booking_id' => $b->id,
+                'validation_error' => $err,
+            ]);
+        });
+    }
+
     public static function pushDeleteAsync(Booking $booking, int $userId): void
     {
         if (! $booking->crm_khach_ma) return;
