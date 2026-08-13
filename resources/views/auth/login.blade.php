@@ -93,7 +93,13 @@ Ghi nhớ đăng nhập
 @endif
 </div>
 
-<p class="text-center text-xs text-on-surface-variant mt-6">© Longevity Booking · Hệ thống quản lý đặt lịch Longevity</p>
+<p class="text-center text-xs text-on-surface-variant mt-6 flex items-center justify-center gap-2">
+<span>© Longevity Booking · Hệ thống quản lý đặt lịch Longevity</span>
+@php $__latestVer = \App\Support\Changelog::latest(); @endphp
+@if ($__latestVer)
+<a href="/changelog" title="Xem changelog" class="px-2 py-0.5 rounded-md bg-surface-container-low border border-outline-variant text-on-surface-variant font-semibold hover:bg-surface-container-high">{{ $__latestVer['version'] }}</a>
+@endif
+</p>
 </div>
 </body>
 </html>
