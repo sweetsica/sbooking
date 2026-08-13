@@ -75,6 +75,22 @@ Ghi nhớ đăng nhập
 <span class="material-symbols-outlined text-[20px]">login</span> Đăng nhập
 </button>
 </form>
+
+<a href="{{ route('demo') }}" class="mt-4 w-full py-2.5 border border-outline text-on-surface font-semibold rounded-lg hover:bg-surface transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">menu_book</span> Hướng dẫn sử dụng
+</a>
+
+@php
+    $scrmUrl = rtrim(\App\Models\AppSetting::get('scrm_url', (string) (config('services.scrm.url') ?? env('CRM_URL', ''))), '/');
+@endphp
+@if ($scrmUrl)
+<div class="flex items-center gap-3 my-5 text-[10px] uppercase tracking-widest text-on-surface-variant/60">
+<span class="flex-1 h-px bg-outline-variant"></span><span>hoặc</span><span class="flex-1 h-px bg-outline-variant"></span>
+</div>
+<a href="{{ $scrmUrl }}/login" class="w-full py-2.5 border border-outline text-on-surface font-semibold rounded-lg hover:bg-surface transition-all flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[20px]">database</span> Chuyển sang Datasource
+</a>
+@endif
 </div>
 
 <p class="text-center text-xs text-on-surface-variant mt-6">© Longevity Booking · Hệ thống quản lý đặt lịch Longevity</p>

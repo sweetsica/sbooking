@@ -22,6 +22,7 @@ Route::get('/', function () {
 
 // Trang hướng dẫn nhanh (demo luồng vận hành) — public, không cần đăng nhập
 Route::view('/demo', 'longevity.demo')->name('demo');
+Route::view('/changelog', 'changelog')->name('changelog');
 
 // Đăng nhập / đăng xuất
 Route::get('/login', [AuthController::class, 'showLogin'])->name('login');

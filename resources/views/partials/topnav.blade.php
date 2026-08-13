@@ -81,6 +81,10 @@
 </div>
 <h1 class="text-headline-md font-bold text-on-surface leading-tight whitespace-nowrap hidden xl:block">Longevity Booking</h1>
 </a>
+@php $__latestVer = \App\Support\Changelog::latest(); @endphp
+@if ($__latestVer)
+<a href="/changelog" title="Xem changelog" class="hidden lg:inline-flex items-center px-2 py-0.5 rounded-md bg-surface-container-low border border-outline-variant text-body-sm font-semibold text-on-surface-variant hover:bg-surface-container-high shrink-0">{{ $__latestVer['version'] }}</a>
+@endif
 <!-- Navigation Links (tablet: chỉ icon, lg+: kèm nhãn) -->
 <nav class="flex items-center gap-1 shrink-0">
 @foreach ($items as $it)
