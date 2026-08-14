@@ -1148,13 +1148,38 @@ class BookingController extends Controller
             ->with('ok', 'Đã xóa lịch hẹn của ' . $ten . '.' . $extra);
     }
 
-    /** Duyệt / bỏ duyệt lịch đặt phòng (chỉ admin). */
-    public function duyet(CoSo $co_so, Booking $booking)
+    /** Duyệt / bỏ duyệt lịch đặt phòng (chỉ admin).
+     *  B5c (2026-08-14): admin vận hành + admin hệ thống được edit sale/giờ/note lúc duyệt.
+     *    Fields nhận từ request (optional): gio_thuc_hien, gio_ket_thuc, tiep_don_user_id, ghi_chu.
+     *    Giờ nhập tự do (không validate capacity — dùng để thống kê ca đến trễ / quá giờ sau).
+     */
+    public function duyet(CoSo $co_so, Booking $booking, \Illuminate\Http\Request $request)
     {
         abort_unless($booking->co_so_id === $co_so->id, 404);
         $this->authorizePerm('duyet_booking');
 
         $approve = ! $booking->da_duyet;
+
+        // B5c: apply edit fields TRƯỚC khi validate capacity + push CRM.
+        if ($approve) {
+            $data = $request->validate([
+                'gio_thuc_hien'      => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+                'gio_ket_thuc'       => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+                'tiep_don_user_id'   => ['nullable', 'integer', 'exists:users,id'],
+                'ghi_chu'            => ['nullable', 'string', 'max:2000'],
+            ]);
+
+            if (! empty($data['gio_thuc_hien'])) $booking->gio_thuc_hien = $data['gio_thuc_hien'];
+            if (! empty($data['gio_ket_thuc']))  $booking->gio_ket_thuc  = $data['gio_ket_thuc'];
+            if (array_key_exists('ghi_chu', $data)) $booking->ghi_chu = $data['ghi_chu'];
+            if (! empty($data['tiep_don_user_id'])) {
+                // Q5.2: sale dropdown chỉ hiện sale cùng co_so_id của booking.
+                $saleOk = \App\Models\User::where('id', $data['tiep_don_user_id'])
+                    ->where('co_so_id', $booking->co_so_id)->exists();
+                abort_unless($saleOk, 422, 'Sale không thuộc cơ sở của booking này.');
+                $booking->tiep_don_user_id = $data['tiep_don_user_id'];
+            }
+        }
 
         // Phase C1.d (2026-08-02): guard capacity mỗi lần duyệt (không chỉ re-approve
         // đơn từ chối). Đơn từ CRM push sang có thể trải qua thời gian chờ nên slot có

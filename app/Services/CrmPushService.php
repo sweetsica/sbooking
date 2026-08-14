@@ -23,6 +23,15 @@ class CrmPushService
 
     public static function pushStatus(Booking $booking, int $userId): array
     {
+        // B5c (2026-08-14): gửi thêm giờ / KTV / ghi_chu — CRM nhận về khi admin sbooking
+        // đổi lúc duyệt (SCRM cập nhật BookingLog.scheduled_at / cv1_user_id / note).
+        $scheduledAt = $booking->ngay_dat && $booking->gio_thuc_hien
+            ? $booking->ngay_dat->toDateString() . ' ' . substr($booking->gio_thuc_hien, 0, 8)
+            : null;
+        $scheduledEnd = $booking->ngay_dat && $booking->gio_ket_thuc
+            ? $booking->ngay_dat->toDateString() . ' ' . substr($booking->gio_ket_thuc, 0, 8)
+            : null;
+
         return self::push($booking, $userId, [
             'type' => 'status',
             'booking_ma' => $booking->ma_booking,
@@ -30,6 +39,10 @@ class CrmPushService
             'trang_thai_khach' => $booking->trang_thai_khach,
             'trang_thai' => $booking->trang_thai,
             'ly_do_tu_choi' => $booking->ly_do_tu_choi,
+            'scheduled_at' => $scheduledAt,
+            'scheduled_end_at' => $scheduledEnd,
+            'note' => $booking->ghi_chu,
+            'cv1_user_id' => $booking->tiep_don_user_id, // Sale tiếp đón = CV1 bên CRM.
         ]);
     }
 

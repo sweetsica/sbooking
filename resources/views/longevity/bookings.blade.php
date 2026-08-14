@@ -483,12 +483,23 @@
 <span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $badge[1] }}" @if($rejected && $b->ly_do_tu_choi) title="Lý do từ chối: {{ $b->ly_do_tu_choi }}" @endif>{{ $badge[0] }}</span>
 @if ($canDuyet)
 @unless ($done)
+{{-- B5c (2026-08-14): approve mở modal edit sale/giờ/note cho admin vận hành + admin hệ thống.
+     Bấm Bỏ duyệt (khi đã approved) vẫn dùng form gọn nhẹ. --}}
+@if ($approved)
 <form method="POST" action="/{{ $coSo->slug }}/duyet-dat-phong/{{ $b->id }}" class="inline">
 @csrf @method('PATCH')
-<button type="submit" title="{{ $approved ? 'Bỏ duyệt' : 'Duyệt' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $approved ? 'bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error' : 'text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container' }}">
-<span class="material-symbols-outlined text-[16px]">{{ $approved ? 'close' : 'check' }}</span>
+<button type="submit" title="Bỏ duyệt" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error">
+<span class="material-symbols-outlined text-[16px]">close</span>
 </button>
 </form>
+@else
+<button type="button"
+        onclick="openApprove({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->co_so_id), @js($b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : ''), @js($b->gio_ket_thuc ? substr($b->gio_ket_thuc,0,5) : ''), @js($b->tiep_don_user_id), @js($b->ghi_chu ?? ''))"
+        title="Duyệt"
+        class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</button>
+@endif
 @endunless
 @unless ($done || $rejected)
 <button type="button" onclick="openReject({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'))" title="Từ chối (không duyệt)" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-red-400 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500">
@@ -665,6 +676,92 @@ Không có kết quả
     };
     m.addEventListener('click', function(e){ if(e.target === this) closeReject(); });
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeReject(); });
+})();
+</script>
+
+{{-- B5c (2026-08-14): modal duyệt lịch với edit sale/giờ/note. --}}
+<div id="approve-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/40 p-4">
+    <div class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant overflow-hidden">
+        <form id="approve-form" method="POST" action="">
+            @csrf @method('PATCH')
+            <div class="p-5 border-b border-outline-variant flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-600">check_circle</span>
+                <h3 class="text-headline-md font-headline-md text-on-surface">Duyệt lịch hẹn</h3>
+            </div>
+            <div class="p-5 space-y-3">
+                <p class="text-body-sm text-on-surface-variant">Lịch của <span id="approve-name" class="font-semibold text-on-surface"></span>. Có thể chỉnh sale tiếp đón / giờ / ghi chú trước khi duyệt.</p>
+                <div class="grid grid-cols-2 gap-2">
+                    <div>
+                        <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Giờ bắt đầu</label>
+                        <input type="time" name="gio_thuc_hien" class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md">
+                    </div>
+                    <div>
+                        <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Giờ kết thúc</label>
+                        <input type="time" name="gio_ket_thuc" class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md">
+                    </div>
+                </div>
+                <div>
+                    <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Sale tiếp đón</label>
+                    <select name="tiep_don_user_id" id="approve-sale-select" class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md">
+                        <option value="">— Giữ nguyên —</option>
+                    </select>
+                    <p class="text-[11px] text-on-surface-variant/70 mt-0.5">Danh sách sale trong cùng cơ sở.</p>
+                </div>
+                <div>
+                    <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Ghi chú</label>
+                    <textarea name="ghi_chu" rows="2" class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md"></textarea>
+                </div>
+            </div>
+            <div class="p-4 bg-surface-container-low/50 border-t border-outline-variant flex justify-end gap-2">
+                <button type="button" onclick="closeApprove()" class="px-4 py-2 text-on-surface-variant font-semibold rounded-lg hover:bg-surface-container-high transition-colors">Hủy</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg flex items-center gap-2 hover:bg-emerald-700 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">check</span> Duyệt
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function(){
+    var base = "/{{ $coSo->slug }}/duyet-dat-phong/";
+    var m = document.getElementById('approve-modal');
+    var f = document.getElementById('approve-form');
+    var sel = document.getElementById('approve-sale-select');
+    var saleCache = {}; // co_so_id -> [{id, name}]
+
+    function loadSales(coSoId, currentId){
+        if (saleCache[coSoId]) return Promise.resolve(saleCache[coSoId]);
+        return fetch('/api/sales-in-cosolow?co_so_id=' + coSoId, {headers:{Accept:'application/json'}})
+            .then(r => r.ok ? r.json() : {data:[]})
+            .then(j => { saleCache[coSoId] = j.data || []; return saleCache[coSoId]; })
+            .catch(() => []);
+    }
+    function fillSaleOptions(list, currentId){
+        sel.innerHTML = '<option value="">— Giữ nguyên —</option>';
+        (list || []).forEach(function(u){
+            var opt = document.createElement('option');
+            opt.value = u.id; opt.textContent = u.name + (u.chuc_danh ? ' — ' + u.chuc_danh : '');
+            if (currentId && Number(currentId) === Number(u.id)) opt.selected = true;
+            sel.appendChild(opt);
+        });
+    }
+    window.openApprove = function(id, name, coSoId, gStart, gEnd, tiepDonId, ghiChu){
+        f.action = base + id;
+        document.getElementById('approve-name').textContent = name || 'khách';
+        f.gio_thuc_hien.value = gStart || '';
+        f.gio_ket_thuc.value = gEnd || '';
+        f.ghi_chu.value = ghiChu || '';
+        fillSaleOptions([], tiepDonId);
+        loadSales(coSoId, tiepDonId).then(function(list){ fillSaleOptions(list, tiepDonId); });
+        m.classList.remove('hidden'); m.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+    };
+    window.closeApprove = function(){
+        m.classList.add('hidden'); m.classList.remove('flex');
+        document.body.style.overflow = '';
+    };
+    m.addEventListener('click', function(e){ if(e.target === this) closeApprove(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape') closeApprove(); });
 })();
 </script>
 @endif

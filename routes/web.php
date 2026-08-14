@@ -34,6 +34,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/doi-mat-khau',  [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::post('/doi-mat-khau', [AuthController::class, 'changePassword'])->name('password.update');
 
+    // B5c (2026-08-14): dropdown Sale trong modal duyệt lịch — lọc theo co_so_id của booking.
+    Route::get('/api/sales-in-cosolow', function (\Illuminate\Http\Request $r) {
+        $coSoId = (int) $r->query('co_so_id');
+        if (! $coSoId) return response()->json(['data' => []]);
+        $users = \App\Models\User::where('co_so_id', $coSoId)
+            ->orderBy('name')
+            ->get(['id', 'name', 'chuc_danh']);
+        return response()->json(['data' => $users]);
+    })->name('api.sales-in-cosolow');
+
     // Thông báo (in-app)
     Route::get('/thong-bao',                        [ThongBaoController::class, 'index'])->name('thongbao.index');
     Route::get('/thong-bao/summary',                [ThongBaoController::class, 'summary'])->name('thongbao.summary');
