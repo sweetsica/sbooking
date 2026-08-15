@@ -228,6 +228,11 @@
 <a href="/doi-mat-khau" class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface hover:bg-surface-container-low transition-colors">
 <span class="material-symbols-outlined text-[20px] text-on-surface-variant">lock_reset</span> Đổi mật khẩu
 </a>
+@if (app()->environment('local') && auth()->user()->is_admin)
+<a href="/dev/quick-login" class="flex items-center gap-3 px-4 py-2.5 text-body-md text-red-700 font-semibold hover:bg-red-50 transition-colors">
+<span class="material-symbols-outlined text-[20px]">supervised_user_circle</span> 🚀 Quick Login (dev)
+</a>
+@endif
 <form method="POST" action="/logout">
 @csrf
 <button type="submit" class="w-full flex items-center gap-3 px-4 py-2.5 text-body-md text-error hover:bg-error/10 transition-colors text-left">

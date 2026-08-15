@@ -375,7 +375,18 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 <td class="px-4 py-3 text-on-surface-variant">{{ $r->dia_chi }}</td>
 @break
 @endswitch
-<td class="px-4 py-3 text-right"><div class="inline-flex items-center gap-1 text-on-surface-variant opacity-40"><span class="material-symbols-outlined text-[18px]">lock</span></div></td>
+<td class="px-4 py-3 text-right">
+@if ($key === 'nguoi-dung' && app()->environment('local') && auth()->user()->is_admin && $r->id !== auth()->id())
+<form method="POST" action="{{ route('impersonate.start', $r->id) }}" class="inline">
+@csrf
+<button type="submit" class="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-600 text-white text-xs font-semibold hover:bg-red-700">
+<span class="material-symbols-outlined text-[14px]">supervised_user_circle</span> Giả lập
+</button>
+</form>
+@else
+<div class="inline-flex items-center gap-1 text-on-surface-variant opacity-40"><span class="material-symbols-outlined text-[18px]">lock</span></div>
+@endif
+</td>
 </tr>
 @empty
 <tr><td colspan="4" class="px-4 py-10 text-center text-on-surface-variant">
