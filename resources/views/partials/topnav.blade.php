@@ -72,6 +72,17 @@
     $settingsActive = in_array($active, ['thiet-lap', 'lich-lam-viec', 'ngay-nghi', 'bao-cao', 'so-do'], true);
 @endphp
 <!-- Top Navigation Bar -->
+@if (session('impersonate_original_id'))
+    <div class="fixed top-0 left-0 right-0 z-[60] bg-red-600 text-white text-xs px-4 py-1.5 flex items-center justify-between gap-3">
+        <span>🎭 Đang giả lập <strong>{{ auth()->user()->name }}</strong> — original: {{ session('impersonate_original_name') }}</span>
+        <form method="POST" action="{{ route('impersonate.leave') }}" class="inline">
+            @csrf
+            <button class="px-2 py-0.5 rounded bg-white text-red-700 hover:bg-red-50 font-semibold text-xs">← Về Admin</button>
+        </form>
+    </div>
+    <style>header.fixed{top:28px !important;}</style>
+@endif
+
 <header class="fixed top-0 left-0 right-0 h-16 bg-surface-container-lowest border-b border-outline-variant flex items-center px-container-margin z-50">
 <div class="flex items-center gap-2 lg:gap-4 xl:gap-6 w-full max-w-[1650px] mx-auto min-w-0">
 <!-- Brand Identity -->

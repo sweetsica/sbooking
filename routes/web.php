@@ -34,6 +34,11 @@ Route::middleware('auth')->group(function () {
     Route::get('/doi-mat-khau',  [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::post('/doi-mat-khau', [AuthController::class, 'changePassword'])->name('password.update');
 
+    // Dev tool 2026-08-15 — Impersonate + quick-login panel.
+    Route::post('/impersonate/{user}', [\App\Http\Controllers\ImpersonateController::class, 'start'])->name('impersonate.start');
+    Route::post('/impersonate-leave', [\App\Http\Controllers\ImpersonateController::class, 'leave'])->name('impersonate.leave');
+    Route::get('/dev/quick-login', [\App\Http\Controllers\ImpersonateController::class, 'quickLogin'])->name('dev.quick-login');
+
     // B5c (2026-08-14): dropdown Sale trong modal duyệt lịch — lọc theo co_so_id của booking.
     Route::get('/api/sales-in-cosolow', function (\Illuminate\Http\Request $r) {
         $coSoId = (int) $r->query('co_so_id');
