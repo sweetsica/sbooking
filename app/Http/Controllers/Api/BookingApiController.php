@@ -262,6 +262,9 @@ class BookingApiController extends Controller
             'ket_hop_medical' => ['nullable', 'boolean'],
             'co_tu_van'       => ['nullable', 'boolean'],
             'co_kham_cls'     => ['nullable', 'boolean'],
+            // B5/2026-08-15: SCRM có thể push huỷ (auto-cancel 15' khách trễ).
+            'trang_thai'      => ['nullable', 'in:huy'],
+            'ly_do_huy'       => ['nullable', 'string', 'max:500'],
         ]);
 
         // Capacity guard nếu slot thay đổi (ngay/gio/phong).
@@ -291,6 +294,12 @@ class BookingApiController extends Controller
                 }
             }
         }
+
+        // B5/2026-08-15: map ly_do_huy → ly_do_tu_choi (dùng chung cột lý do) khi hủy.
+        if (($data['trang_thai'] ?? null) === 'huy' && ! empty($data['ly_do_huy'])) {
+            $data['ly_do_tu_choi'] = 'Auto-hủy 15\': ' . $data['ly_do_huy'];
+        }
+        unset($data['ly_do_huy']);
 
         $booking->fill(array_filter($data, fn ($v) => $v !== null));
         $booking->save();
