@@ -177,12 +177,9 @@ class BookingApiController extends Controller
                     ['ho_ten' => $data['ho_ten'], 'co_so_id' => $data['co_so_id']]
                 );
 
-                // 2026-08-12: Booking từ SCRM (có crm_khach_ma) LUÔN chờ admin sbooking duyệt,
-                // kể cả phong_kham — để capacity check bác sĩ/khung giờ chạy trước khi lịch chốt.
-                // Booking tạo trực tiếp bên sbooking: phong_kham vẫn auto-duyệt như cũ.
+                // 2026-08-16: Mọi booking mới đều chờ Admin vận hành sbooking duyệt (dù nguồn nào, loại nào).
                 $loaiDatLich = $data['loai_dat_lich'] ?? 'phong_kham';
-                $fromScrm = ! empty($data['crm_khach_ma']);
-                $autoDuyet = $loaiDatLich === 'phong_kham' && ! $fromScrm;
+                $autoDuyet = false;
 
                 $booking = Booking::create([
                     'co_so_id'      => $data['co_so_id'],

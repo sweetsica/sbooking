@@ -859,8 +859,8 @@ class BookingController extends Controller
             : null;
 
         $loaiDatLich = in_array($request->input('loai_dat_lich'), ['phong_kham', 'dich_vu'], true) ? $request->input('loai_dat_lich') : 'phong_kham';
-        // 2026-08-10: Thăm khám (phong_kham) không cần duyệt — auto da_duyet. Dịch vụ cần duyệt.
-        $autoDuyet = $loaiDatLich === 'phong_kham';
+        // 2026-08-16: Mọi booking mới đều chờ Admin vận hành duyệt (bỏ auto-duyet cho phong_kham).
+        $autoDuyet = false;
 
         $booking = Booking::create([
             'co_so_id'      => $co_so->id,

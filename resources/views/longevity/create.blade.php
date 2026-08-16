@@ -577,8 +577,10 @@
         phong.addEventListener('change', () => { syncPhongMeta(); loadSlots(); });
         if (ngay) ngay.addEventListener('change', loadSlots);
         khung.addEventListener('change', updateEnd);
-        loadSlots();
-        syncPhongMeta();
+        // 2026-08-17 fix TDZ: defer init sang microtask để các `let/const` phía dưới
+        // (bacSi, ktvSel, bsCoLich, loadKtv…) kịp init trước khi loadSlots() gọi loadBacSi/loadKtv.
+        // Trước đây gọi sync ngay → TDZ error "Cannot access 'bacSi' before initialization".
+        queueMicrotask(() => { syncPhongMeta(); loadSlots(); });
     }
 
     // ===== Radio "Loại chính" (mutex Tư vấn / Khám LS / Không) =====
@@ -612,7 +614,8 @@
     });
     // Apply ngay khi load: filter theo radio mặc định (tu_van)
     const initLoai = document.querySelector('input[name="loai_chinh"]:checked');
-    if (initLoai) applyLoaiChinh(initLoai.value);
+    // 2026-08-17 fix TDZ: applyLoaiChinh → loadSlots → loadBacSi/loadKtv dùng bsCoLich/ktvSel khai báo phía dưới.
+    if (initLoai) queueMicrotask(() => applyLoaiChinh(initLoai.value));
 
     let bsAbortCtl;
     let bsCoLich = true; // có lịch da_duyet cho tháng hay chưa
