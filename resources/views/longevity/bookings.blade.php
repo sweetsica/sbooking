@@ -527,6 +527,14 @@
             <span class="material-symbols-outlined text-[16px]">{{ $tdBusy ? 'done_all' : 'record_voice_over' }}</span>
         </button>
     </form>
+    {{-- 2026-08-18 — Nút "Kết luận checkin" mở modal 3 dropdown (tình trạng + kết quả + phân loại) + push CRM. --}}
+    @php $ckDone = ! empty($b->checkin_hoan_tat_at); @endphp
+    <button type="button"
+            onclick="openCheckinDone({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->tinh_trang_checkin ?? ''), @js($b->ket_qua_sau_checkin ?? ''), @js($b->phan_loai ?? ''))"
+            title="{{ $ckDone ? 'Đã xong checkin — bấm để sửa lại' : 'Kết luận checkin (Sale tiếp đón)' }}"
+            class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $ckDone ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600' : 'text-outline border-outline-variant hover:border-emerald-500 hover:text-emerald-600' }}">
+        <span class="material-symbols-outlined text-[16px]">{{ $ckDone ? 'fact_check' : 'checklist' }}</span>
+    </button>
 @endif
 @if ($approved || $done)
 <form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $b->id }}" class="inline">
@@ -807,6 +815,114 @@ Không có kết quả
             });
         });
     } catch (err) { console.warn('Echo init failed', err); }
+})();
+</script>
+
+{{-- 2026-08-18 — Modal "Kết luận checkin" — Sale tiếp đón bấm sau khi khách checkin xong. --}}
+<div id="checkin-done-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/40 p-4">
+    <div class="bg-surface rounded-2xl w-full max-w-md shadow-2xl">
+        <form id="checkin-done-form" method="POST" action="">
+            @csrf @method('PATCH')
+            <div class="p-5 border-b border-outline-variant flex items-center gap-2">
+                <span class="material-symbols-outlined text-emerald-500">fact_check</span>
+                <h3 class="text-headline-md font-headline-md text-on-surface">Kết luận checkin</h3>
+            </div>
+            <div class="p-5 space-y-4">
+                <p class="text-body-sm text-on-surface-variant">Khách <span id="ck-name" class="font-semibold text-on-surface"></span> — chọn 3 mục dưới rồi bấm <b>Đã xong</b>. Kết quả sẽ đồng bộ sang CRM và đóng Phase 4 (Check-in).</p>
+
+                <div>
+                    <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Tình trạng checkin <span class="text-red-500">*</span></label>
+                    <select name="tinh_trang_checkin" id="ck-tinhtrang" required
+                            class="w-full px-3 py-2 rounded-lg text-body-md border border-outline-variant bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none">
+                        <option value="">— chọn —</option>
+                        <option value="checkin">Checkin</option>
+                        <option value="doi_lich">Đổi lịch</option>
+                        <option value="huy_lich">Hủy lịch</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Kết quả sau checkin <span id="ck-kq-req" class="text-red-500">*</span></label>
+                    <select name="ket_qua_sau_checkin" id="ck-ketqua"
+                            class="w-full px-3 py-2 rounded-lg text-body-md border border-outline-variant bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none">
+                        <option value="">— chọn —</option>
+                        <option value="tham_kham">Thăm khám</option>
+                        <option value="tu_van">Tư vấn</option>
+                        <option value="mua_hang">Mua hàng</option>
+                        <option value="khong_mua">Không mua</option>
+                        <option value="hoan_thanh">Đã hoàn thành</option>
+                        <option value="huy_lich_tao_moi">Hủy lịch - Tạo mới</option>
+                    </select>
+                    <p class="text-[11px] text-on-surface-variant mt-1">Bỏ trống nếu Tình trạng = Hủy lịch.</p>
+                </div>
+
+                <div>
+                    <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Phân loại <span class="text-red-500">*</span> <span class="text-[11px] font-normal text-on-surface-variant">(tự map theo Kết quả, sửa được)</span></label>
+                    <select name="phan_loai" id="ck-phanloai" required
+                            class="w-full px-3 py-2 rounded-lg text-body-md border border-outline-variant bg-surface-container-low focus:border-primary focus:ring-1 focus:ring-primary/20 outline-none">
+                        <option value="">— chọn —</option>
+                        <option value="follow">Follow</option>
+                        <option value="booking">Booking</option>
+                        <option value="close">Close</option>
+                    </select>
+                </div>
+            </div>
+            <div class="p-4 bg-surface-container-low/50 border-t border-outline-variant flex justify-end gap-2">
+                <button type="button" onclick="closeCheckinDone()" class="px-4 py-2 text-on-surface-variant font-semibold rounded-lg hover:bg-surface-container-high transition-colors">Hủy</button>
+                <button type="submit" class="px-5 py-2 bg-emerald-600 text-white font-semibold rounded-lg flex items-center gap-2 hover:bg-emerald-700 transition-colors">
+                    <span class="material-symbols-outlined text-[20px]">check</span> Đã xong
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function(){
+    var base = "/{{ $coSo->slug }}/checkin-done/";
+    var m = document.getElementById('checkin-done-modal');
+    var f = document.getElementById('checkin-done-form');
+    var tt = document.getElementById('ck-tinhtrang');
+    var kq = document.getElementById('ck-ketqua');
+    var pl = document.getElementById('ck-phanloai');
+    var kqReq = document.getElementById('ck-kq-req');
+    var autoMap = { tham_kham:'follow', tu_van:'follow', mua_hang:'follow', khong_mua:'follow', hoan_thanh:'close', huy_lich_tao_moi:'booking' };
+
+    tt.addEventListener('change', function(){
+        // Hủy lịch → kết quả không bắt buộc, tự set null. Phân loại mặc định follow.
+        if (tt.value === 'huy_lich') {
+            kq.value = '';
+            kq.required = false;
+            kqReq.style.display = 'none';
+            if (!pl.value) pl.value = 'follow';
+        } else {
+            kq.required = true;
+            kqReq.style.display = '';
+        }
+    });
+    kq.addEventListener('change', function(){
+        // Auto-map phân loại theo bảng scope, chỉ set khi phân loại đang trống hoặc chưa user sửa.
+        var mapped = autoMap[kq.value];
+        if (mapped) pl.value = mapped;
+    });
+
+    window.openCheckinDone = function(id, name, curTt, curKq, curPl){
+        f.action = base + id;
+        document.getElementById('ck-name').textContent = name || 'khách';
+        tt.value = curTt || '';
+        kq.value = curKq || '';
+        pl.value = curPl || '';
+        // Trigger UI state theo tình trạng ban đầu.
+        tt.dispatchEvent(new Event('change'));
+        m.classList.remove('hidden'); m.classList.add('flex');
+        document.body.style.overflow = 'hidden';
+        setTimeout(function(){ tt.focus(); }, 50);
+    };
+    window.closeCheckinDone = function(){
+        m.classList.add('hidden'); m.classList.remove('flex');
+        document.body.style.overflow = '';
+    };
+    m.addEventListener('click', function(e){ if(e.target === this) closeCheckinDone(); });
+    document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !m.classList.contains('hidden')) closeCheckinDone(); });
 })();
 </script>
 </body></html>
