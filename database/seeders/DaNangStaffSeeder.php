@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Hash;
  *   - Slug cơ sở: `dn` (khớp cột `facilities.booking_co_so_slug` bên CRM).
  *   - Email trùng CRM (`ltkp@longevity.com.vn` …) → sau này link SSO không phải map thêm.
  *   - Username = phần trước @ email (cùng convention với các user Bảo IT/Tú MOD hiện có).
- *   - Mật khẩu mặc định: `123456` (đồng bộ CRM demo). Đổi tay sau khi phát cho nhân sự.
+ *   - Mật khẩu mặc định: `l23@tdn` (convention: HN=59@ntn, ĐN=l23@tdn, HCM=207@nvt).
  *
  * Role bên booking:
  *   - CM Kim Phấn        → quan_tri_van_hanh (duyệt + cập nhật trạng thái khách + bình luận)
@@ -68,7 +68,7 @@ class DaNangStaffSeeder extends Seeder
         }
 
         // 4) 9 user Đà Nẵng.
-        $matKhau = Hash::make('123456');
+        $matKhau = Hash::make('l23@tdn');
 
         $users = [
             // CM
