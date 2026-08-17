@@ -31,8 +31,9 @@ class DaNangStaffSeeder extends Seeder
 {
     public function run(): void
     {
-        // 1) Cơ sở Đà Nẵng đã tồn tại sẵn với slug '23tdn' (Lô 2+3 Trần Đăng Ninh) — reuse, không tạo mới.
-        $csDn = CoSo::where('slug', '23tdn')->firstOrFail();
+        // 1) Cơ sở Đà Nẵng đã tồn tại sẵn với slug 'lo23tdn' (Lô 2+3 Trần Đăng Ninh) — reuse, không tạo mới.
+        // 2026-08-17: fix slug 'lo23tdn' (DB thực tế), trước ghi '23tdn' làm seeder fail firstOrFail.
+        $csDn = CoSo::where('slug', 'lo23tdn')->firstOrFail();
 
         // 2) Phòng ban chuẩn cho cơ sở DN (giống 4 cơ sở cũ).
         $phongBanChuan = [
