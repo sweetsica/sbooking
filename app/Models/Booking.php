@@ -27,6 +27,41 @@ class Booking extends Model
         'trang_thai_tiep_don', 'tiep_don_user_id', 'tiep_don_bat_dau', 'tiep_don_hoan_tat',
         // 2026-08-10: Admin BO/cơ sở/vận hành tick khi booking quá muộn.
         'booking_tre',
+        // 2026-08-18: Sale tiếp đón tick lúc close — 3 field + timestamp/actor. Sync về CRM.
+        'tinh_trang_checkin', 'ket_qua_sau_checkin', 'phan_loai',
+        'checkin_hoan_tat_at', 'checkin_hoan_tat_by',
+    ];
+
+    // 2026-08-18 — 3 enum bảng "Nguyên tắc chia lại số" (nhánh Tư vấn viên).
+    public const TINH_TRANG_CHECKIN = [
+        'checkin'   => 'Checkin',
+        'doi_lich'  => 'Đổi lịch',
+        'huy_lich'  => 'Hủy lịch',
+    ];
+
+    public const KET_QUA_SAU_CHECKIN = [
+        'tham_kham'         => 'Thăm khám',
+        'tu_van'            => 'Tư vấn',
+        'mua_hang'          => 'Mua hàng',
+        'khong_mua'         => 'Không mua',
+        'hoan_thanh'        => 'Đã hoàn thành',
+        'huy_lich_tao_moi'  => 'Hủy lịch - Tạo mới',
+    ];
+
+    public const PHAN_LOAI = [
+        'follow'  => 'Follow',
+        'booking' => 'Booking',
+        'close'   => 'Close',
+    ];
+
+    /** Auto-map Kết quả → Phân loại theo bảng scope (Sale sửa lại được). */
+    public const KET_QUA_TO_PHAN_LOAI = [
+        'tham_kham'        => 'follow',
+        'tu_van'           => 'follow',
+        'mua_hang'         => 'follow',
+        'khong_mua'        => 'follow',
+        'hoan_thanh'       => 'close',
+        'huy_lich_tao_moi' => 'booking',
     ];
 
     protected $casts = [
@@ -40,6 +75,8 @@ class Booking extends Model
         'tiep_don_bat_dau' => 'datetime',
         'tiep_don_hoan_tat' => 'datetime',
         'booking_tre' => 'boolean',
+        'checkin_hoan_tat_at' => 'datetime',
+        'checkin_hoan_tat_by' => 'integer',
     ];
 
     protected static function booted(): void

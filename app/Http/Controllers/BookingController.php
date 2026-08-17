@@ -1375,6 +1375,46 @@ class BookingController extends Controller
     }
 
     /**
+     * 2026-08-18 — Sale tiếp đón bấm "Đã xong" khi khách checkin xong:
+     *   3 field bắt buộc — tinh_trang_checkin + ket_qua_sau_checkin (nullable khi hủy lịch) + phan_loai
+     *   → set checkin_hoan_tat_at/by + push callback CRM để close phase 5 + sync classification.
+     */
+    public function capNhatCheckinDone(CoSo $co_so, Booking $booking, Request $request)
+    {
+        abort_unless($booking->co_so_id === $co_so->id, 404);
+        abort_unless(
+            $booking->tiep_don_user_id === auth()->id() || $booking->sale_id === auth()->id() || auth()->user()?->is_admin,
+            403,
+            'Chỉ Sale tiếp đón / Sale phụ trách / Admin mới được bấm Đã xong.'
+        );
+
+        $data = $request->validate([
+            'tinh_trang_checkin'  => ['required', Rule::in(array_keys(Booking::TINH_TRANG_CHECKIN))],
+            'ket_qua_sau_checkin' => ['nullable', Rule::in(array_keys(Booking::KET_QUA_SAU_CHECKIN))],
+            'phan_loai'           => ['required', Rule::in(array_keys(Booking::PHAN_LOAI))],
+        ], [], [
+            'tinh_trang_checkin' => 'tình trạng checkin',
+            'ket_qua_sau_checkin' => 'kết quả sau checkin',
+            'phan_loai' => 'phân loại',
+        ]);
+
+        if ($data['tinh_trang_checkin'] !== 'huy_lich' && empty($data['ket_qua_sau_checkin'])) {
+            return back()->withErrors(['ket_qua_sau_checkin' => 'Kết quả sau checkin bắt buộc khi không phải hủy lịch.']);
+        }
+
+        $booking->fill($data);
+        $booking->checkin_hoan_tat_at = now();
+        $booking->checkin_hoan_tat_by = auth()->id();
+        $booking->save();
+
+        $push = \App\Services\CrmPushService::pushCheckinDone($booking, auth()->id());
+
+        return back()->with($push['ok'] ? 'ok' : 'warn',
+            'Đã lưu kết quả checkin. ' . $push['msg']
+        );
+    }
+
+    /**
      * 2026-08-10 — Toggle cờ "Booking trễ" (Admin cơ sở / Quản trị vận hành / is_admin BO).
      */
     public function toggleBookingTre(CoSo $co_so, Booking $booking, Request $request)

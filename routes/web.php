@@ -115,6 +115,8 @@ Route::prefix('{co_so:slug}')->group(function () {
         // 2026-08-05: BỎ them-phan-hoi / xoa-phan-hoi (dead — thay bằng binh-luan bên dưới).
         // Phase 6.25 (local): tiếp đón + bình luận + GET fallback (tránh 405 khi user copy URL action).
         Route::patch('/tiep-don/{booking}', [BookingController::class, 'capNhatTiepDon'])->name('booking.tiepdon');
+        // 2026-08-18: Sale tiếp đón bấm "Đã xong" — 3 field checkin + push CRM close phase 5.
+        Route::patch('/checkin-done/{booking}', [BookingController::class, 'capNhatCheckinDone'])->name('booking.checkin-done');
         // 2026-08-10 — Admin (BO / cơ sở / vận hành) tick "Booking trễ".
         Route::patch('/booking-tre/{booking}', [BookingController::class, 'toggleBookingTre'])->name('booking.tre');
         Route::get('/trang-thai-khach/{booking}', function ($co_so_slug, $booking) {

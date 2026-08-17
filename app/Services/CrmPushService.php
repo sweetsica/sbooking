@@ -240,6 +240,41 @@ class CrmPushService
         }
     }
 
+    /**
+     * 2026-08-18 — Push checkin-done: Sale tiếp đón bấm "Đã xong" ở sbooking →
+     * datasource cập nhật classification/checkin_status/checkin_result + auto-close phase 5.
+     */
+    public static function pushCheckinDone(Booking $booking, int $userId): array
+    {
+        $token = self::callbackToken($userId);
+        if (! $token) {
+            return ['ok' => false, 'msg' => 'Chưa cấu hình SCRM_API_TOKEN.'];
+        }
+        $u = \App\Models\User::find($userId);
+        try {
+            $r = Http::withToken($token)->acceptJson()->timeout(6)
+                ->post(self::crmUrl() . '/api/booking-event/checkin-done', [
+                    'crm_khach_ma'         => $booking->crm_khach_ma,
+                    'ma_booking'           => $booking->ma_booking,
+                    'tinh_trang_checkin'   => $booking->tinh_trang_checkin,
+                    'ket_qua_sau_checkin'  => $booking->ket_qua_sau_checkin,
+                    'phan_loai'            => $booking->phan_loai,
+                    'hoan_tat_at'          => optional($booking->checkin_hoan_tat_at)->toIso8601String(),
+                    'hoan_tat_by_email'    => $u?->email,
+                ]);
+            if ($r->successful()) {
+                return ['ok' => true, 'msg' => 'Đã sync CRM.'];
+            }
+            $body = $r->json();
+            $reason = $body['reason'] ?? ('HTTP ' . $r->status());
+            Log::warning('CrmPush pushCheckinDone fail', ['status' => $r->status(), 'body' => $r->body(), 'booking' => $booking->ma_booking]);
+            return ['ok' => false, 'msg' => 'CRM từ chối: ' . $reason];
+        } catch (\Throwable $e) {
+            Log::warning('CrmPush pushCheckinDone exception: ' . $e->getMessage());
+            return ['ok' => false, 'msg' => 'Lỗi mạng CRM: ' . $e->getMessage()];
+        }
+    }
+
     /** 2026-08-10 — Push "Dừng nhận lead" / "Nhận lead lại" sang scrm. */
     public static function pushDungNhanLead(int $userId, bool $isPaused): array
     {
