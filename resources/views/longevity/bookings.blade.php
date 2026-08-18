@@ -506,15 +506,30 @@
 <span class="material-symbols-outlined text-[16px]">block</span>
 </button>
 @endunless
-{{-- Phase C1.b rev6 2026-08-01: nút Check-in — chỉ show khi đã duyệt + chưa check-in + chưa xong. --}}
+{{-- Phase C1.b rev6 2026-08-01: nút Check-in — chỉ show khi đã duyệt + chưa xong.
+     2026-08-18: expose đủ 3 trạng thái Khách đã tới / Tới trễ / Hủy (Rule::in đã có sẵn ở
+     BookingController::capNhatTrangThaiKhach). Bấm lại đúng trạng thái đang chọn = toggle bỏ chọn. --}}
 @if ($approved && $canCheckIn)
-<form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $b->id }}" class="inline">
-@csrf @method('PATCH')
-<input type="hidden" name="trang_thai_khach" value="da_toi">
-<button type="submit" title="{{ $checkedIn ? 'Bỏ check-in (khách chưa tới)' : 'Check-in — khách đã tới' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $checkedIn ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600' : 'text-outline border-outline-variant hover:border-emerald-500 hover:text-emerald-600' }}">
-<span class="material-symbols-outlined text-[16px]">{{ $checkedIn ? 'how_to_reg' : 'login' }}</span>
-</button>
-</form>
+@php
+    $ttk = $b->trang_thai_khach;
+    $tteState = ['da_toi', 'toi_tre', 'huy'];
+    $tteConfig = [
+        'da_toi'  => ['icon' => 'how_to_reg',      'title' => 'Khách đã tới',  'active' => 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600', 'idle' => 'text-outline border-outline-variant hover:border-emerald-500 hover:text-emerald-600'],
+        'toi_tre' => ['icon' => 'schedule',        'title' => 'Khách tới trễ', 'active' => 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600',       'idle' => 'text-outline border-outline-variant hover:border-amber-500 hover:text-amber-600'],
+        'huy'     => ['icon' => 'person_cancel',   'title' => 'Khách hủy',     'active' => 'bg-rose-500 text-white border-rose-500 hover:bg-rose-600',           'idle' => 'text-outline border-outline-variant hover:border-rose-500 hover:text-rose-600'],
+    ];
+@endphp
+@foreach ($tteState as $__s)
+    @php $__c = $tteConfig[$__s]; $__on = ($ttk === $__s); @endphp
+    <form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $b->id }}" class="inline">
+        @csrf @method('PATCH')
+        <input type="hidden" name="trang_thai_khach" value="{{ $__s }}">
+        <button type="submit" title="{{ $__on ? 'Bấm lại để bỏ: ' . $__c['title'] : $__c['title'] }}"
+                class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $__on ? $__c['active'] : $__c['idle'] }}">
+            <span class="material-symbols-outlined text-[16px]">{{ $__c['icon'] }}</span>
+        </button>
+    </form>
+@endforeach
 @endif
 {{-- Phase 6.25.C — Nút "Đang tiếp đón / Hoàn tất" cho sale được gán (manual bên scrm phase 3 hoặc auto UPS). --}}
 @if ($b->tiep_don_user_id === auth()->id() || $b->sale_id === auth()->id())
@@ -709,11 +724,12 @@ Không có kết quả
                     </div>
                 </div>
                 <div>
-                    <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Sale tiếp đón</label>
-                    <select name="tiep_don_user_id" id="approve-sale-select" class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md">
-                        <option value="">— Giữ nguyên —</option>
+                    <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Sale tiếp đón <span class="text-red-500">*</span></label>
+                    <select name="tiep_don_user_id" id="approve-sale-select" required
+                            class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md">
+                        <option value="">— chọn sale phụ trách —</option>
                     </select>
-                    <p class="text-[11px] text-on-surface-variant/70 mt-0.5">Danh sách sale trong cùng cơ sở.</p>
+                    <p class="text-[11px] text-on-surface-variant/70 mt-0.5">Bắt buộc — Sale tiếp đón khi khách tới. Danh sách sale trong cùng cơ sở.</p>
                 </div>
                 <div>
                     <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Ghi chú</label>

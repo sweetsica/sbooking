@@ -1161,24 +1161,27 @@ class BookingController extends Controller
         $approve = ! $booking->da_duyet;
 
         // B5c: apply edit fields TRƯỚC khi validate capacity + push CRM.
+        // 2026-08-18: tiep_don_user_id BẮT BUỘC khi duyệt — không được duyệt mà chưa gắn sale phụ trách.
+        //   Nếu booking đã có tiep_don_user_id (VD từ trước hoặc UPS auto-chia) → cho phép truyền lại chính giá trị đó,
+        //   nhưng luôn phải có 1 sale phụ trách trong payload duyệt.
         if ($approve) {
             $data = $request->validate([
                 'gio_thuc_hien'      => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
                 'gio_ket_thuc'       => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
-                'tiep_don_user_id'   => ['nullable', 'integer', 'exists:users,id'],
+                'tiep_don_user_id'   => ['required', 'integer', 'exists:users,id'],
                 'ghi_chu'            => ['nullable', 'string', 'max:2000'],
+            ], [
+                'tiep_don_user_id.required' => 'Vui lòng chọn Sale tiếp đón trước khi duyệt.',
             ]);
 
             if (! empty($data['gio_thuc_hien'])) $booking->gio_thuc_hien = $data['gio_thuc_hien'];
             if (! empty($data['gio_ket_thuc']))  $booking->gio_ket_thuc  = $data['gio_ket_thuc'];
             if (array_key_exists('ghi_chu', $data)) $booking->ghi_chu = $data['ghi_chu'];
-            if (! empty($data['tiep_don_user_id'])) {
-                // Q5.2: sale dropdown chỉ hiện sale cùng co_so_id của booking.
-                $saleOk = \App\Models\User::where('id', $data['tiep_don_user_id'])
-                    ->where('co_so_id', $booking->co_so_id)->exists();
-                abort_unless($saleOk, 422, 'Sale không thuộc cơ sở của booking này.');
-                $booking->tiep_don_user_id = $data['tiep_don_user_id'];
-            }
+            // Q5.2: sale dropdown chỉ hiện sale cùng co_so_id của booking.
+            $saleOk = \App\Models\User::where('id', $data['tiep_don_user_id'])
+                ->where('co_so_id', $booking->co_so_id)->exists();
+            abort_unless($saleOk, 422, 'Sale không thuộc cơ sở của booking này.');
+            $booking->tiep_don_user_id = $data['tiep_don_user_id'];
         }
 
         // Phase C1.d (2026-08-02): guard capacity mỗi lần duyệt (không chỉ re-approve
