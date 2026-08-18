@@ -494,7 +494,7 @@
 </form>
 @else
 <button type="button"
-        onclick="openApprove({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->co_so_id), @js($b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : ''), @js($b->gio_ket_thuc ? substr($b->gio_ket_thuc,0,5) : ''), @js($b->tiep_don_user_id), @js($b->ghi_chu ?? ''))"
+        onclick="openApprove({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->co_so_id), @js($b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : ''), @js($b->gio_ket_thuc ? substr($b->gio_ket_thuc,0,5) : ''), @js($b->tiep_don_user_id), @js($b->ghi_chu ?? ''), {source_group: @js($b->nguon ?? ''), creator_id: @js($b->nguoi_tao_id), creator_name: @js($b->nguoiTao?->name ?? '')})"
         title="Duyệt"
         class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container">
 <span class="material-symbols-outlined text-[16px]">check</span>

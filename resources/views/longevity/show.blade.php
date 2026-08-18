@@ -65,7 +65,7 @@ body { background-color: #f7f9fb; }
 @unless ($approved)
 {{-- 2026-08-18: mở modal (giống list) để chọn Sale tiếp đón bắt buộc. Trước bấm nút submit thẳng không có tiep_don_user_id → 422. --}}
 <button type="button"
-        onclick="openApprove({{ $booking->id }}, @js($booking->khachHang?->ho_ten ?? 'khách'), @js($booking->co_so_id), @js($booking->gio_thuc_hien ? substr($booking->gio_thuc_hien,0,5) : ''), @js($booking->gio_ket_thuc ? substr($booking->gio_ket_thuc,0,5) : ''), @js($booking->tiep_don_user_id), @js($booking->ghi_chu ?? ''))"
+        onclick="openApprove({{ $booking->id }}, @js($booking->khachHang?->ho_ten ?? 'khách'), @js($booking->co_so_id), @js($booking->gio_thuc_hien ? substr($booking->gio_thuc_hien,0,5) : ''), @js($booking->gio_ket_thuc ? substr($booking->gio_ket_thuc,0,5) : ''), @js($booking->tiep_don_user_id), @js($booking->ghi_chu ?? ''), {source_group: @js($booking->nguon ?? ''), creator_id: @js($booking->nguoi_tao_id), creator_name: @js($booking->nguoiTao?->name ?? '')})"
         class="h-[40px] px-5 bg-on-tertiary-container text-white font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">check_circle</span> Duyệt
 </button>
@@ -225,13 +225,22 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Sale phụ trách</label>
 {{-- 2026-08-18: hiển thị Sale tiếp đón (tiep_don_user_id) - do admin chọn khi Duyệt.
-     Fallback sale_id (gán từ CRM Phase 3) nếu tiếp đón chưa set. --}}
+     Fallback sale_id (gán từ CRM Phase 3) nếu tiếp đón chưa set.
+     Kèm Sale hỗ trợ nếu admin đã tick "Thêm sale hỗ trợ" khi duyệt. --}}
 <div class="ro">
-    {{ $booking->tiepDonUser?->name ?? $booking->sale?->name ?? '—' }}
-    @if ($booking->tiepDonUser)
-        <span class="ml-1 text-[11px] text-emerald-700 font-semibold">· tiếp đón</span>
-    @elseif ($booking->sale)
-        <span class="ml-1 text-[11px] text-on-surface-variant/60 italic">· CRM phase 3</span>
+    <div>
+        {{ $booking->tiepDonUser?->name ?? $booking->sale?->name ?? '—' }}
+        @if ($booking->tiepDonUser)
+            <span class="ml-1 text-[11px] text-emerald-700 font-semibold">· tiếp đón gốc</span>
+        @elseif ($booking->sale)
+            <span class="ml-1 text-[11px] text-on-surface-variant/60 italic">· CRM phase 3</span>
+        @endif
+    </div>
+    @if ($booking->tiepDonHoTro)
+        <div class="mt-1 text-body-sm">
+            <span class="text-on-surface">{{ $booking->tiepDonHoTro->name }}</span>
+            <span class="ml-1 text-[11px] text-sky-700 font-semibold">· hỗ trợ (0.5)</span>
+        </div>
     @endif
 </div>
 </div>

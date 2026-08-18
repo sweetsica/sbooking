@@ -30,6 +30,8 @@ class Booking extends Model
         // 2026-08-18: Sale tiếp đón tick lúc close — 3 field + timestamp/actor. Sync về CRM.
         'tinh_trang_checkin', 'ket_qua_sau_checkin', 'phan_loai',
         'checkin_hoan_tat_at', 'checkin_hoan_tat_by',
+        // 2026-08-18: Sale hỗ trợ — khi sale gốc bận, admin gán thêm sale B đón kèm.
+        'tiep_don_ho_tro_id', 'tiep_don_ho_tro_by', 'tiep_don_ho_tro_at',
     ];
 
     // 2026-08-18 — 3 enum bảng "Nguyên tắc chia lại số" (nhánh Tư vấn viên).
@@ -77,7 +79,14 @@ class Booking extends Model
         'booking_tre' => 'boolean',
         'checkin_hoan_tat_at' => 'datetime',
         'checkin_hoan_tat_by' => 'integer',
+        'tiep_don_ho_tro_at' => 'datetime',
     ];
+
+    /** 2026-08-18 — Sale hỗ trợ tiếp đón (khi sale gốc bận). */
+    public function tiepDonHoTro(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'tiep_don_ho_tro_id');
+    }
 
     protected static function booted(): void
     {

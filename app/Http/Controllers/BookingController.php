@@ -1161,17 +1161,20 @@ class BookingController extends Controller
         $approve = ! $booking->da_duyet;
 
         // B5c: apply edit fields TRƯỚC khi validate capacity + push CRM.
-        // 2026-08-18: tiep_don_user_id BẮT BUỘC khi duyệt — không được duyệt mà chưa gắn sale phụ trách.
-        //   Nếu booking đã có tiep_don_user_id (VD từ trước hoặc UPS auto-chia) → cho phép truyền lại chính giá trị đó,
-        //   nhưng luôn phải có 1 sale phụ trách trong payload duyệt.
+        // 2026-08-18: tiep_don_user_id BẮT BUỘC khi duyệt. Sale hỗ trợ (tiep_don_ho_tro_id) optional.
+        //   Nguồn SA/BA/MKT_BR (lead.source_group từ CRM): tiep_don_user_id FIX CỨNG = sale gốc (creator),
+        //   admin không được sửa; chỉ được thêm tiep_don_ho_tro_id để hỗ trợ đón khi sale gốc bận.
+        //   Nguồn khác: admin sửa cả 2 slot bình thường.
         if ($approve) {
             $data = $request->validate([
-                'gio_thuc_hien'      => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
-                'gio_ket_thuc'       => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
-                'tiep_don_user_id'   => ['required', 'integer', 'exists:users,id'],
-                'ghi_chu'            => ['nullable', 'string', 'max:2000'],
+                'gio_thuc_hien'       => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+                'gio_ket_thuc'        => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
+                'tiep_don_user_id'    => ['required', 'integer', 'exists:users,id'],
+                'tiep_don_ho_tro_id'  => ['nullable', 'integer', 'exists:users,id', 'different:tiep_don_user_id'],
+                'ghi_chu'             => ['nullable', 'string', 'max:2000'],
             ], [
-                'tiep_don_user_id.required' => 'Vui lòng chọn Sale tiếp đón trước khi duyệt.',
+                'tiep_don_user_id.required'    => 'Vui lòng chọn Sale tiếp đón trước khi duyệt.',
+                'tiep_don_ho_tro_id.different' => 'Sale hỗ trợ phải khác Sale tiếp đón gốc.',
             ]);
 
             if (! empty($data['gio_thuc_hien'])) $booking->gio_thuc_hien = $data['gio_thuc_hien'];
@@ -1181,7 +1184,27 @@ class BookingController extends Controller
             $saleOk = \App\Models\User::where('id', $data['tiep_don_user_id'])
                 ->where('co_so_id', $booking->co_so_id)->exists();
             abort_unless($saleOk, 422, 'Sale không thuộc cơ sở của booking này.');
-            $booking->tiep_don_user_id = $data['tiep_don_user_id'];
+
+            // 2026-08-18: nguồn SA/BA/MKT_BR — tiep_don_user_id fix cứng = creator (nguoi_tao_id).
+            //   Admin không được sửa. Chỉ được thêm sale hỗ trợ.
+            $selfOwnedSources = ['sa', 'ba', 'mkt_br'];
+            $isSelfOwned = in_array($booking->nguon, $selfOwnedSources, true);
+            if ($isSelfOwned && $booking->nguoi_tao_id) {
+                // Ignore payload — force = creator để bảo vệ quyền sở hữu sale gốc.
+                $booking->tiep_don_user_id = $booking->nguoi_tao_id;
+            } else {
+                $booking->tiep_don_user_id = $data['tiep_don_user_id'];
+            }
+
+            // Sale hỗ trợ (optional).
+            if (! empty($data['tiep_don_ho_tro_id'])) {
+                $hoTroOk = \App\Models\User::where('id', $data['tiep_don_ho_tro_id'])
+                    ->where('co_so_id', $booking->co_so_id)->exists();
+                abort_unless($hoTroOk, 422, 'Sale hỗ trợ không thuộc cơ sở của booking này.');
+                $booking->tiep_don_ho_tro_id = $data['tiep_don_ho_tro_id'];
+                $booking->tiep_don_ho_tro_by = auth()->id();
+                $booking->tiep_don_ho_tro_at = now();
+            }
         }
 
         // Phase C1.d (2026-08-02): guard capacity mỗi lần duyệt (không chỉ re-approve
