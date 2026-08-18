@@ -52,13 +52,72 @@ Route::middleware('auth')->group(function () {
     Route::get('/dev/quick-login', [\App\Http\Controllers\ImpersonateController::class, 'quickLogin'])->name('dev.quick-login');
 
     // B5c (2026-08-14): dropdown Sale trong modal duyệt lịch — lọc theo co_so_id của booking.
+    // 2026-08-18: dropdown "Sale tiếp đón" ở modal Duyệt → lấy sale check-in UPS hôm nay
+    // từ CRM datasource (không phải all users local). Match theo email → local user.id.
+    // Fallback all-users local nếu CRM unreachable.
     Route::get('/api/sales-in-cosolow', function (\Illuminate\Http\Request $r) {
         $coSoId = (int) $r->query('co_so_id');
         if (! $coSoId) return response()->json(['data' => []]);
+
+        $baseUrl = rtrim(\App\Models\AppSetting::get('scrm_url') ?: (config('services.scrm.url') ?: ''), '/');
+        $token = config('services.scrm.api_token');
+        // Emails + names từ CRM (email/name unique key để match với sbooking users)
+        $upsMeta = [];  // key (email hoặc name lower) → { email, name, list_bucket, is_busy }
+        $reason = null;
+
+        if ($baseUrl && $token) {
+            try {
+                $resp = \Illuminate\Support\Facades\Http::withToken($token)->acceptJson()->timeout(4)
+                    ->get($baseUrl . '/api/ups/sales-today', ['sbooking_co_so_id' => $coSoId]);
+                if ($resp->successful()) {
+                    foreach ($resp->json('data', []) as $s) {
+                        if (empty($s['email'])) continue;
+                        $upsMeta[strtolower($s['email'])] = [
+                            'email' => $s['email'], 'name' => $s['name'] ?? '',
+                            'list_bucket' => $s['list_bucket'] ?? null, 'is_busy' => (bool) ($s['is_busy'] ?? false),
+                        ];
+                    }
+                    $reason = $resp->json('reason');
+                } else {
+                    $reason = 'CRM ' . $resp->status();
+                }
+            } catch (\Throwable $e) {
+                $reason = 'CRM lỗi mạng';
+                \Illuminate\Support\Facades\Log::warning('sales-in-cosolow CRM fetch fail: ' . $e->getMessage());
+            }
+        }
+
+        if (! empty($upsMeta)) {
+            // Match sbooking user theo email trước; fallback theo name (do 2 project seed email khác nhau).
+            $emails = array_column($upsMeta, 'email');
+            $names  = array_column($upsMeta, 'name');
+            $sbUsers = \App\Models\User::where('co_so_id', $coSoId)
+                ->where(function ($q) use ($emails, $names) {
+                    $q->whereIn('email', $emails)->orWhereIn('name', $names);
+                })->orderBy('name')->get(['id', 'name', 'chuc_danh', 'email']);
+
+            $data = $sbUsers->map(function ($u) use ($upsMeta) {
+                $m = $upsMeta[strtolower($u->email)] ?? null;
+                if (! $m) {
+                    // fallback name match
+                    foreach ($upsMeta as $entry) {
+                        if ($entry['name'] === $u->name) { $m = $entry; break; }
+                    }
+                }
+                return [
+                    'id' => $u->id, 'name' => $u->name, 'chuc_danh' => $u->chuc_danh,
+                    'bucket' => $m['list_bucket'] ?? null,
+                    'busy'   => $m['is_busy'] ?? false,
+                ];
+            });
+            return response()->json(['data' => $data, 'source' => 'ups', 'crm_count' => count($upsMeta), 'matched' => $data->count()]);
+        }
+
+        // Fallback: all users trong co_so (khi CRM unreachable / không sale UPS nào)
         $users = \App\Models\User::where('co_so_id', $coSoId)
             ->orderBy('name')
             ->get(['id', 'name', 'chuc_danh']);
-        return response()->json(['data' => $users]);
+        return response()->json(['data' => $users, 'source' => 'local', 'fallback_reason' => $reason]);
     })->name('api.sales-in-cosolow');
 
     // Thông báo (in-app)

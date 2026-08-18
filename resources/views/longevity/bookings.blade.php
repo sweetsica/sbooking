@@ -761,10 +761,14 @@ Không có kết quả
             .catch(() => []);
     }
     function fillSaleOptions(list, currentId){
-        sel.innerHTML = '<option value="">— Giữ nguyên —</option>';
+        // 2026-08-18: bắt buộc chọn — placeholder chỉ ra "chọn sale phụ trách".
+        // Hiển thị bucket UPS + trạng thái busy nếu có (source=ups từ CRM).
+        sel.innerHTML = '<option value="">— chọn sale phụ trách —</option>';
         (list || []).forEach(function(u){
             var opt = document.createElement('option');
-            opt.value = u.id; opt.textContent = u.name + (u.chuc_danh ? ' — ' + u.chuc_danh : '');
+            var label = u.name + (u.chuc_danh ? ' — ' + u.chuc_danh : '');
+            if (u.bucket) label += ' · UPS ' + u.bucket + (u.busy ? ' (đang bận)' : ' (rảnh)');
+            opt.value = u.id; opt.textContent = label;
             if (currentId && Number(currentId) === Number(u.id)) opt.selected = true;
             sel.appendChild(opt);
         });
