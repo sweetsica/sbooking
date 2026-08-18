@@ -55,9 +55,31 @@ Route::middleware('auth')->group(function () {
     // 2026-08-18: dropdown "Sale tiếp đón" ở modal Duyệt → lấy sale check-in UPS hôm nay
     // từ CRM datasource (không phải all users local). Match theo email → local user.id.
     // Fallback all-users local nếu CRM unreachable.
+    //
+    // 2026-08-18 (rev): nhận ?ngay_dat=YYYY-MM-DD — nếu ngày booking != hôm nay
+    //   (VD ngày mai) → BỎ QUA UPS, trả all user cơ sở có chuc_danh chứa "sale" (lọc admin/lễ tân/tele).
+    //   Lý do: UPS chỉ chốt cho hôm nay; booking mai/kia thì admin phải chọn tay từ full danh sách sale.
     Route::get('/api/sales-in-cosolow', function (\Illuminate\Http\Request $r) {
         $coSoId = (int) $r->query('co_so_id');
         if (! $coSoId) return response()->json(['data' => []]);
+
+        $ngayDat = $r->query('ngay_dat');
+        $isFuture = false;
+        if ($ngayDat) {
+            try {
+                $isFuture = \Carbon\Carbon::parse($ngayDat)->startOfDay()->gt(now()->startOfDay());
+            } catch (\Throwable $e) { $isFuture = false; }
+        }
+
+        // Booking mai/kia — bỏ qua UPS, trả all user cơ sở (giống fallback local đã có).
+        // Không lọc chuc_danh vì vocab sbooking không có "sale" (HC/SHC/CM/KTV/DM/TL/Tele) —
+        // admin cơ sở tự lọc bằng mắt như flow local fallback hiện tại.
+        if ($isFuture) {
+            $users = \App\Models\User::where('co_so_id', $coSoId)
+                ->orderBy('name')
+                ->get(['id', 'name', 'chuc_danh']);
+            return response()->json(['data' => $users, 'source' => 'future_all_users', 'ngay_dat' => $ngayDat]);
+        }
 
         $baseUrl = rtrim(\App\Models\AppSetting::get('scrm_url') ?: (config('services.scrm.url') ?: ''), '/');
         $token = config('services.scrm.api_token');

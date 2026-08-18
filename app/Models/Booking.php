@@ -32,6 +32,8 @@ class Booking extends Model
         'checkin_hoan_tat_at', 'checkin_hoan_tat_by',
         // 2026-08-18: Sale hỗ trợ — khi sale gốc bận, admin gán thêm sale B đón kèm.
         'tiep_don_ho_tro_id', 'tiep_don_ho_tro_by', 'tiep_don_ho_tro_at',
+        // 2026-08-18: Tele phụ trách phase 2 SCRM (snapshot, không FK — user thuộc SCRM).
+        'tele_owner_id', 'tele_owner_name',
     ];
 
     // 2026-08-18 — 3 enum bảng "Nguyên tắc chia lại số" (nhánh Tư vấn viên).

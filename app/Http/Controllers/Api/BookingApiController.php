@@ -129,6 +129,10 @@ class BookingApiController extends Controller
             // 2026-08-18: nguoi_tao_id = sale gốc (creator) — CRM push sang để modal Duyệt lock dropdown
             // khi source ∈ SA/BA/MKT_BR.
             'nguoi_tao_id'     => ['nullable', 'integer', 'exists:users,id'],
+            // 2026-08-18: tele_owner_id/name = Tele phụ trách phase 2 SCRM (lead.owner sau CM chia).
+            // Snapshot để modal Duyệt hiển thị — không FK vì user thuộc SCRM (không map cứng sang sbooking).
+            'tele_owner_id'    => ['nullable', 'integer'],
+            'tele_owner_name'  => ['nullable', 'string', 'max:150'],
         ]);
 
         // Phase C1.d 2026-08-02: capacity guard sớm ngay tại API — không cho tạo trùng slot
@@ -206,6 +210,9 @@ class BookingApiController extends Controller
                     'tiep_don_user_id' => $data['tiep_don_user_id'] ?? null,
                     // 2026-08-18: nguoi_tao_id = sale gốc từ CRM push, fallback auth() (booking tạo tay bên sbooking).
                     'nguoi_tao_id'    => $data['nguoi_tao_id'] ?? auth()->id(),
+                    // 2026-08-18: Tele phụ trách phase 2 SCRM (owner sau CM chia) — snapshot cho modal Duyệt.
+                    'tele_owner_id'   => $data['tele_owner_id'] ?? null,
+                    'tele_owner_name' => $data['tele_owner_name'] ?? null,
                     'trang_thai'    => $autoDuyet ? 'da_duyet' : 'cho_duyet',
                     'da_duyet'      => $autoDuyet,
                 ]);
@@ -267,6 +274,9 @@ class BookingApiController extends Controller
             // B5/2026-08-15: SCRM có thể push huỷ (auto-cancel 15' khách trễ).
             'trang_thai'      => ['nullable', 'in:huy'],
             'ly_do_huy'       => ['nullable', 'string', 'max:500'],
+            // 2026-08-18: cập nhật Tele phụ trách khi CM đổi owner phase 2.
+            'tele_owner_id'   => ['nullable', 'integer'],
+            'tele_owner_name' => ['nullable', 'string', 'max:150'],
         ]);
 
         // Capacity guard nếu slot thay đổi (ngay/gio/phong).

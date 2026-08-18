@@ -1,6 +1,8 @@
 {{-- B5c (2026-08-14): modal duyệt lịch với edit sale/giờ/note.
      2026-08-18: hiển thị source info + owner (creator) + option "Thêm sale hỗ trợ".
-     Nguồn SA/BA/MKT_BR: field Sale tiếp đón bị lock (fix = creator), admin chỉ được thêm sale hỗ trợ. --}}
+     Nguồn SA/BA/MKT_BR: field Sale tiếp đón bị lock (fix = creator), admin chỉ được thêm sale hỗ trợ.
+     2026-08-18 (rev): hiện info nguồn/người tạo/tele cho MỌI source (banner khác màu theo SELF_OWNED vs còn lại).
+     Booking mai/kia: loadSales bỏ qua UPS, trả all sale cơ sở (Admin chọn tay). --}}
 <div id="approve-modal" class="fixed inset-0 z-[60] hidden items-center justify-center bg-black/40 p-4">
     <div class="w-full max-w-md bg-surface-container-lowest rounded-xl shadow-xl border border-outline-variant overflow-hidden">
         <form id="approve-form" method="POST" action="">
@@ -12,15 +14,18 @@
             <div class="p-5 space-y-3">
                 <p class="text-body-sm text-on-surface-variant">Lịch của <span id="approve-name" class="font-semibold text-on-surface"></span>.</p>
 
-                {{-- 2026-08-18 — Info nguồn / người tạo / người tele (highlight khi SA/BA/MKT_BR) --}}
-                <div id="approve-source-info" class="hidden p-3 rounded-lg border border-amber-300 bg-amber-50 text-body-sm">
+                {{-- 2026-08-18 — Info nguồn / người tạo / tele phụ trách.
+                     Amber (SELF_OWNED = SA/BA/MKT_BR): sale gốc fix cứng, admin chỉ thêm hỗ trợ.
+                     Blue (còn lại — MKT/BDM/BOD/Walk-in): tele ≠ tiếp đón, admin chọn tay Sale tiếp đón. --}}
+                <div id="approve-source-info" class="hidden p-3 rounded-lg border text-body-sm">
                     <div class="flex items-center gap-1.5 mb-1">
-                        <span class="material-symbols-outlined text-amber-700 text-[18px]">verified</span>
-                        <span class="font-bold text-amber-900">Lead tự tạo</span>
-                        <span id="approve-source-badge" class="ml-1 px-2 py-0.5 rounded-full bg-amber-200 text-amber-900 text-[11px] font-semibold uppercase"></span>
+                        <span id="approve-source-icon" class="material-symbols-outlined text-[18px]">info</span>
+                        <span id="approve-source-title" class="font-bold"></span>
+                        <span id="approve-source-badge" class="ml-1 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase"></span>
                     </div>
-                    <div class="text-amber-900">Người tạo / Tele / Tiếp đón gốc: <b id="approve-creator-name">—</b></div>
-                    <div class="text-[11px] text-amber-800/80 mt-1">Sale gốc được fix cứng để bảo vệ quyền sở hữu. Admin có thể thêm Sale hỗ trợ đón kèm khi bận.</div>
+                    <div id="approve-creator-row" class="hidden"><span class="text-on-surface-variant">Người tạo:</span> <b id="approve-creator-name">—</b></div>
+                    <div id="approve-tele-row" class="hidden"><span class="text-on-surface-variant">Tele phụ trách:</span> <b id="approve-tele-name">—</b></div>
+                    <div id="approve-source-note" class="text-[11px] opacity-80 mt-1"></div>
                 </div>
 
                 <div class="grid grid-cols-2 gap-2">
@@ -84,16 +89,27 @@
     var htToggle = document.getElementById('approve-ho-tro-toggle');
     var htWrap = document.getElementById('approve-ho-tro-wrap');
     var srcInfo = document.getElementById('approve-source-info');
+    var srcIcon = document.getElementById('approve-source-icon');
+    var srcTitle = document.getElementById('approve-source-title');
     var srcBadge = document.getElementById('approve-source-badge');
+    var srcNote = document.getElementById('approve-source-note');
+    var creatorRow = document.getElementById('approve-creator-row');
     var creatorName = document.getElementById('approve-creator-name');
+    var teleRow = document.getElementById('approve-tele-row');
+    var teleName = document.getElementById('approve-tele-name');
     var lockBadge = document.getElementById('approve-sale-lock-badge');
 
     // Nguồn "tự tạo" — sale tiếp đón chính bị fix cứng = creator, chỉ được thêm hỗ trợ.
     var SELF_OWNED = ['sa', 'ba', 'mkt_br'];
 
-    function loadSales(coSoId){
-        return fetch('/api/sales-in-cosolow?co_so_id=' + coSoId + '&_=' + Date.now(),
-                     {headers:{Accept:'application/json'}, cache:'no-store'})
+    // Palette 2 tone: amber (self-owned lock) vs blue (còn lại, admin chọn tay).
+    var THEME_AMBER = 'border-amber-300 bg-amber-50 text-amber-900';
+    var THEME_BLUE  = 'border-sky-300 bg-sky-50 text-sky-900';
+
+    function loadSales(coSoId, ngayDat){
+        var url = '/api/sales-in-cosolow?co_so_id=' + coSoId + '&_=' + Date.now();
+        if (ngayDat) url += '&ngay_dat=' + encodeURIComponent(ngayDat);
+        return fetch(url, {headers:{Accept:'application/json'}, cache:'no-store'})
             .then(r => r.ok ? r.json() : {data:[]})
             .then(j => j.data || []).catch(() => []);
     }
@@ -120,7 +136,10 @@
 
     /**
      * openApprove(id, name, coSoId, gStart, gEnd, tiepDonId, ghiChu, opts)
-     *   opts = { source_group, creator_id, creator_name } — optional, dùng cho self-owned lock.
+     *   opts = { source_group, creator_id, creator_name, tele_owner_name, ngay_dat }
+     *     - source_group ∈ SELF_OWNED (SA/BA/MKT_BR) → sale tiếp đón lock cứng = creator, admin chỉ thêm hỗ trợ.
+     *     - source_group còn lại (MKT/BDM/BOD/Walk-in) → admin chọn tay Sale tiếp đón + hỗ trợ.
+     *     - ngay_dat = ngày booking. Nếu > hôm nay → sales-in-cosolow trả all sale cơ sở (bỏ UPS).
      */
     window.openApprove = function(id, name, coSoId, gStart, gEnd, tiepDonId, ghiChu, opts){
         opts = opts || {};
@@ -133,13 +152,42 @@
 
         var srcLower = (opts.source_group || '').toLowerCase();
         var isSelfOwned = SELF_OWNED.indexOf(srcLower) !== -1 && opts.creator_id;
+        var hasCreator = !! opts.creator_name || !! opts.creator_id;
+        var hasTele    = !! opts.tele_owner_name;
 
-        // Show/hide source info banner
-        if (isSelfOwned) {
+        // Banner luôn hiện nếu có nguồn — chọn theme + wording theo self-owned hay không.
+        if (srcLower && (hasCreator || hasTele)) {
             srcInfo.classList.remove('hidden');
+            // Reset class then apply theme.
+            srcInfo.className = 'p-3 rounded-lg border text-body-sm ' + (isSelfOwned ? THEME_AMBER : THEME_BLUE);
+            srcBadge.className = 'ml-1 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ' +
+                (isSelfOwned ? 'bg-amber-200 text-amber-900' : 'bg-sky-200 text-sky-900');
             srcBadge.textContent = srcLower.toUpperCase().replace('_', ' ');
-            creatorName.textContent = opts.creator_name || '#' + opts.creator_id;
-            lockBadge.classList.remove('hidden');
+
+            if (isSelfOwned) {
+                srcIcon.textContent = 'verified';
+                srcTitle.textContent = 'Lead tự tạo — sale gốc = tiếp đón';
+                srcNote.textContent = 'Sale gốc được fix cứng để bảo vệ quyền sở hữu. Admin có thể thêm Sale hỗ trợ đón kèm khi bận.';
+            } else {
+                srcIcon.textContent = 'info';
+                srcTitle.textContent = 'Lead do team chia';
+                srcNote.textContent = 'Tele phụ trách khác với Sale tiếp đón. Admin chọn tay Sale tiếp đón theo lịch cơ sở.';
+            }
+
+            if (hasCreator) {
+                creatorRow.classList.remove('hidden');
+                creatorName.textContent = opts.creator_name || '#' + opts.creator_id;
+            } else {
+                creatorRow.classList.add('hidden');
+            }
+            if (hasTele) {
+                teleRow.classList.remove('hidden');
+                teleName.textContent = opts.tele_owner_name;
+            } else {
+                teleRow.classList.add('hidden');
+            }
+
+            lockBadge.classList.toggle('hidden', ! isSelfOwned);
         } else {
             srcInfo.classList.add('hidden');
             lockBadge.classList.add('hidden');
@@ -148,7 +196,7 @@
         fillOptions(sel, [], '— chọn sale phụ trách —', tiepDonId);
         fillOptions(selHT, [], '— chọn sale hỗ trợ —', null);
 
-        loadSales(coSoId).then(function(list){
+        loadSales(coSoId, opts.ngay_dat).then(function(list){
             // Nếu self-owned: đảm bảo creator có trong list dù không check-in UPS (fix cứng cho sale gốc).
             if (isSelfOwned && ! list.some(function(u){ return Number(u.id) === Number(opts.creator_id); })) {
                 list.unshift({id: opts.creator_id, name: opts.creator_name || ('#' + opts.creator_id), chuc_danh: 'Sale gốc', bucket: null, busy: false});
