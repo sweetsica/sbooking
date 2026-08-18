@@ -5,6 +5,29 @@ namespace App\Support;
 class BookingFields
 {
     /**
+     * 2026-08-19 — map raw source_group từ SCRM push (mkt_br, bod, sa, …)
+     * sang code chuẩn khớp SCRM SOURCE_GROUP_CODES (MKTBR, BOD, SA, …).
+     * Booking cũ hoặc tạo tay sbooking (giá trị lạ) → giữ nguyên uppercase.
+     */
+    public const SOURCE_LABELS = [
+        'mkt'    => 'MKT',
+        'mkt_br' => 'MKTBR',
+        'bdm'    => 'BDM',
+        'bod'    => 'BOD',
+        'sa'     => 'SA',
+        'ba'     => 'BA',
+        'wi'     => 'WI',
+        'hl'     => 'HL',
+    ];
+
+    public static function sourceLabel(?string $nguon): string
+    {
+        if ($nguon === null || $nguon === '') return '—';
+        $key = strtolower($nguon);
+        return self::SOURCE_LABELS[$key] ?? strtoupper($nguon);
+    }
+
+    /**
      * Danh sách tất cả các trường có thể phân quyền (gắn theo vai trò).
      * Gồm: quyền đặt phòng (booking) + quyền đặt lịch bác sĩ (tư vấn)
      * + nhập/xuất + duyệt.

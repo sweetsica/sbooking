@@ -12,7 +12,7 @@
                 <h3 class="text-headline-md font-headline-md text-on-surface">Duyệt lịch hẹn</h3>
             </div>
             <div class="p-5 space-y-3">
-                <p class="text-body-sm text-on-surface-variant">Lịch của <span id="approve-name" class="font-semibold text-on-surface"></span>.</p>
+                <p class="text-body-sm text-on-surface-variant">Lịch của khách hàng: <span id="approve-name" class="font-semibold text-on-surface"></span>.</p>
 
                 {{-- 2026-08-18 — Info nguồn / người tạo / tele phụ trách.
                      Amber (SELF_OWNED = SA/BA/MKT_BR): sale gốc fix cứng, admin chỉ thêm hỗ trợ.
@@ -23,7 +23,7 @@
                         <span id="approve-source-title" class="font-bold"></span>
                         <span id="approve-source-badge" class="ml-1 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase"></span>
                     </div>
-                    <div id="approve-creator-row" class="hidden"><span class="text-on-surface-variant">Người tạo:</span> <b id="approve-creator-name">—</b></div>
+                    <div id="approve-creator-row" class="hidden"><span class="text-on-surface-variant">Người nhập lead:</span> <b id="approve-creator-name">—</b></div>
                     <div id="approve-tele-row" class="hidden"><span class="text-on-surface-variant">Tele phụ trách:</span> <b id="approve-tele-name">—</b></div>
                     <div id="approve-source-note" class="text-[11px] opacity-80 mt-1"></div>
                 </div>
@@ -151,67 +151,84 @@
         htToggle.checked = false; htWrap.classList.add('hidden'); selHT.value = '';
 
         var srcLower = (opts.source_group || '').toLowerCase();
-        var isSelfOwned = SELF_OWNED.indexOf(srcLower) !== -1 && opts.creator_id;
+        // 2026-08-19: self-owned = nhận diện theo SOURCE thôi (không đòi creator_id).
+        //   Booking cũ CRM chưa push nguoi_tao_id → vẫn hiện banner "Lead tự tạo".
+        //   Fallback creator DISPLAY = tele (MKT_BR/SA/BA: cùng 1 người).
+        var isSelfOwned = SELF_OWNED.indexOf(srcLower) !== -1;
+        if (isSelfOwned && ! opts.creator_name && opts.tele_owner_name) {
+            opts.creator_name = opts.tele_owner_name;
+        }
+        // Lock dropdown chỉ khi có sbooking-side user id hợp lệ (nguoi_tao_id hoặc tiep_don_user_id).
+        // Nếu cả 2 đều null (booking cũ mapping hụt) → hiện banner nhưng để admin chọn tay.
+        var lockToSbookingId = null;
+        if (isSelfOwned) {
+            if (opts.creator_id) lockToSbookingId = opts.creator_id;
+            else if (tiepDonId)  lockToSbookingId = tiepDonId;
+        }
         var hasCreator = !! opts.creator_name || !! opts.creator_id;
         var hasTele    = !! opts.tele_owner_name;
 
-        // Banner luôn hiện nếu có nguồn — chọn theme + wording theo self-owned hay không.
-        if (srcLower && (hasCreator || hasTele)) {
-            srcInfo.classList.remove('hidden');
-            // Reset class then apply theme.
-            srcInfo.className = 'p-3 rounded-lg border text-body-sm ' + (isSelfOwned ? THEME_AMBER : THEME_BLUE);
-            srcBadge.className = 'ml-1 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ' +
-                (isSelfOwned ? 'bg-amber-200 text-amber-900' : 'bg-sky-200 text-sky-900');
-            srcBadge.textContent = srcLower.toUpperCase().replace('_', ' ');
+        // 2026-08-19 — luôn hiện banner (3 field: Nguồn / Người nhập lead / Tele phụ trách),
+        // thiếu data thì fallback "—" để booking cũ vẫn thấy đủ khung thông tin.
+        srcInfo.classList.remove('hidden');
+        srcInfo.className = 'p-3 rounded-lg border text-body-sm ' + (isSelfOwned ? THEME_AMBER : THEME_BLUE);
+        srcBadge.className = 'ml-1 px-2 py-0.5 rounded-full text-[11px] font-semibold uppercase ' +
+            (isSelfOwned ? 'bg-amber-200 text-amber-900' : 'bg-sky-200 text-sky-900');
+        srcBadge.textContent = srcLower ? srcLower.toUpperCase().replace('_', ' ') : '—';
 
-            if (isSelfOwned) {
-                srcIcon.textContent = 'verified';
-                srcTitle.textContent = 'Lead tự tạo — sale gốc = tiếp đón';
-                srcNote.textContent = 'Sale gốc được fix cứng để bảo vệ quyền sở hữu. Admin có thể thêm Sale hỗ trợ đón kèm khi bận.';
-            } else {
-                srcIcon.textContent = 'info';
-                srcTitle.textContent = 'Lead do team chia';
-                srcNote.textContent = 'Tele phụ trách khác với Sale tiếp đón. Admin chọn tay Sale tiếp đón theo lịch cơ sở.';
-            }
-
-            if (hasCreator) {
-                creatorRow.classList.remove('hidden');
-                creatorName.textContent = opts.creator_name || '#' + opts.creator_id;
-            } else {
-                creatorRow.classList.add('hidden');
-            }
-            if (hasTele) {
-                teleRow.classList.remove('hidden');
-                teleName.textContent = opts.tele_owner_name;
-            } else {
-                teleRow.classList.add('hidden');
-            }
-
-            lockBadge.classList.toggle('hidden', ! isSelfOwned);
+        if (isSelfOwned) {
+            srcIcon.textContent = 'verified';
+            srcTitle.textContent = 'Lead tự tạo — sale gốc = tiếp đón';
+            srcNote.textContent = lockToSbookingId
+                ? 'Sale gốc được fix cứng để bảo vệ quyền sở hữu. Admin có thể thêm Sale hỗ trợ đón kèm khi bận.'
+                : 'Booking cũ thiếu mapping sale — Admin chọn tay Sale tiếp đón. Booking mới sẽ tự lock.';
         } else {
-            srcInfo.classList.add('hidden');
-            lockBadge.classList.add('hidden');
+            srcIcon.textContent = 'info';
+            srcTitle.textContent = srcLower ? 'Lead do team chia' : 'Thông tin nguồn';
+            srcNote.textContent = srcLower
+                ? 'Tele phụ trách khác với Sale tiếp đón. Admin chọn tay Sale tiếp đón theo lịch cơ sở.'
+                : 'Booking chưa có thông tin nguồn (dữ liệu cũ). Admin chọn tay Sale tiếp đón.';
         }
+
+        creatorRow.classList.remove('hidden');
+        creatorName.textContent = opts.creator_name || (opts.creator_id ? '#' + opts.creator_id : '—');
+        teleRow.classList.remove('hidden');
+        teleName.textContent = opts.tele_owner_name || '—';
+
+        lockBadge.classList.toggle('hidden', ! lockToSbookingId);
 
         fillOptions(sel, [], '— chọn sale phụ trách —', tiepDonId);
         fillOptions(selHT, [], '— chọn sale hỗ trợ —', null);
 
         loadSales(coSoId, opts.ngay_dat).then(function(list){
-            // Nếu self-owned: đảm bảo creator có trong list dù không check-in UPS (fix cứng cho sale gốc).
-            if (isSelfOwned && ! list.some(function(u){ return Number(u.id) === Number(opts.creator_id); })) {
-                list.unshift({id: opts.creator_id, name: opts.creator_name || ('#' + opts.creator_id), chuc_danh: 'Sale gốc', bucket: null, busy: false});
+            // 2026-08-19: self-owned mà thiếu id (booking cũ) → tra theo TÊN creator/tele trong list sale
+            //   để vẫn lock được. Match không phân biệt hoa thường và khoảng trắng thừa.
+            if (isSelfOwned && ! lockToSbookingId) {
+                var wantedName = (opts.creator_name || opts.tele_owner_name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+                if (wantedName) {
+                    var hit = (list || []).find(function(u){
+                        return (u.name || '').trim().toLowerCase().replace(/\s+/g, ' ') === wantedName;
+                    });
+                    if (hit) lockToSbookingId = hit.id;
+                }
             }
-            fillOptions(sel, list, '— chọn sale phụ trách —', isSelfOwned ? opts.creator_id : tiepDonId);
+
+            // Đảm bảo option lock xuất hiện dù không check-in UPS.
+            if (lockToSbookingId && ! list.some(function(u){ return Number(u.id) === Number(lockToSbookingId); })) {
+                list.unshift({id: lockToSbookingId, name: opts.creator_name || opts.tele_owner_name || ('#' + lockToSbookingId), chuc_danh: 'Sale gốc', bucket: null, busy: false});
+            }
+            fillOptions(sel, list, '— chọn sale phụ trách —', lockToSbookingId || tiepDonId);
             fillOptions(selHT, list, '— chọn sale hỗ trợ —', null);
 
-            // Với self-owned: khoá dropdown chính = creator (readonly). Admin chỉ đổi dropdown hỗ trợ.
-            if (isSelfOwned) {
-                sel.value = opts.creator_id;
+            if (lockToSbookingId) {
+                sel.value = lockToSbookingId;
                 sel.setAttribute('readonly', 'readonly');
-                // <select> không hỗ trợ readonly, dùng disabled + hidden input để submit vẫn có giá trị.
                 sel.style.pointerEvents = 'none';
                 sel.style.background = '#fef3c7';
-                ensureHiddenTiepDon(opts.creator_id);
+                ensureHiddenTiepDon(lockToSbookingId);
+                lockBadge.classList.remove('hidden');
+                // Cập nhật lại note (đã set trước khi tra tên).
+                if (isSelfOwned) srcNote.textContent = 'Sale gốc được fix cứng để bảo vệ quyền sở hữu. Admin có thể thêm Sale hỗ trợ đón kèm khi bận.';
             } else {
                 sel.removeAttribute('readonly');
                 sel.style.pointerEvents = '';

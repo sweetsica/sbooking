@@ -43,7 +43,7 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nguồn</label>
-<div class="ro">{{ $lichHen->nguon ?? '—' }}</div>
+<div class="ro">{{ \App\Support\BookingFields::sourceLabel($lichHen->nguon) }}</div>
 </div>
 </div>
 

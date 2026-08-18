@@ -14,6 +14,9 @@ Route::post('/auth/login', [AuthApiController::class, 'login']);
 Route::middleware('scrm.token')->group(function () {
     Route::get('/bookings', [BookingApiController::class, 'index']);
     Route::post('/bookings', [BookingApiController::class, 'store']);
+    // 2026-08-19: pre-flight check (dry-run) — SCRM lead-form call trước khi tạo booking
+    // để hiển thị lỗi BS trùng lịch / phòng full / khung ngắn ngay tại form, không đợi sync fail.
+    Route::post('/bookings/preflight', [BookingApiController::class, 'preflight']);
     Route::put('/bookings/{booking}', [BookingApiController::class, 'update']);
     Route::post('/bookings/{booking}/comments', [BookingApiController::class, 'comment']);
     Route::get('/sync/dich-vu', [SyncApiController::class, 'dichVu']);

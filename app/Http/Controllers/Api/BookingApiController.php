@@ -102,6 +102,61 @@ class BookingApiController extends Controller
      * Upsert khach_hang theo so_dien_thoai (tạo mới nếu chưa có). Tạo booking status=cho_duyet.
      * Không yêu cầu phong_id/khung_gio_id — lễ tân sbooking gán khi duyệt.
      */
+    /**
+     * 2026-08-19 — pre-flight check (dry-run) cho SCRM lead-form.
+     * Chạy đúng ràng buộc trong store() (room capacity + BS trùng giờ) nhưng KHÔNG insert.
+     * Trả 200 {ok: true} nếu qua, 409/422 giữ nguyên message như store để hiển thị inline.
+     */
+    public function preflight(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'co_so_id'      => ['required', 'integer', 'exists:co_so,id'],
+            'ngay_dat'      => ['required', 'date_format:Y-m-d'],
+            'gio_thuc_hien' => ['nullable', 'string'],
+            'gio_ket_thuc'  => ['nullable', 'string'],
+            'dich_vu_id'    => ['nullable', 'integer', 'exists:dich_vu,id'],
+            'bac_si_id'     => ['nullable', 'integer', 'exists:bac_si,id'],
+            'phong_id'      => ['nullable', 'integer', 'exists:phong,id'],
+            'khung_gio_id'  => ['nullable', 'integer', 'exists:khung_gio,id'],
+        ]);
+
+        if (! empty($data['phong_id']) && ! empty($data['gio_thuc_hien'])) {
+            $phong = \App\Models\Phong::find($data['phong_id']);
+            if ($phong) {
+                $capacity = max(1, (int) $phong->so_slot_toi_da);
+                $gio = substr($data['gio_thuc_hien'], 0, 5);
+                $count = Booking::where('phong_id', $phong->id)
+                    ->whereDate('ngay_dat', $data['ngay_dat'])
+                    ->where('gio_thuc_hien', 'LIKE', $gio . '%')
+                    ->giuCho()
+                    ->count();
+                if ($count >= $capacity) {
+                    return response()->json([
+                        'message' => "Phòng {$phong->ten} đã đầy ({$count}/{$capacity}) tại {$gio} ngày {$data['ngay_dat']} — chọn giờ khác hoặc phòng khác.",
+                        'error'   => 'room_full',
+                    ], 409);
+                }
+            }
+        }
+
+        if (! empty($data['bac_si_id']) && ! empty($data['dich_vu_id']) && ! empty($data['khung_gio_id'])) {
+            $err = $this->bccCheckBacSiCapacity(
+                (int) $data['bac_si_id'],
+                (int) $data['khung_gio_id'],
+                (int) $data['dich_vu_id'],
+                $data['ngay_dat'],
+                null,
+                $data['gio_thuc_hien'] ?? null,
+                $data['gio_ket_thuc'] ?? null,
+            );
+            if ($err) {
+                return response()->json(['message' => $err, 'error' => 'bs_capacity'], 422);
+            }
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

@@ -138,7 +138,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <td class="px-4 py-4 text-body-sm">{{ $lh->ngay_hen?->format('d/m/Y') }}</td>
 <td class="px-4 py-4 text-body-sm font-semibold">{{ $lh->bacSiTuVan?->ten_day_du ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $lh->caKham?->nhan ?? '—' }}</td>
-<td class="px-4 py-4"><span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px]">{{ $lh->nguon ?? '—' }}</span></td>
+<td class="px-4 py-4"><span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px]">{{ \App\Support\BookingFields::sourceLabel($lh->nguon) }}</span></td>
 <td class="px-4 py-4 text-body-sm">{{ $lh->sale?->name ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant italic truncate max-w-[150px]" title="{{ $lh->ghi_chu }}">{{ $lh->ghi_chu ?: '—' }}</td>
 <td class="px-4 py-4 sticky-col sticky-right-0 bg-surface-container-lowest shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">

@@ -448,7 +448,7 @@
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->khungGio?->nhan ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : '—' }}</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->gio_ket_thuc ? substr($b->gio_ket_thuc,0,5) : ($b->khungGio ? substr($b->khungGio->gio_ket_thuc,0,5) : '—') }}</td>
-<td class="px-4 py-4"><span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px]">{{ $b->nguon ?? '—' }}</span></td>
+<td class="px-4 py-4"><span class="px-2 py-0.5 bg-surface-container-high rounded text-[11px]">{{ \App\Support\BookingFields::sourceLabel($b->nguon) }}</span></td>
 <td class="px-4 py-4 text-body-sm">{{ $b->sale?->name ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm">{{ $b->dichVu?->ten ?? '—' }}</td>
 <td class="px-4 py-4 text-body-sm text-center">{{ $b->so_luong ?? '—' }}</td>
@@ -494,7 +494,7 @@
 </form>
 @else
 <button type="button"
-        onclick="openApprove({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->co_so_id), @js($b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : ''), @js($b->gio_ket_thuc ? substr($b->gio_ket_thuc,0,5) : ''), @js($b->tiep_don_user_id), @js($b->ghi_chu ?? ''), {source_group: @js($b->nguon ?? ''), creator_id: @js($b->nguoi_tao_id), creator_name: @js($b->nguoiTao?->name ?? ''), tele_owner_name: @js($b->tele_owner_name ?? ''), ngay_dat: @js(optional($b->ngay_dat)->toDateString())})"
+        onclick="openApprove({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->co_so_id), @js($b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : ''), @js($b->gio_ket_thuc ? substr($b->gio_ket_thuc,0,5) : ''), @js($b->tiep_don_user_id), @js($b->ghi_chu ?? ''), {source_group: @js($b->nguon ?? ''), creator_id: @js($b->nguoi_tao_id), creator_name: @js($b->nguoiTao?->name ?? ''), tele_owner_id: @js($b->tele_owner_id), tele_owner_name: @js($b->tele_owner_name ?? ''), ngay_dat: @js(optional($b->ngay_dat)->toDateString())})"
         title="Duyệt"
         class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container">
 <span class="material-symbols-outlined text-[16px]">check</span>

@@ -411,8 +411,9 @@ class BookingController extends Controller
      * Kiểm gio_thuc_hien / gio_ket_thuc có nằm trong khung_gio cha không.
      * Trả về array errors (theo field) hoặc [] nếu hợp lệ.
      */
-    // Giờ thực hiện/kết thúc phải nằm trong DẢI GIỜ MỞ của phòng (slot tư vấn có thể trải nhiều khung,
-    // nên không bó trong 1 khung). khung_gio_id chỉ là khung chứa mốc bắt đầu.
+    // 2026-08-19: siết boundary — gio_thuc_hien/gio_ket_thuc PHẢI nằm trong khung_gio đã chọn
+    //   (không cho phép trải nhiều khung). Trước đây chỉ bó theo giờ mở cửa của phòng →
+    //   khung 09:15-09:20 mà end 09:40 vẫn qua, phi thực tế. Nếu DV dài hơn khung → user chọn khung dài hơn.
     private function validateGioTrongKhung(array $data): array
     {
         $errors = [];
@@ -421,22 +422,21 @@ class BookingController extends Controller
         if (! $kg || ! $khungs || $khungs->isEmpty()) return $errors;
 
         $toMin = fn (?string $t) => $t ? ((int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2)) : null;
-        $khungs = $khungs->sortBy('thu_tu')->values();
-        $open  = $toMin(substr($khungs->first()->gio_bat_dau, 0, 5));
-        $close = $toMin(substr($khungs->last()->gio_ket_thuc, 0, 5));
+        $kgBd  = $toMin(substr($kg->gio_bat_dau, 0, 5));
+        $kgKt  = $toMin(substr($kg->gio_ket_thuc, 0, 5));
 
         $bd = $toMin($data['gio_thuc_hien'] ?? null);
         $kt = $toMin($data['gio_ket_thuc'] ?? null);
         $fmt = fn (int $m) => sprintf('%02d:%02d', intdiv($m, 60), $m % 60);
 
-        if ($bd !== null && $bd < $open) {
-            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải >= ' . $fmt($open) . ' (giờ mở cửa).';
+        if ($bd !== null && $bd < $kgBd) {
+            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải >= ' . $fmt($kgBd) . ' (đầu khung giờ).';
         }
-        if ($bd !== null && $bd >= $close) {
-            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải nhỏ hơn ' . $fmt($close) . ' (giờ đóng cửa).';
+        if ($bd !== null && $bd >= $kgKt) {
+            $errors['gio_thuc_hien'] = 'Giờ thực hiện phải nhỏ hơn ' . $fmt($kgKt) . ' (cuối khung giờ).';
         }
-        if ($kt !== null && $kt > $close) {
-            $errors['gio_ket_thuc'] = 'Giờ kết thúc phải <= ' . $fmt($close) . ' (giờ đóng cửa).';
+        if ($kt !== null && $kt > $kgKt) {
+            $errors['gio_ket_thuc'] = 'Giờ kết thúc phải <= ' . $fmt($kgKt) . ' (cuối khung giờ ' . $fmt($kgBd) . '-' . $fmt($kgKt) . '). Chọn khung giờ dài hơn nếu DV cần nhiều thời gian.';
         }
         if ($bd !== null && $kt !== null && $kt <= $bd) {
             $errors['gio_ket_thuc'] = 'Giờ kết thúc phải sau giờ thực hiện.';
