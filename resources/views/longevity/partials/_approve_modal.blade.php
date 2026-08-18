@@ -47,13 +47,13 @@
     var m = document.getElementById('approve-modal');
     var f = document.getElementById('approve-form');
     var sel = document.getElementById('approve-sale-select');
-    var saleCache = {}; // co_so_id -> [{id, name}]
-
+    // 2026-08-18: bỏ cache — fetch fresh mỗi lần mở modal để cập nhật trạng thái busy/rảnh
+    //   ngay khi sale bấm "Đang tiếp đón" (is_busy=true) bên UPS.
     function loadSales(coSoId, currentId){
-        if (saleCache[coSoId]) return Promise.resolve(saleCache[coSoId]);
-        return fetch('/api/sales-in-cosolow?co_so_id=' + coSoId, {headers:{Accept:'application/json'}})
+        return fetch('/api/sales-in-cosolow?co_so_id=' + coSoId + '&_=' + Date.now(),
+                     {headers:{Accept:'application/json'}, cache:'no-store'})
             .then(r => r.ok ? r.json() : {data:[]})
-            .then(j => { saleCache[coSoId] = j.data || []; return saleCache[coSoId]; })
+            .then(j => j.data || [])
             .catch(() => []);
     }
     function fillSaleOptions(list, currentId){
