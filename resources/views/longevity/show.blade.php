@@ -224,7 +224,16 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Sale phụ trách</label>
-<div class="ro">{{ $booking->sale?->name ?? '—' }}</div>
+{{-- 2026-08-18: hiển thị Sale tiếp đón (tiep_don_user_id) - do admin chọn khi Duyệt.
+     Fallback sale_id (gán từ CRM Phase 3) nếu tiếp đón chưa set. --}}
+<div class="ro">
+    {{ $booking->tiepDonUser?->name ?? $booking->sale?->name ?? '—' }}
+    @if ($booking->tiepDonUser)
+        <span class="ml-1 text-[11px] text-emerald-700 font-semibold">· tiếp đón</span>
+    @elseif ($booking->sale)
+        <span class="ml-1 text-[11px] text-on-surface-variant/60 italic">· CRM phase 3</span>
+    @endif
+</div>
 </div>
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Menu</label>
