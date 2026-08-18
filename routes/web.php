@@ -13,10 +13,22 @@ use App\Http\Controllers\ThongBaoController;
 use App\Models\CoSo;
 use Illuminate\Support\Facades\Route;
 
-// Trang gốc -> chuyển về cơ sở mặc định (auth sẽ tự đẩy về login nếu chưa đăng nhập)
+// Trang gốc -> chuyển về cơ sở của user đang đăng nhập (impersonate + login đều đúng slug).
+// Guest: fallback cơ sở active đầu tiên (rồi middleware auth đá về /login).
+// 2026-08-18 fix: trước hardcode CoSo::first() → impersonate admin ĐN vẫn mở /59ntn/... .
 Route::get('/', function () {
-    $cs = CoSo::where('active', true)->first();
+    $u = auth()->user();
+    $cs = $u?->coSo ?? \App\Models\CoSo::where('active', true)->first();
     abort_unless($cs, 404, 'Chưa có cơ sở nào.');
+
+    // Vai trò khác nhau có trang chủ khác — bác sĩ về lịch tư vấn, nhân viên về tạo booking.
+    $ma = $u?->vaiTro?->ma;
+    if (in_array($ma, ['bac_si', 'bac_si_tu_van'], true)) {
+        return redirect("/{$cs->slug}/lich-tu-van");
+    }
+    if ($ma === 'nhan_vien') {
+        return redirect("/{$cs->slug}/tao-moi");
+    }
     return redirect("/{$cs->slug}/lich-hen");
 });
 
