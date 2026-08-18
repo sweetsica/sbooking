@@ -225,6 +225,7 @@ class CrmPushService
             $r = Http::withToken($token)->acceptJson()->timeout(6)
                 ->post(self::crmUrl() . $endpoint, [
                     'sale_email' => $u?->email,
+                    'sale_name'  => $u?->name, // 2026-08-18: fallback match khi email 2 project không trùng.
                     'work_date'  => now()->toDateString(),
                 ]);
             if ($r->successful()) {
@@ -288,6 +289,7 @@ class CrmPushService
             $r = Http::withToken($token)->acceptJson()->timeout(6)
                 ->post(self::crmUrl() . $endpoint, [
                     'sale_email' => $u?->email,
+                    'sale_name'  => $u?->name, // 2026-08-18: fallback match khi email 2 project không trùng.
                     'work_date'  => now()->toDateString(),
                 ]);
             if ($r->successful()) {
