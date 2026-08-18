@@ -63,12 +63,12 @@ body { background-color: #f7f9fb; }
 @if ($canDuyet && ! $done)
 <div class="ml-auto flex items-center gap-2">
 @unless ($approved)
-<form method="POST" action="/{{ $coSo->slug }}/duyet-dat-phong/{{ $booking->id }}">
-@csrf @method('PATCH')
-<button type="submit" class="h-[40px] px-5 bg-on-tertiary-container text-white font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+{{-- 2026-08-18: mở modal (giống list) để chọn Sale tiếp đón bắt buộc. Trước bấm nút submit thẳng không có tiep_don_user_id → 422. --}}
+<button type="button"
+        onclick="openApprove({{ $booking->id }}, @js($booking->khachHang?->ho_ten ?? 'khách'), @js($booking->co_so_id), @js($booking->gio_thuc_hien ? substr($booking->gio_thuc_hien,0,5) : ''), @js($booking->gio_ket_thuc ? substr($booking->gio_ket_thuc,0,5) : ''), @js($booking->tiep_don_user_id), @js($booking->ghi_chu ?? ''))"
+        class="h-[40px] px-5 bg-on-tertiary-container text-white font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">check_circle</span> Duyệt
 </button>
-</form>
 @endunless
 @unless ($rejected)
 <button type="button" onclick="openReject()" class="h-[40px] px-5 border border-red-300 text-red-600 font-semibold rounded-lg flex items-center gap-2 hover:bg-red-500 hover:text-white hover:border-red-500 transition-colors">
@@ -285,5 +285,10 @@ function closeReject(){var m=document.getElementById('reject-modal');m.classList
 (function(){var m=document.getElementById('reject-modal');if(!m)return;m.addEventListener('click',function(e){if(e.target===this)closeReject();});document.addEventListener('keydown',function(e){if(e.key==='Escape')closeReject();});})();
 @if ($errors->has('ly_do_tu_choi')) openReject(); @endif
 </script>
+@endif
+
+{{-- 2026-08-18: modal Duyệt (dropdown Sale tiếp đón từ UPS CRM) — share với bookings list. --}}
+@if ($canDuyet && ! $done && ! $approved)
+    @include('longevity.partials._approve_modal')
 @endif
 </body></html>
