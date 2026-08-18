@@ -126,6 +126,9 @@ class BookingApiController extends Controller
             'co_kham_cls'     => ['nullable', 'boolean'],
             'sale_id'          => ['nullable', 'integer', 'exists:users,id'],
             'tiep_don_user_id' => ['nullable', 'integer', 'exists:users,id'],
+            // 2026-08-18: nguoi_tao_id = sale gốc (creator) — CRM push sang để modal Duyệt lock dropdown
+            // khi source ∈ SA/BA/MKT_BR.
+            'nguoi_tao_id'     => ['nullable', 'integer', 'exists:users,id'],
         ]);
 
         // Phase C1.d 2026-08-02: capacity guard sớm ngay tại API — không cho tạo trùng slot
@@ -201,6 +204,8 @@ class BookingApiController extends Controller
                     'co_kham_cls'     => $data['co_kham_cls'] ?? false,
                     'sale_id'         => $data['sale_id'] ?? null,
                     'tiep_don_user_id' => $data['tiep_don_user_id'] ?? null,
+                    // 2026-08-18: nguoi_tao_id = sale gốc từ CRM push, fallback auth() (booking tạo tay bên sbooking).
+                    'nguoi_tao_id'    => $data['nguoi_tao_id'] ?? auth()->id(),
                     'trang_thai'    => $autoDuyet ? 'da_duyet' : 'cho_duyet',
                     'da_duyet'      => $autoDuyet,
                 ]);
