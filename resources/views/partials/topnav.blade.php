@@ -155,10 +155,14 @@
 @endif
 @php
     $unreadCount = auth()->check() ? auth()->user()->unreadNotifications()->count() : 0;
-    // 2026-08-10 — Nút "Dừng nhận lead" chỉ cho sale (chức danh HC/SHC/CM/DM), không cho admin.
-    $__saleChucDanh = in_array(auth()->user()?->chuc_danh, ['HC', 'SHC', 'CM', 'DM'], true);
-    $__showDungNhanLead = auth()->check() && $__saleChucDanh && ! auth()->user()->is_admin;
-    $__isPaused = (bool) (auth()->user()->dung_nhan_lead ?? false);
+    // 2026-08-10 — Nút "Dừng nhận lead" cho sale tiếp đón.
+    // 2026-08-18: nới điều kiện — check theo vai trò thay vì chuc_danh cứng.
+    //   Ẩn với admin + role quản trị/quản lý. Hiện cho các role còn lại (Sale/Tele/Lễ tân/dn_full_flow…).
+    //   Trước dùng in_array(chuc_danh, [HC,SHC,CM,DM]) → miss "Tele", "Team Leader", "CM Marketing ĐN" etc.
+    $__u = auth()->user();
+    $__excludeRoleMa = ['admin_co_so', 'quan_tri_van_hanh', 'quan_ly_sales', 'quan_ly_kinh_doanh', 'quan_tri_he_thong'];
+    $__showDungNhanLead = $__u && ! $__u->is_admin && ! in_array($__u->vaiTro?->ma, $__excludeRoleMa, true);
+    $__isPaused = (bool) ($__u->dung_nhan_lead ?? false);
 @endphp
 @if ($__showDungNhanLead)
     <form method="POST" action="/dung-nhan-lead" class="shrink-0"
