@@ -37,12 +37,9 @@
     ];
     $otherActive = in_array($active, ['bac-si', 'phong'], true);
 
-    // "Duyệt lịch": chỉ hiện cho người có quyền duyệt.
-    if ($canDuyet) {
-        array_unshift($items,
-            ['key' => 'duyet-lich', 'label' => 'Duyệt lịch', 'icon' => 'fact_check', 'href' => '/'.$coSo->slug.'/duyet-lich']
-        );
-    }
+    // 2026-08-19: bỏ menu "Duyệt lịch" ở topnav — admin bấm Duyệt inline trong từng
+    //   list Lịch khám / Lịch dịch vụ / Lịch tư vấn (nút Duyệt đã có ở row cho_duyet).
+    //   Route /duyet-lich giữ nguyên để không phá bookmark cũ.
 
     // Nhân viên: chỉ thấy 2 loại đặt lịch.
     if ($vaiTroMa === 'nhan_vien') {
