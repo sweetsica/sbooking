@@ -1,8 +1,12 @@
 @php
     $active = $active ?? 'lich-hen';
-    // Phân biệt active giữa "Đặt lịch phòng khám" và "Đặt lịch dịch vụ" qua param ?kieu=dich_vu
-    if ($active === 'lich-hen' && request('kieu') === 'dich_vu') {
-        $active = 'dich-vu';
+    // Phân biệt active giữa "Lịch khám / Tư vấn / Dịch vụ" qua param ?loai= (Phase C) hoặc ?kieu= (legacy).
+    // 2026-08-19 Phase C: bổ sung ?loai=tu_van + ?loai=dich_vu — trước đây chỉ override ?kieu=dich_vu.
+    if ($active === 'lich-hen') {
+        $loaiQ = request('loai');
+        $kieuQ = request('kieu');
+        if ($loaiQ === 'tu_van')                            $active = 'tu-van';
+        elseif ($loaiQ === 'dich_vu' || $kieuQ === 'dich_vu') $active = 'dich-vu';
     }
     $isAdmin = auth()->check() && auth()->user()->is_admin;
     $vaiTroMa = auth()->user()?->vaiTro?->ma;
