@@ -31,10 +31,10 @@ class BookingController extends Controller
     {
         $this->authorizePerm('them_booking');
 
-        return view('longevity.create', $this->formData($co_so, 'phong_kham') + [
+        return view('longevity.create', $this->formData($co_so, 'kham_ls') + [
             'bk' => null,
             'allowedFields' => null,
-            'loaiDatLich' => 'phong_kham',
+            'loaiDatLich' => 'kham_ls',
             'prefill' => $this->prefillFromQuery($request),
             'returnUrl' => $this->safeReturnUrl($request->query('return_url')),
         ]);
@@ -123,7 +123,7 @@ class BookingController extends Controller
         ]);
     }
 
-    /** Dữ liệu dùng chung cho form tạo / sửa. $kieuPhong: 'phong_kham' | 'phong_dich_vu' | null (cả 2). */
+    /** Dữ liệu dùng chung cho form tạo / sửa. $kieuPhong: 'kham_ls' | 'phong_dich_vu' | null (cả 2). */
     private function formData(CoSo $co_so, ?string $kieuPhong = null): array
     {
         $co_so->load([
@@ -137,7 +137,7 @@ class BookingController extends Controller
         // Lọc theo loại: phong_kham → la_dich_vu=false; phong_dich_vu → la_dich_vu=true
         $dichVus = DichVu::where('active', true)
             ->where('co_so_id', $co_so->id)
-            ->when($kieuPhong === 'phong_kham', fn ($q) => $q->where('la_dich_vu', false))
+            ->when($kieuPhong === 'kham_ls', fn ($q) => $q->where('la_dich_vu', false))
             ->when($kieuPhong === 'phong_dich_vu', fn ($q) => $q->where('la_dich_vu', true))
             ->orderBy('ten')->get();
         $co_so->setRelation('dichVus', $dichVus);
@@ -858,7 +858,7 @@ class BookingController extends Controller
             ? $this->bacSiTrungLich($co_so, (int) $data['bac_si_id'], $data['ngay_dat'], (int) $data['khung_gio_id'], $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null)
             : null;
 
-        $loaiDatLich = in_array($request->input('loai_dat_lich'), ['phong_kham', 'dich_vu'], true) ? $request->input('loai_dat_lich') : 'phong_kham';
+        $loaiDatLich = in_array($request->input('loai_dat_lich'), ['kham_ls', 'tu_van', 'dich_vu'], true) ? $request->input('loai_dat_lich') : 'kham_ls';
         // 2026-08-16: Mọi booking mới đều chờ Admin vận hành duyệt (bỏ auto-duyet cho phong_kham).
         $autoDuyet = false;
 

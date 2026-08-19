@@ -137,8 +137,13 @@
                 <tbody class="divide-y divide-outline-variant/60" data-bookings-tbody>
                     @forelse ($bookings as $i => $b)
                         @php
-                            $loai = $b->loai_dat_lich === 'phong_kham' ? '🩺 Thăm khám' : '💆 Dịch vụ';
-                            $loaiClass = $b->loai_dat_lich === 'phong_kham' ? 'bg-sky-50 text-sky-700' : 'bg-fuchsia-50 text-fuchsia-700';
+                            // 2026-08-19 Phase B: 3 loại — Khám LS / Tư vấn / Dịch vụ.
+                            [$loai, $loaiClass] = match ($b->loai_dat_lich) {
+                                'kham_ls' => ['🩺 Khám LS',   'bg-sky-50 text-sky-700'],
+                                'tu_van'  => ['💬 Tư vấn',    'bg-indigo-50 text-indigo-700'],
+                                'dich_vu' => ['💆 Dịch vụ',   'bg-fuchsia-50 text-fuchsia-700'],
+                                default   => ['❔ ' . $b->loai_dat_lich, 'bg-slate-100 text-slate-700'],
+                            };
                             $st = $b->trang_thai;
                             $stKh = $b->trang_thai_khach;
                             $stLabel = match (true) {
@@ -199,9 +204,13 @@
         return [t || '—', 'bg-gray-100 text-gray-600'];
     };
 
-    const loaiBadge = (loai) => loai === 'phong_kham'
-        ? ['🩺 Thăm khám', 'bg-sky-50 text-sky-700']
-        : ['💆 Dịch vụ',   'bg-fuchsia-50 text-fuchsia-700'];
+    // 2026-08-19 Phase B: 3 loại — Khám LS / Tư vấn / Dịch vụ. 'phong_kham' cũ fallback.
+    const loaiBadge = (loai) => {
+        if (loai === 'kham_ls' || loai === 'phong_kham') return ['🩺 Khám LS', 'bg-sky-50 text-sky-700'];
+        if (loai === 'tu_van') return ['💬 Tư vấn', 'bg-indigo-50 text-indigo-700'];
+        if (loai === 'dich_vu') return ['💆 Dịch vụ', 'bg-fuchsia-50 text-fuchsia-700'];
+        return ['❔ ' + (loai || '—'), 'bg-slate-100 text-slate-700'];
+    };
 
     const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 

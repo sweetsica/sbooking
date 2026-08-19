@@ -170,7 +170,8 @@ class BookingApiController extends Controller
             'bac_si_id'      => ['nullable', 'integer', 'exists:bac_si,id'],
             'phong_id'       => ['nullable', 'integer', 'exists:phong,id'],
             'khung_gio_id'   => ['nullable', 'integer', 'exists:khung_gio,id'],
-            'loai_dat_lich'  => ['nullable', 'in:phong_kham,dich_vu'],
+            // 2026-08-19 Phase B: 'phong_kham' giữ hỗ trợ backward-compat, sẽ map thành 'kham_ls'.
+            'loai_dat_lich'  => ['nullable', 'in:phong_kham,kham_ls,tu_van,dich_vu'],
             'nguon'          => ['nullable', 'string', 'max:60'],
             'crm_khach_ma'   => ['nullable', 'string', 'max:60'],
             'ghi_chu'        => ['nullable', 'string', 'max:2000'],
@@ -240,7 +241,10 @@ class BookingApiController extends Controller
                 );
 
                 // 2026-08-16: Mọi booking mới đều chờ Admin vận hành sbooking duyệt (dù nguồn nào, loại nào).
-                $loaiDatLich = $data['loai_dat_lich'] ?? 'phong_kham';
+                // 2026-08-19 Phase B: 3 loại chuẩn — 'kham_ls' | 'tu_van' | 'dich_vu'.
+                //   Backward-compat: 'phong_kham' cũ → 'kham_ls' (default), 'tu_van' giữ nguyên.
+                $loaiRaw = $data['loai_dat_lich'] ?? 'kham_ls';
+                $loaiDatLich = $loaiRaw === 'phong_kham' ? 'kham_ls' : $loaiRaw;
                 $autoDuyet = false;
 
                 $booking = Booking::create([

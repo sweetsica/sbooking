@@ -111,7 +111,7 @@
 <body class="font-body-md text-on-surface">
 @php $bk = $bk ?? null; $editing = (bool) $bk; @endphp
 <!-- Top Navigation Bar (Replacing SideNavBar) -->
-@include('partials.topnav', ['active' => ($loaiDatLich ?? 'phong_kham') === 'dich_vu' ? 'dich-vu' : 'lich-hen'])
+@include('partials.topnav', ['active' => ($loaiDatLich ?? 'kham_ls') === 'dich_vu' ? 'dich-vu' : 'lich-hen'])
 <!-- Main Content -->
 <main class="pt-16 min-h-screen">
 <div class="p-container-margin max-w-[1650px] mx-auto">
@@ -143,9 +143,9 @@
 
 <!-- Main Form Card -->
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden mb-12">
-@php $isDichVu = ($loaiDatLich ?? 'phong_kham') === 'dich_vu'; @endphp
+@php $isDichVu = ($loaiDatLich ?? 'kham_ls') === 'dich_vu'; @endphp
 <form class="p-8" id="booking-form" method="POST" action="{{ $editing ? '/'.$coSo->slug.'/sua-dat-phong/'.$bk->id : ($isDichVu ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/tao-moi') }}">
-<input type="hidden" name="loai_dat_lich" value="{{ $isDichVu ? 'dich_vu' : 'phong_kham' }}"/>
+<input type="hidden" name="loai_dat_lich" value="{{ $isDichVu ? 'dich_vu' : ($loaiDatLich ?? 'kham_ls') }}"/>
 @csrf
 @if ($editing) @method('PUT') @endif
 <!-- System Info -->
