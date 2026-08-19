@@ -316,8 +316,11 @@ class PageController extends Controller
                 ->whereBetween('gio_thuc_hien', [$now->format('H:i:s'), $in1h->format('H:i:s')]);
         } elseif ($tab === 'done') {
             $listQ->whereDate('ngay_dat', $today)->where('trang_thai', 'da_xong');
+        } else {
+            // 2026-08-19: tab === 'today' (default) → lọc đúng ngày hôm nay
+            //   (trước đây comment ghi "show tất cả" — sai UX, widget "Lịch hôm nay" phải khớp).
+            $listQ->whereDate('ngay_dat', $today);
         }
-        // tab === 'today' (default): không lọc theo ngày, show tất cả.
 
         $bookings = $listQ->with(['khachHang', 'dichVu', 'sale'])
             ->orderByDesc('id')
