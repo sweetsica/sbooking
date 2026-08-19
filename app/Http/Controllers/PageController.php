@@ -290,8 +290,10 @@ class PageController extends Controller
         // vì chờ duyệt có thể là lịch tương lai user cần biết ngay).
         $approvalCount = (clone $base())->where('trang_thai', 'cho_duyet')->count();
 
+        // 2026-08-19: default = null (show tất cả). Click widget "Lịch hôm nay" (tab=today)
+        //   mới filter theo ngay_dat=today. Trước đây default='today' nhưng logic không filter → confusing.
         $tab = in_array($request->query('tab'), ['today', 'approval', 'processing', 'upcoming', 'done'], true)
-            ? $request->query('tab') : 'today';
+            ? $request->query('tab') : null;
 
         // 2026-08-10: filter theo nhóm dịch vụ (tu_van / kham_ls). null = tất cả.
         $nhom = in_array($request->query('nhom'), ['tu_van', 'kham_ls'], true) ? $request->query('nhom') : null;
@@ -316,9 +318,9 @@ class PageController extends Controller
                 ->whereBetween('gio_thuc_hien', [$now->format('H:i:s'), $in1h->format('H:i:s')]);
         } elseif ($tab === 'done') {
             $listQ->whereDate('ngay_dat', $today)->where('trang_thai', 'da_xong');
-        } else {
-            // 2026-08-19: tab === 'today' (default) → lọc đúng ngày hôm nay
-            //   (trước đây comment ghi "show tất cả" — sai UX, widget "Lịch hôm nay" phải khớp).
+        } elseif ($tab === 'today') {
+            // 2026-08-19: chỉ khi click widget "Lịch hôm nay" mới filter ngay_dat=today.
+            //   Default (tab=null) → show tất cả.
             $listQ->whereDate('ngay_dat', $today);
         }
 
