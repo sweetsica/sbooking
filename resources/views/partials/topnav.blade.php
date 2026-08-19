@@ -25,9 +25,12 @@
         if (auth()->user()?->vai_tro_id)   $q->orWhere('vai_tro_id', auth()->user()->vai_tro_id);
     })->where('truong', 'quyen_ngay_nghi')->exists();
 
+    // 2026-08-19 Phase C: 3 loại lịch — Khám LS / Tư vấn / Dịch vụ.
+    //   Filter qua ?loai= (booking.loai_dat_lich) — chính xác hơn ?kieu= cũ (dựa phong.kieu_phong).
     $items = [
-        ['key' => 'lich-hen',  'label' => 'Lịch khám',        'icon' => 'calendar_month', 'href' => '/'.$coSo->slug.'/lich-hen'],
-        ['key' => 'dich-vu',   'label' => 'Lịch dịch vụ',     'icon' => 'spa',            'href' => '/'.$coSo->slug.'/lich-hen?kieu=dich_vu'],
+        ['key' => 'lich-hen',  'label' => 'Lịch khám',    'icon' => 'medical_services', 'href' => '/'.$coSo->slug.'/lich-hen?loai=kham_ls'],
+        ['key' => 'tu-van',    'label' => 'Lịch tư vấn',  'icon' => 'forum',            'href' => '/'.$coSo->slug.'/lich-hen?loai=tu_van'],
+        ['key' => 'dich-vu',   'label' => 'Lịch dịch vụ', 'icon' => 'spa',              'href' => '/'.$coSo->slug.'/lich-hen?loai=dich_vu'],
     ];
 
     // 2026-08-10: gom Bác sĩ + Phòng dịch vụ vào dropdown "Khác" cho gọn menu chính.
@@ -43,7 +46,8 @@
 
     // Nhân viên: chỉ thấy 2 loại đặt lịch.
     if ($vaiTroMa === 'nhan_vien') {
-        $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'dich-vu'], true)));
+        // 2026-08-19 Phase C: nhân viên thấy cả 3 loại lịch mới (khám / tư vấn / dịch vụ).
+        $items = array_values(array_filter($items, fn ($it) => in_array($it['key'], ['lich-hen', 'tu-van', 'dich-vu'], true)));
     }
 
     // Admin: gear icon → /thiet-lap (cards "Lịch làm việc" & "Ngày nghỉ" nằm trong đó).

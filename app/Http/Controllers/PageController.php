@@ -248,11 +248,17 @@ class PageController extends Controller
         $in1h = $now->copy()->addHour();
 
         // 2026-08-10 — Tab "Lịch khám" (mặc định) vs "Lịch dịch vụ" (?kieu=dich_vu) → lọc theo phong.kieu_phong.
+        // 2026-08-19 Phase C: thêm filter mới `?loai=kham_ls|tu_van|dich_vu` (booking.loai_dat_lich).
+        //   Nếu có `loai` → dùng loai_dat_lich (chính xác hơn). Fallback `kieu` để tương thích link cũ.
+        $loai = in_array($request->query('loai'), ['kham_ls', 'tu_van', 'dich_vu'], true) ? $request->query('loai') : null;
         $kieu = $request->query('kieu') === 'dich_vu' ? 'phong_dich_vu' : 'phong_kham';
 
         $base = fn () => Booking::where('co_so_id', $co_so->id)
             ->visibleTo(auth()->user())
-            ->whereHas('phong', fn ($q) => $q->where('kieu_phong', $kieu));
+            ->when($loai,
+                fn ($q) => $q->where('loai_dat_lich', $loai),
+                fn ($q) => $q->whereHas('phong', fn ($qq) => $qq->where('kieu_phong', $kieu))
+            );
 
         $todayCount = (clone $base())->whereDate('ngay_dat', $today)->count();
 
@@ -339,13 +345,22 @@ class PageController extends Controller
             ]);
         }
 
+        // 2026-08-19 Phase C: active nav key theo `$loai` để menu highlight đúng.
+        $activeKey = match ($loai) {
+            'tu_van'  => 'tu-van',
+            'dich_vu' => 'dich-vu',
+            default   => 'lich-hen', // kham_ls hoặc không filter
+        };
+
         return view('longevity.dashboard', [
             'coSo' => $co_so, 'todayCount' => $todayCount,
             'approvalCount' => $approvalCount,
             'processingCount' => $processingCount,
             'upcomingCount' => $upcomingCount, 'doneCount' => $doneCount,
-            'tab' => $tab, 'nhom' => $nhom, 'bookings' => $bookings, 'active' => 'lich-hen',
+            'tab' => $tab, 'nhom' => $nhom, 'bookings' => $bookings,
+            'active' => $activeKey,
             'kieu' => $kieu,
+            'loai' => $loai,
         ]);
     }
 
