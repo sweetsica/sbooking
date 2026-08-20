@@ -716,14 +716,22 @@ class PageController extends Controller
         }
         $currentSlotBookings = $currentSlotQuery->get();
 
-        // BS để filter: thuộc cơ sở hoặc global (is_tu_van=true)
-        $vrBacSiIds = \App\Models\VaiTro::whereIn('ma', ['bac_si', 'bac_si_tu_van'])->pluck('id');
-        $bacSis = \App\Models\User::whereIn('vai_tro_id', $vrBacSiIds)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('is_tu_van', true))
-            ->orderBy('name')->get(['id', 'name', 'chuc_danh']);
+        // 2026-08-19: BS lấy trực tiếp từ bảng `bac_si` (standalone entity, không phải users).
+        //   booking.bac_si_id là FK sang bac_si.id — trước đây query users là sai, dropdown rỗng.
+        //   Include BS của cơ sở + BS global (xuat_hien_moi_co_so=true).
+        $bacSis = \App\Models\BacSi::where('active', true)
+            ->where(function ($q) use ($co_so) {
+                $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true);
+            })
+            ->orderBy('ten')->get();
 
-        // Sale để filter: nhân viên phụ trách đơn (tư vấn viên / lễ tân / nhân viên)
-        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', ['tu_van_vien', 'sales_lead', 'sales_manager', 'le_tan', 'nhan_vien'])->pluck('id');
+        // 2026-08-19: mở rộng vai_tro cho "Sale/Nhân viên phụ trách":
+        //   dn_full_flow (Kim Phấn/Bông + team DN) — trước bị bỏ sót → dropdown thiếu 8 user DN.
+        //   ktv (nhận đơn dịch vụ), bac_si (BS user account nếu đóng vai sale).
+        $vrSaleIds = \App\Models\VaiTro::whereIn('ma', [
+            'tu_van_vien', 'sales_lead', 'sales_manager', 'le_tan', 'nhan_vien',
+            'dn_full_flow', 'ktv',
+        ])->pluck('id');
         $sales = \App\Models\User::whereIn('vai_tro_id', $vrSaleIds)
             ->where('co_so_id', $co_so->id)
             ->where('is_admin', false)
@@ -735,8 +743,13 @@ class PageController extends Controller
             'phongs' => $co_so->phongs()->get(),
             'bacSis' => $bacSis,
             'sales' => $sales,
-            'nguons' => Booking::where('co_so_id', $co_so->id)
-                ->whereNotNull('nguon')->distinct()->pluck('nguon'),
+            // 2026-08-19: nguon list = union danh sách cố định SCRM (8 loại) + distinct từ DB
+            //   (bao gồm giá trị legacy như 'SCRM' hoặc value custom). Trước đây chỉ pluck DB
+            //   → cơ sở chưa có booking source nào thì dropdown rỗng.
+            'nguons' => collect(['mkt', 'mkt_br', 'bdm', 'bod', 'sa', 'ba', 'wi', 'hl'])
+                ->merge(Booking::where('co_so_id', $co_so->id)
+                    ->whereNotNull('nguon')->distinct()->pluck('nguon'))
+                ->unique()->sort()->values(),
             'filters' => $request->only(['ngay_tu', 'ngay_den', 'phong_id', 'bac_si_id', 'sale_id', 'nguon', 'trang_thai', 'booking_tre']),
             'sort' => $sort,
             'dir' => $dir,
