@@ -466,6 +466,9 @@
 <td class="px-4 py-4 sticky-col sticky-right-0 {{ $rowBg }} shadow-[-2px_0_5px_rgba(0,0,0,0.05)]">
 <div class="flex items-center justify-end gap-1">
 @php
+    // 2026-08-19: rút gọn cột THAO TÁC — chỉ giữ badge Trạng thái + Kết quả + 3 icon
+    //   (Xem / Xóa / Mở bên DataSource). Bỏ nút Duyệt/Từ chối/Check-in/Tiếp đón/
+    //   Đã xong/Sửa (những thao tác đó thực hiện ở trang chi tiết booking).
     $approved = $b->trang_thai === 'da_duyet';
     $done = $b->trang_thai === 'da_xong';
     $checkedIn = in_array($b->trang_thai_khach, ['da_toi', 'toi_tre'], true);
@@ -480,94 +483,30 @@
                     ? ['Từ chối', 'bg-red-100 text-red-700']
                     : ['Chờ duyệt', 'bg-secondary-container/40 text-on-secondary-container'])));
 @endphp
-<span class="px-2 py-0.5 mr-1 rounded-full text-[11px] font-semibold {{ $badge[1] }}" @if($rejected && $b->ly_do_tu_choi) title="Lý do từ chối: {{ $b->ly_do_tu_choi }}" @endif>{{ $badge[0] }}</span>
-@if ($canDuyet)
-@unless ($done)
-{{-- B5c (2026-08-14): approve mở modal edit sale/giờ/note cho admin vận hành + admin hệ thống.
-     Bấm Bỏ duyệt (khi đã approved) vẫn dùng form gọn nhẹ. --}}
-@if ($approved)
-<form method="POST" action="/{{ $coSo->slug }}/duyet-dat-phong/{{ $b->id }}" class="inline">
-@csrf @method('PATCH')
-<button type="submit" title="Bỏ duyệt" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors bg-on-tertiary-container text-white border-on-tertiary-container hover:bg-error hover:border-error">
-<span class="material-symbols-outlined text-[16px]">close</span>
-</button>
-</form>
-@else
-<button type="button"
-        onclick="openApprove({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->co_so_id), @js($b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : ''), @js($b->gio_ket_thuc ? substr($b->gio_ket_thuc,0,5) : ''), @js($b->tiep_don_user_id), @js($b->ghi_chu ?? ''), {source_group: @js($b->nguon ?? ''), creator_id: @js($b->nguoi_tao_id), creator_name: @js($b->nguoiTao?->name ?? ''), tele_owner_id: @js($b->tele_owner_id), tele_owner_name: @js($b->tele_owner_name ?? ''), ngay_dat: @js(optional($b->ngay_dat)->toDateString())})"
-        title="Duyệt"
-        class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-outline border-outline-variant hover:border-on-tertiary-container hover:text-on-tertiary-container">
-<span class="material-symbols-outlined text-[16px]">check</span>
-</button>
-@endif
-@endunless
-@unless ($done || $rejected)
-<button type="button" onclick="openReject({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'))" title="Từ chối (không duyệt)" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors text-red-400 border-red-200 hover:bg-red-500 hover:text-white hover:border-red-500">
-<span class="material-symbols-outlined text-[16px]">block</span>
-</button>
-@endunless
-{{-- Phase C1.b rev6 2026-08-01: nút Check-in — chỉ show khi đã duyệt + chưa xong.
-     2026-08-18: expose đủ 3 trạng thái Khách đã tới / Tới trễ / Hủy (Rule::in đã có sẵn ở
-     BookingController::capNhatTrangThaiKhach). Bấm lại đúng trạng thái đang chọn = toggle bỏ chọn. --}}
-@if ($approved && $canCheckIn)
+{{-- 2026-08-19: badge tách 2 — Trạng thái (approval) + Kết quả (outcome). Đồng bộ với dashboard. --}}
 @php
-    $ttk = $b->trang_thai_khach;
-    $tteState = ['da_toi', 'toi_tre', 'huy'];
-    $tteConfig = [
-        'da_toi'  => ['icon' => 'how_to_reg',      'title' => 'Khách đã tới',  'active' => 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600', 'idle' => 'text-outline border-outline-variant hover:border-emerald-500 hover:text-emerald-600'],
-        'toi_tre' => ['icon' => 'schedule',        'title' => 'Khách tới trễ', 'active' => 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600',       'idle' => 'text-outline border-outline-variant hover:border-amber-500 hover:text-amber-600'],
-        'huy'     => ['icon' => 'person_cancel',   'title' => 'Khách hủy',     'active' => 'bg-rose-500 text-white border-rose-500 hover:bg-rose-600',           'idle' => 'text-outline border-outline-variant hover:border-rose-500 hover:text-rose-600'],
-    ];
+    $stKh = $b->trang_thai_khach;
+    [$__apLabel, $__apCls] = match ($b->trang_thai) {
+        'cho_duyet' => ['⏳ Chờ duyệt', 'bg-amber-100 text-amber-700'],
+        'da_duyet'  => ['✅ Đã duyệt', 'bg-emerald-50 text-emerald-700'],
+        'tu_choi'   => ['❌ Từ chối',  'bg-rose-100 text-rose-700'],
+        'da_xong'   => ['✅ Đã duyệt', 'bg-emerald-50 text-emerald-700'],
+        default     => [$b->trang_thai ?? '—', 'bg-gray-100 text-gray-600'],
+    };
+    [$__rsLabel, $__rsCls] = match (true) {
+        $b->trang_thai === 'da_xong' => ['🏁 Đã xong', 'bg-emerald-100 text-emerald-700'],
+        $stKh === 'toi_tre'          => ['⏰ Trễ',    'bg-orange-100 text-orange-700'],
+        $stKh === 'huy'              => ['🚫 Hủy',    'bg-red-100 text-red-700'],
+        default                      => ['—',          'bg-transparent text-on-surface-variant/50'],
+    };
 @endphp
-@foreach ($tteState as $__s)
-    @php $__c = $tteConfig[$__s]; $__on = ($ttk === $__s); @endphp
-    <form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $b->id }}" class="inline">
-        @csrf @method('PATCH')
-        <input type="hidden" name="trang_thai_khach" value="{{ $__s }}">
-        <button type="submit" title="{{ $__on ? 'Bấm lại để bỏ: ' . $__c['title'] : $__c['title'] }}"
-                class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $__on ? $__c['active'] : $__c['idle'] }}">
-            <span class="material-symbols-outlined text-[16px]">{{ $__c['icon'] }}</span>
-        </button>
-    </form>
-@endforeach
-@endif
-{{-- Phase 6.25.C — Nút "Đang tiếp đón / Hoàn tất" cho sale được gán (manual bên scrm phase 3 hoặc auto UPS). --}}
-@if ($b->tiep_don_user_id === auth()->id() || $b->sale_id === auth()->id())
-    @php $tdBusy = $b->trang_thai_tiep_don === 'dang_tiep_don'; @endphp
-    <form method="POST" action="/{{ $coSo->slug }}/tiep-don/{{ $b->id }}" class="inline">
-        @csrf @method('PATCH')
-        <input type="hidden" name="trang_thai_tiep_don" value="{{ $tdBusy ? 'hoan_tat' : 'dang_tiep_don' }}">
-        <button type="submit" title="{{ $tdBusy ? 'Hoàn tất tiếp đón (bỏ bận)' : 'Đang tiếp đón (đánh dấu bận)' }}"
-                class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $tdBusy ? 'bg-amber-500 text-white border-amber-500 hover:bg-amber-600' : 'text-outline border-outline-variant hover:border-amber-500 hover:text-amber-600' }}">
-            <span class="material-symbols-outlined text-[16px]">{{ $tdBusy ? 'done_all' : 'record_voice_over' }}</span>
-        </button>
-    </form>
-    {{-- 2026-08-18 — Nút "Kết luận checkin" mở modal 3 dropdown (tình trạng + kết quả + phân loại) + push CRM. --}}
-    @php $ckDone = ! empty($b->checkin_hoan_tat_at); @endphp
-    <button type="button"
-            onclick="openCheckinDone({{ $b->id }}, @js($b->khachHang?->ho_ten ?? 'khách'), @js($b->tinh_trang_checkin ?? ''), @js($b->ket_qua_sau_checkin ?? ''), @js($b->phan_loai ?? ''))"
-            title="{{ $ckDone ? 'Đã xong checkin — bấm để sửa lại' : 'Kết luận checkin (Sale tiếp đón)' }}"
-            class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $ckDone ? 'bg-emerald-500 text-white border-emerald-500 hover:bg-emerald-600' : 'text-outline border-outline-variant hover:border-emerald-500 hover:text-emerald-600' }}">
-        <span class="material-symbols-outlined text-[16px]">{{ $ckDone ? 'fact_check' : 'checklist' }}</span>
-    </button>
-@endif
-@if ($approved || $done)
-<form method="POST" action="/{{ $coSo->slug }}/xong-dat-phong/{{ $b->id }}" class="inline">
-@csrf @method('PATCH')
-<button type="submit" title="{{ $done ? 'Hoàn tác về Đã duyệt' : 'Đánh dấu Đã xong' }}" class="w-7 h-7 rounded-full text-[12px] font-bold border flex items-center justify-center transition-colors {{ $done ? 'bg-primary text-on-primary border-primary hover:opacity-80' : 'text-outline border-outline-variant hover:border-primary hover:text-primary' }}">
-<span class="material-symbols-outlined text-[16px]">{{ $done ? 'undo' : 'task_alt' }}</span>
-</button>
-</form>
-@endif
-@endif
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $__apCls }}"
+      @if($rejected && $b->ly_do_tu_choi) title="Lý do từ chối: {{ $b->ly_do_tu_choi }}" @endif>{{ $__apLabel }}</span>
+<span class="px-2 py-0.5 rounded-full text-[11px] font-semibold {{ $__rsCls }}">{{ $__rsLabel }}</span>
+
 <a href="/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}" title="Xem chi tiết" class="p-1.5 rounded-lg text-on-surface-variant hover:bg-surface-variant transition-colors">
 <span class="material-symbols-outlined text-[18px]">visibility</span>
 </a>
-@if ($canEditBookingRow($b))
-<a href="/{{ $coSo->slug }}/sua-dat-phong/{{ $b->id }}" title="Sửa" class="p-1.5 rounded-lg text-secondary hover:bg-secondary-container/30 transition-colors">
-<span class="material-symbols-outlined text-[18px]">edit</span>
-</a>
-@endif
 @if ($canDeleteBooking)
 <form method="POST" action="/{{ $coSo->slug }}/xoa-dat-phong/{{ $b->id }}" class="inline" onsubmit="return confirm('Xóa lịch hẹn đặt phòng này? Hành động không thể hoàn tác.')">
 @csrf @method('DELETE')
