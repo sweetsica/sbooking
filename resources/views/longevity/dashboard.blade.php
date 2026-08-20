@@ -54,8 +54,10 @@
 
     {{-- 4 widget --}}
     @php
+        // 2026-08-19: label widget "Lịch hôm nay" đổi thành "Lịch ngày DD/MM" khi user chọn ngày khác.
+        $__ngayLabel = ($ngay ?? '') !== '' ? \Carbon\Carbon::parse($ngay)->format('d/m') : 'hôm nay';
         $widgets = [
-            ['key'=>'today',      'label'=>'Lịch hôm nay',            'desc'=>'Tất cả booking ngày hôm nay',                          'value'=>$todayCount,      'color'=>'blue',    'icon'=>'today'],
+            ['key'=>'today',      'label'=>'Lịch ' . $__ngayLabel,     'desc'=>'Tất cả booking ngày ' . $__ngayLabel,                  'value'=>$todayCount,      'color'=>'blue',    'icon'=>'today'],
             ['key'=>'approval',   'label'=>'Lịch chờ duyệt',          'desc'=>'Tất cả booking đang trạng thái "Chờ duyệt" (mọi ngày)','value'=>$approvalCount,   'color'=>'rose',    'icon'=>'pending_actions'],
             ['key'=>'processing', 'label'=>'Đang xử lý',              'desc'=>'Khách đã tới — đang tiếp đón / khám',                  'value'=>$processingCount, 'color'=>'amber',   'icon'=>'schedule'],
             ['key'=>'upcoming',   'label'=>'Sắp tới (trong 1 giờ)',   'desc'=>'Đã duyệt, giờ hẹn trong vòng 60 phút tới',             'value'=>$upcomingCount,   'color'=>'violet',  'icon'=>'alarm'],
@@ -84,27 +86,56 @@
         @endforeach
     </div>
 
-    {{-- 2026-08-10: filter nhóm dịch vụ (tất cả / tư vấn / thăm khám). Giữ tab hiện tại khi đổi nhóm. --}}
+    {{-- 2026-08-10: filter nhóm dịch vụ (tất cả / tư vấn / thăm khám). Giữ tab hiện tại khi đổi nhóm.
+         2026-08-19: thêm search (mã ĐL / tên / SĐT) + date picker ở bên phải. Đổi ngày → widget filter theo ngày đó. --}}
     @php
         $nhom = $nhom ?? null;
-        $baseQs = 'tab=' . urlencode($tab);
+        $searchQ = $search ?? '';
+        $ngayFilter = $ngay ?? '';
+        // Query base: giữ tab + loai + nhom + ngay + search khi build link nhóm.
+        $qsCarry = ['tab' => $tab, 'loai' => $loai ?? null, 'ngay' => $ngayFilter ?: null, 'q' => $searchQ ?: null];
+        $qsCarry = array_filter($qsCarry, fn ($v) => $v !== null && $v !== '');
+        $baseQs = http_build_query($qsCarry);
         $nhomBtns = [
             ''        => ['Tất cả',   'apps'],
             'tu_van'  => ['Tư vấn',   'chat'],
             'kham_ls' => ['Thăm khám','medical_information'],
         ];
     @endphp
-    <div class="flex items-center gap-2 mb-3 flex-wrap">
-        @foreach ($nhomBtns as $k => [$lb, $ico])
-            @php
-                $on = ($nhom ?? '') === $k;
-                $href = '?' . $baseQs . ($k ? '&nhom=' . $k : '');
-            @endphp
-            <a href="{{ $href }}"
-               class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-body-sm transition-colors {{ $on ? 'bg-secondary-container text-on-secondary-container border-secondary font-semibold' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low' }}">
-                <span class="material-symbols-outlined text-[18px]">{{ $ico }}</span> {{ $lb }}
-            </a>
-        @endforeach
+    <div class="flex items-center gap-2 mb-3 flex-wrap justify-between">
+        <div class="flex items-center gap-2 flex-wrap">
+            @foreach ($nhomBtns as $k => [$lb, $ico])
+                @php
+                    $on = ($nhom ?? '') === $k;
+                    $href = '?' . $baseQs . ($k ? '&nhom=' . $k : '');
+                @endphp
+                <a href="{{ $href }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-body-sm transition-colors {{ $on ? 'bg-secondary-container text-on-secondary-container border-secondary font-semibold' : 'bg-surface-container-lowest text-on-surface-variant border-outline-variant hover:bg-surface-container-low' }}">
+                    <span class="material-symbols-outlined text-[18px]">{{ $ico }}</span> {{ $lb }}
+                </a>
+            @endforeach
+        </div>
+
+        {{-- 2026-08-19: search + date filter (bên phải). Đổi date → reload trang, widget cũng filter theo ngày đó. --}}
+        <form method="GET" class="flex items-center gap-2 flex-wrap">
+            @if ($loai ?? null)<input type="hidden" name="loai" value="{{ $loai }}"/>@endif
+            @if ($nhom)<input type="hidden" name="nhom" value="{{ $nhom }}"/>@endif
+            @if ($tab)<input type="hidden" name="tab" value="{{ $tab }}"/>@endif
+            <div class="relative">
+                <span class="material-symbols-outlined absolute left-2 top-1/2 -translate-y-1/2 text-[18px] text-on-surface-variant/60">search</span>
+                <input type="text" name="q" value="{{ $searchQ }}" placeholder="Mã ĐL / tên / SĐT"
+                       class="pl-9 pr-3 py-1.5 rounded-lg border border-outline-variant text-body-sm bg-surface-container-lowest focus:outline-none focus:border-primary w-56"/>
+            </div>
+            <input type="date" name="ngay" value="{{ $ngayFilter }}"
+                   onchange="this.form.submit()"
+                   class="px-3 py-1.5 rounded-lg border border-outline-variant text-body-sm bg-surface-container-lowest focus:outline-none focus:border-primary"
+                   title="Xem lịch của ngày khác — widget bên trên cũng sẽ lọc theo ngày này"/>
+            <button type="submit" class="px-3 py-1.5 rounded-lg bg-primary text-on-primary text-body-sm font-semibold hover:opacity-90">Tìm</button>
+            @if ($searchQ || $ngayFilter)
+                @php $clearQs = http_build_query(array_filter(['tab' => $tab, 'loai' => $loai ?? null, 'nhom' => $nhom])); @endphp
+                <a href="?{{ $clearQs }}" class="px-2 py-1.5 text-body-sm text-on-surface-variant hover:text-error" title="Xoá lọc">✕</a>
+            @endif
+        </form>
     </div>
 
     {{-- List booking --}}

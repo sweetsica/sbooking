@@ -243,9 +243,18 @@ class PageController extends Controller
      */
     public function dashboard(CoSo $co_so, Request $request)
     {
-        $today = now()->toDateString();
+        // 2026-08-19: user chọn ngày (?ngay=YYYY-MM-DD) — mọi widget + list filter theo ngày này.
+        //   Default = hôm nay. Search (?q) áp lên list booking (mã ĐL / tên / SĐT).
+        $ngayFilter = $request->query('ngay');
+        try {
+            $today = $ngayFilter ? \Carbon\Carbon::parse($ngayFilter)->toDateString() : now()->toDateString();
+        } catch (\Throwable $e) {
+            $today = now()->toDateString();
+            $ngayFilter = null;
+        }
         $now = now();
         $in1h = $now->copy()->addHour();
+        $searchQ = trim((string) $request->query('q', ''));
 
         // 2026-08-10 — Tab "Lịch khám" (mặc định) vs "Lịch dịch vụ" (?kieu=dich_vu) → lọc theo phong.kieu_phong.
         // 2026-08-19 Phase C: thêm filter mới `?loai=kham_ls|tu_van|dich_vu` (booking.loai_dat_lich).
@@ -324,6 +333,16 @@ class PageController extends Controller
             $listQ->whereDate('ngay_dat', $today);
         }
 
+        // 2026-08-19: search theo mã ĐL / tên / SĐT. Áp trước sort để không phá order.
+        if ($searchQ !== '') {
+            $listQ->where(function ($q) use ($searchQ) {
+                $q->where('id', 'like', "%{$searchQ}%")
+                  ->orWhereHas('khachHang', fn ($kq) => $kq
+                      ->where('ho_ten', 'like', "%{$searchQ}%")
+                      ->orWhere('so_dien_thoai', 'like', "%{$searchQ}%"));
+            });
+        }
+
         // 2026-08-19: sort cột "Giờ hẹn" — ?sort=gio_asc (sớm→muộn) | gio_desc (muộn→sớm).
         //   Default order = id desc (booking mới nhất trước) khi không có sort.
         $sort = in_array($request->query('sort'), ['gio_asc', 'gio_desc'], true) ? $request->query('sort') : null;
@@ -376,6 +395,9 @@ class PageController extends Controller
             'active' => $activeKey,
             'kieu' => $kieu,
             'loai' => $loai,
+            // 2026-08-19: date + search — dashboard blade dùng để render form + widget label.
+            'ngay' => $ngayFilter,
+            'search' => $searchQ,
         ]);
     }
 
