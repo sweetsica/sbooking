@@ -176,6 +176,7 @@
                             </a>
                         </th>
                         <th class="px-4 py-2.5 font-semibold">Trạng thái</th>
+                        <th class="px-4 py-2.5 font-semibold">Kết quả</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-outline-variant/60" data-bookings-tbody>
@@ -190,15 +191,22 @@
                             };
                             $st = $b->trang_thai;
                             $stKh = $b->trang_thai_khach;
-                            $stLabel = match (true) {
-                                $st === 'da_xong'    => ['🏁 Đã xong', 'bg-emerald-100 text-emerald-700'],
-                                $stKh === 'da_toi'   => ['🚪 Đã tới', 'bg-teal-100 text-teal-700'],
-                                $stKh === 'toi_tre'  => ['⏰ Tới trễ', 'bg-orange-100 text-orange-700'],
-                                $stKh === 'huy'      => ['🚫 Hủy', 'bg-red-100 text-red-700'],
-                                $st === 'da_duyet'   => ['✅ Đã duyệt', 'bg-emerald-50 text-emerald-700'],
-                                $st === 'cho_duyet'  => ['⏳ Chờ duyệt', 'bg-amber-100 text-amber-700'],
-                                $st === 'tu_choi'    => ['❌ Từ chối', 'bg-rose-100 text-rose-700'],
-                                default              => [$st ?? '—', 'bg-gray-100 text-gray-600'],
+                            // 2026-08-19: tách 2 cột.
+                            //   Trạng thái (approval): Chờ duyệt / Đã duyệt / Từ chối.
+                            //     Nếu đã da_xong → coi như đã duyệt xong.
+                            //   Kết quả (outcome): Trễ / Hủy / Đã xong. Chưa có → "—".
+                            $stApproval = match ($st) {
+                                'cho_duyet' => ['⏳ Chờ duyệt', 'bg-amber-100 text-amber-700'],
+                                'da_duyet'  => ['✅ Đã duyệt', 'bg-emerald-50 text-emerald-700'],
+                                'tu_choi'   => ['❌ Từ chối',  'bg-rose-100 text-rose-700'],
+                                'da_xong'   => ['✅ Đã duyệt', 'bg-emerald-50 text-emerald-700'],
+                                default     => [$st ?? '—',    'bg-gray-100 text-gray-600'],
+                            };
+                            $stResult = match (true) {
+                                $st === 'da_xong'   => ['🏁 Đã xong', 'bg-emerald-100 text-emerald-700'],
+                                $stKh === 'toi_tre' => ['⏰ Trễ',    'bg-orange-100 text-orange-700'],
+                                $stKh === 'huy'     => ['🚫 Hủy',    'bg-red-100 text-red-700'],
+                                default             => ['—',         'bg-transparent text-on-surface-variant/50'],
                             };
                         @endphp
                         <tr class="hover:bg-surface-container-low cursor-pointer" onclick="window.location='/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}'">
@@ -213,12 +221,15 @@
                             </td>
                             <td class="px-4 py-2.5 font-mono text-xs">{{ $b->gio_thuc_hien ? substr($b->gio_thuc_hien, 0, 5) : '—' }}</td>
                             <td class="px-4 py-2.5">
-                                <span class="text-xs font-semibold px-2 py-0.5 rounded {{ $stLabel[1] }}">{{ $stLabel[0] }}</span>
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded {{ $stApproval[1] }}">{{ $stApproval[0] }}</span>
+                            </td>
+                            <td class="px-4 py-2.5">
+                                <span class="text-xs font-semibold px-2 py-0.5 rounded {{ $stResult[1] }}">{{ $stResult[0] }}</span>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-12 text-center text-on-surface-variant italic">
+                            <td colspan="9" class="px-4 py-12 text-center text-on-surface-variant italic">
                                 Không có lịch nào khớp bộ lọc.
                             </td>
                         </tr>
@@ -237,15 +248,18 @@
     const currentTab = @json($tab);
     const url = `/${slug}/lich-hen?tab=${encodeURIComponent(currentTab)}&json=1`;
 
-    const statusBadge = (t, tk) => {
-        if (t === 'da_xong')    return ['🏁 Đã xong',   'bg-emerald-100 text-emerald-700'];
-        if (tk === 'da_toi')    return ['🚪 Đã tới',    'bg-teal-100 text-teal-700'];
-        if (tk === 'toi_tre')   return ['⏰ Tới trễ',   'bg-orange-100 text-orange-700'];
-        if (tk === 'huy')       return ['🚫 Hủy',       'bg-red-100 text-red-700'];
-        if (t === 'da_duyet')   return ['✅ Đã duyệt',  'bg-emerald-50 text-emerald-700'];
-        if (t === 'cho_duyet')  return ['⏳ Chờ duyệt', 'bg-amber-100 text-amber-700'];
-        if (t === 'tu_choi')    return ['❌ Từ chối',   'bg-rose-100 text-rose-700'];
+    // 2026-08-19: tách 2 badge — approval + result. Mirror server-side logic.
+    const approvalBadge = (t) => {
+        if (t === 'cho_duyet') return ['⏳ Chờ duyệt', 'bg-amber-100 text-amber-700'];
+        if (t === 'da_duyet' || t === 'da_xong') return ['✅ Đã duyệt', 'bg-emerald-50 text-emerald-700'];
+        if (t === 'tu_choi')   return ['❌ Từ chối',  'bg-rose-100 text-rose-700'];
         return [t || '—', 'bg-gray-100 text-gray-600'];
+    };
+    const resultBadge = (t, tk) => {
+        if (t === 'da_xong')  return ['🏁 Đã xong', 'bg-emerald-100 text-emerald-700'];
+        if (tk === 'toi_tre') return ['⏰ Trễ',    'bg-orange-100 text-orange-700'];
+        if (tk === 'huy')     return ['🚫 Hủy',    'bg-red-100 text-red-700'];
+        return ['—', 'bg-transparent text-on-surface-variant/50'];
     };
 
     // 2026-08-19 Phase B: 3 loại — Khám LS / Tư vấn / Dịch vụ. 'phong_kham' cũ fallback.
@@ -278,11 +292,12 @@
             const tbody = document.querySelector('[data-bookings-tbody]');
             if (! tbody) return;
             if (! d.bookings || d.bookings.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="8" class="px-4 py-12 text-center text-on-surface-variant italic">Không có lịch nào khớp bộ lọc.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-12 text-center text-on-surface-variant italic">Không có lịch nào khớp bộ lọc.</td></tr>`;
                 return;
             }
             tbody.innerHTML = d.bookings.map((b, i) => {
-                const [stLabel, stClass] = statusBadge(b.trang_thai, b.trang_thai_khach);
+                const [apLabel, apClass] = approvalBadge(b.trang_thai);
+                const [rsLabel, rsClass] = resultBadge(b.trang_thai, b.trang_thai_khach);
                 const [lLabel, lClass] = loaiBadge(b.loai);
                 const dv = b.dich_vu ? `<span class="text-xs text-on-surface-variant ml-1">· ${esc(b.dich_vu)}</span>` : '';
                 return `
@@ -294,7 +309,8 @@
                     <td class="px-4 py-2.5 text-on-surface-variant">${esc(b.sale || '—')}</td>
                     <td class="px-4 py-2.5"><span class="text-xs px-2 py-0.5 rounded ${lClass}">${lLabel}</span>${dv}</td>
                     <td class="px-4 py-2.5 font-mono text-xs">${esc(b.gio || '—')}</td>
-                    <td class="px-4 py-2.5"><span class="text-xs font-semibold px-2 py-0.5 rounded ${stClass}">${stLabel}</span></td>
+                    <td class="px-4 py-2.5"><span class="text-xs font-semibold px-2 py-0.5 rounded ${apClass}">${apLabel}</span></td>
+                    <td class="px-4 py-2.5"><span class="text-xs font-semibold px-2 py-0.5 rounded ${rsClass}">${rsLabel}</span></td>
                 </tr>`;
             }).join('');
         } catch (e) { /* silent */ }
