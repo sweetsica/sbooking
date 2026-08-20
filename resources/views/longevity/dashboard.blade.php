@@ -130,7 +130,20 @@
                         <th class="px-4 py-2.5 font-semibold">SĐT</th>
                         <th class="px-4 py-2.5 font-semibold">Sale chăm sóc</th>
                         <th class="px-4 py-2.5 font-semibold">Danh mục</th>
-                        <th class="px-4 py-2.5 font-semibold">Giờ hẹn</th>
+                        @php
+                            // 2026-08-19: cột "Giờ hẹn" sortable — toggle asc ↔ desc qua query ?sort=gio_asc|gio_desc.
+                            //   default = giữ order hiện tại (id desc) — không sort.
+                            $__sort = request('sort');
+                            $__nextSort = $__sort === 'gio_asc' ? 'gio_desc' : 'gio_asc';
+                            $__arrow = $__sort === 'gio_asc' ? '▲' : ($__sort === 'gio_desc' ? '▼' : '⇅');
+                            $__sortColor = $__sort ? 'text-primary' : 'text-on-surface-variant/50';
+                            $__sortUrl = request()->fullUrlWithQuery(['sort' => $__nextSort]);
+                        @endphp
+                        <th class="px-4 py-2.5 font-semibold">
+                            <a href="{{ $__sortUrl }}" class="inline-flex items-center gap-1 hover:text-primary transition-colors" title="Bấm để sắp xếp {{ $__nextSort === 'gio_asc' ? 'giờ sớm → muộn' : 'giờ muộn → sớm' }}">
+                                Giờ hẹn <span class="text-[10px] {{ $__sortColor }}">{{ $__arrow }}</span>
+                            </a>
+                        </th>
                         <th class="px-4 py-2.5 font-semibold">Trạng thái</th>
                     </tr>
                 </thead>

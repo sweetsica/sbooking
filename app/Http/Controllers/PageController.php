@@ -324,8 +324,18 @@ class PageController extends Controller
             $listQ->whereDate('ngay_dat', $today);
         }
 
+        // 2026-08-19: sort cột "Giờ hẹn" — ?sort=gio_asc (sớm→muộn) | gio_desc (muộn→sớm).
+        //   Default order = id desc (booking mới nhất trước) khi không có sort.
+        $sort = in_array($request->query('sort'), ['gio_asc', 'gio_desc'], true) ? $request->query('sort') : null;
+        if ($sort === 'gio_asc') {
+            $listQ->orderByRaw('ngay_dat asc, gio_thuc_hien asc');
+        } elseif ($sort === 'gio_desc') {
+            $listQ->orderByRaw('ngay_dat desc, gio_thuc_hien desc');
+        } else {
+            $listQ->orderByDesc('id');
+        }
+
         $bookings = $listQ->with(['khachHang', 'dichVu', 'sale'])
-            ->orderByDesc('id')
             ->limit(100)
             ->get();
 
