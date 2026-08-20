@@ -26,12 +26,31 @@ class BookingExport implements FromQuery, WithHeadings, WithMapping, WithTitle
             'ID', 'Dấu thời gian', 'Họ tên KH', 'Số điện thoại', 'Email',
             'Ngày đặt', 'Phòng', 'Khung giờ', 'Giờ thực hiện', 'Giờ kết thúc',
             'Nguồn', 'Sale phụ trách', 'Dịch vụ', 'Số lượng',
-            'Bác sĩ / Điều dưỡng', 'Ghi chú', 'Trạng thái',
+            'Bác sĩ / Điều dưỡng', 'Ghi chú',
+            // 2026-08-19: tách 2 cột — Trạng thái (approval) + Kết quả (outcome).
+            'Trạng thái', 'Kết quả',
         ];
     }
 
     public function map($bk): array
     {
+        // 2026-08-19: mirror logic dashboard/bookings blade.
+        //   Trạng thái: cho_duyet / da_duyet / tu_choi (da_xong coi như đã duyệt).
+        //   Kết quả: Đã xong / Trễ / Hủy / (rỗng).
+        $trangThai = match ($bk->trang_thai) {
+            'cho_duyet' => 'Chờ duyệt',
+            'da_duyet'  => 'Đã duyệt',
+            'tu_choi'   => 'Từ chối',
+            'da_xong'   => 'Đã duyệt',
+            default     => $bk->trang_thai ?? '',
+        };
+        $ketQua = match (true) {
+            $bk->trang_thai === 'da_xong'    => 'Đã xong',
+            $bk->trang_thai_khach === 'toi_tre' => 'Trễ',
+            $bk->trang_thai_khach === 'huy'  => 'Hủy',
+            default                          => '',
+        };
+
         return [
             $bk->id,
             $bk->created_at?->format('d/m/Y H:i'),
@@ -49,7 +68,8 @@ class BookingExport implements FromQuery, WithHeadings, WithMapping, WithTitle
             $bk->so_luong,
             $bk->bacSi?->ten_day_du ?? '',
             $bk->ghi_chu,
-            $bk->trang_thai === 'da_duyet' ? 'Đã duyệt' : ($bk->trang_thai === 'tu_choi' ? 'Từ chối' : 'Chờ duyệt'),
+            $trangThai,
+            $ketQua,
         ];
     }
 
