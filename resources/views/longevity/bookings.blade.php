@@ -795,4 +795,19 @@ Không có kết quả
     document.addEventListener('keydown', function(e){ if(e.key === 'Escape' && !m.classList.contains('hidden')) closeCheckinDone(); });
 })();
 </script>
+<script>
+// Auto-reload danh sách mỗi 5s (giả lập realtime). Skip khi tab ẩn, khi có modal đang mở,
+// hoặc khi user đang gõ trong input/textarea/select.
+(function(){
+    const INTERVAL = 5000;
+    function shouldSkip(){
+        if (document.hidden) return true;
+        if (document.querySelector('#reject-modal:not(.hidden), #checkin-done-modal:not(.hidden), #approve-modal:not(.hidden)')) return true;
+        const ae = document.activeElement;
+        if (ae && ['INPUT','TEXTAREA','SELECT'].includes(ae.tagName)) return true;
+        return false;
+    }
+    setInterval(() => { if (!shouldSkip()) location.reload(); }, INTERVAL);
+})();
+</script>
 </body></html>
