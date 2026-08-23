@@ -261,6 +261,10 @@ Route::prefix('{co_so:slug}')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');
             // Nhật ký thông báo — admin only.
             Route::get('/nhat-ky-thong-bao', [\App\Http\Controllers\NotificationLogController::class, 'index'])->name('notification-log');
+            // Cấu hình qua Excel — phải khai TRƯỚC route catch-all `/{section}` bên dưới.
+            Route::get('/cau-hinh-excel', fn (\App\Models\CoSo $co_so) => view('longevity.settings.cau-hinh-excel', ['coSo' => $co_so]))->name('cauhinh-excel');
+            Route::get('/cau-hinh-excel/xuat', [ExcelController::class, 'exportCauHinh'])->name('cauhinh.xuat');
+            Route::post('/cau-hinh-excel/nhap', [ExcelController::class, 'importCauHinh'])->name('cauhinh.nhap');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
 
             // Ghi + các mục quản trị khác: CHỈ ADMIN

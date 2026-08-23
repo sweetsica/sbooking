@@ -348,3 +348,7 @@
 })();
 </script>
 @endauth
+
+@auth
+@include('partials._support_bubble')
+@endauth

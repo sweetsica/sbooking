@@ -92,6 +92,18 @@
 </div>
 </div>
 </a>
+<a href="{{ route('settings.cauhinh-excel', $coSo) }}"
+   class="group bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:shadow-lg hover:border-secondary/40 transition-all">
+<div class="flex items-start gap-4">
+<div class="w-12 h-12 rounded-xl bg-secondary-container/40 text-on-secondary-container flex items-center justify-center group-hover:scale-110 transition-transform shrink-0">
+<span class="material-symbols-outlined">table_view</span>
+</div>
+<div class="min-w-0">
+<h3 class="text-headline-md font-headline-md mb-1 flex items-center gap-2 flex-wrap">Cấu hình qua Excel {!! $tagCoSo !!}</h3>
+<p class="text-body-sm text-on-surface-variant">Xuất/nhập cấu hình Phòng, Dịch vụ, Bác sĩ của cơ sở qua file Excel 3 sheet — sửa nhanh hơn thao tác tay từng dòng.</p>
+</div>
+</div>
+</a>
 <a href="{{ route('settings.notification-log', $coSo) }}"
    class="group bg-surface-container-lowest border border-outline-variant rounded-xl p-5 hover:shadow-lg hover:border-secondary/40 transition-all">
 <div class="flex items-start gap-4">

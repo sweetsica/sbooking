@@ -4,10 +4,12 @@ namespace App\Http\Controllers;
 
 use App\Exports\BaoCaoExport;
 use App\Exports\BookingExport;
+use App\Exports\CauHinhExport;
 use App\Exports\LichHenExport;
 use App\Exports\NguoiDungExport;
 use App\Http\Controllers\SettingsController;
 use App\Imports\BookingImport;
+use App\Imports\CauHinhImport;
 use App\Imports\LichHenImport;
 use App\Models\CoSo;
 use App\Models\PhanQuyen;
@@ -70,6 +72,28 @@ class ExcelController extends Controller
         Excel::import($import, $request->file('file'));
 
         return back()->with('ok', "Đã nhập {$import->imported} dòng lịch tư vấn.");
+    }
+
+    public function exportCauHinh(CoSo $co_so)
+    {
+        // Admin only. Xuất toàn bộ (không lọc theo cơ sở) — cột co_so_id trong file phân biệt.
+        $name = 'cau-hinh-toan-bo-' . now()->format('Ymd-His') . '.xlsx';
+        return Excel::download(new CauHinhExport(), $name);
+    }
+
+    public function importCauHinh(CoSo $co_so, Request $request)
+    {
+        $request->validate(['file' => ['required', 'file', 'mimes:xlsx,xls']]);
+
+        $import = new CauHinhImport();
+        Excel::import($import, $request->file('file'));
+
+        $s = $import->stats;
+        $msg = "Phòng: +{$s['phong']['insert']} / ✏{$s['phong']['update']} / ⚠{$s['phong']['skip']}. "
+             . "Dịch vụ: +{$s['dich_vu']['insert']} / ✏{$s['dich_vu']['update']} / ⚠{$s['dich_vu']['skip']}. "
+             . "Bác sĩ: +{$s['bac_si']['insert']} / ✏{$s['bac_si']['update']} / ⚠{$s['bac_si']['skip']}.";
+
+        return back()->with('ok', $msg)->with('import_errors', $import->errors);
     }
 
     private function authorizeField(string $field): void
