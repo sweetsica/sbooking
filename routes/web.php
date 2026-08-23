@@ -46,6 +46,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/doi-mat-khau',  [AuthController::class, 'showChangePassword'])->name('password.change');
     Route::post('/doi-mat-khau', [AuthController::class, 'changePassword'])->name('password.update');
 
+    // Hỗ trợ / phản hồi (ticket) — không scope theo co_so.
+    Route::get('/ho-tro',       [\App\Http\Controllers\SupportTicketController::class, 'index'])->name('support.index');
+    Route::post('/ho-tro',      [\App\Http\Controllers\SupportTicketController::class, 'store'])->name('support.store');
+    Route::get('/ho-tro/{id}',  [\App\Http\Controllers\SupportTicketController::class, 'show'])->whereNumber('id')->name('support.show');
+    Route::post('/ho-tro/{id}/tra-loi',    [\App\Http\Controllers\SupportTicketController::class, 'reply'])->whereNumber('id')->name('support.reply');
+    Route::patch('/ho-tro/{id}/trang-thai',[\App\Http\Controllers\SupportTicketController::class, 'updateStatus'])->whereNumber('id')->name('support.status');
+
     // Dev tool 2026-08-15 — Impersonate + quick-login panel.
     Route::post('/impersonate/{user}', [\App\Http\Controllers\ImpersonateController::class, 'start'])->name('impersonate.start');
     Route::post('/impersonate-leave', [\App\Http\Controllers\ImpersonateController::class, 'leave'])->name('impersonate.leave');
