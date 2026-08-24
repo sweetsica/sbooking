@@ -19,10 +19,10 @@ return new class extends Migration
             ->where('co_so_id', $cs->id)
             ->where('ten', 'Phòng YHCT')
             ->update([
-                'kieu_phong'   => 'phong_dich_vu',
+                'kieu_phong'     => 'phong_dich_vu',
                 'so_slot_toi_da' => 2,
-                'phut_moi_slot'  => 30,
-                'updated_at'   => now(),
+                'phut_moi_khach' => 30,
+                'updated_at'     => now(),
             ]);
 
         if (app()->runningInConsole()) {
