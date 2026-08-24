@@ -21,16 +21,33 @@ return new class extends Migration
         $pass = Hash::make('l23@tdn');
         $now = now();
 
-        // 1. Fix Kim Phấn sb#19
-        $fixed = DB::table('users')->where('id', 19)->update([
-            'co_so_id' => 3,
-            'phong_ban_id' => 16,
-            'vai_tro_id' => 2,
-            'username' => 'dn.cms01',
-            'email' => 'dn.cms01@longevity.com.vn',
-            'chuc_danh' => 'CM',
-            'updated_at' => $now,
-        ]);
+        // 1. Fix Kim Phấn sb#19 — chỉ chạy nếu chưa có row nào khác đang giữ
+        //    username/email 'dn.cms01' (idempotent với env đã có bản mới).
+        $dupExists = DB::table('users')
+            ->where('id', '!=', 19)
+            ->where(function ($q) {
+                $q->where('username', 'dn.cms01')
+                  ->orWhere('email', 'dn.cms01@longevity.com.vn');
+            })
+            ->exists();
+
+        if ($dupExists) {
+            $fixed = 0;
+            if (app()->runningInConsole()) {
+                echo "  → Skip fix Kim Phấn sb#19: username/email 'dn.cms01' đã tồn tại ở row khác.\n";
+                echo "     Kiểm tra thủ công row sb#19 (bản cũ) trước khi xoá/gộp.\n";
+            }
+        } else {
+            $fixed = DB::table('users')->where('id', 19)->update([
+                'co_so_id' => 3,
+                'phong_ban_id' => 16,
+                'vai_tro_id' => 2,
+                'username' => 'dn.cms01',
+                'email' => 'dn.cms01@longevity.com.vn',
+                'chuc_danh' => 'CM',
+                'updated_at' => $now,
+            ]);
+        }
 
         // 2. Tạo 8 user DN mới
         $users = [
