@@ -37,6 +37,24 @@ class SyncApiController extends Controller
     }
 
     /**
+     * GET /api/sync/dich-vu-phong
+     * Trả pivot DV ↔ phòng (Đợt C.1, 2026-08-25) để SCRM filter phòng theo DV được chọn.
+     */
+    public function dichVuPhong(): JsonResponse
+    {
+        $rows = \DB::table('dich_vu_phong')
+            ->select(['dich_vu_id', 'phong_id', 'updated_at'])
+            ->orderBy('dich_vu_id')
+            ->orderBy('phong_id')
+            ->get();
+
+        return response()->json([
+            'count' => $rows->count(),
+            'data'  => $rows,
+        ]);
+    }
+
+    /**
      * GET /api/sync/users
      * Trả danh sách user sbooking để scrm map (Phase C1.e — sync note/CV 2 chiều).
      */

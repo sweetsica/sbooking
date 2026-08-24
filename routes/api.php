@@ -20,6 +20,7 @@ Route::middleware('scrm.token')->group(function () {
     Route::put('/bookings/{booking}', [BookingApiController::class, 'update']);
     Route::post('/bookings/{booking}/comments', [BookingApiController::class, 'comment']);
     Route::get('/sync/dich-vu', [SyncApiController::class, 'dichVu']);
+    Route::get('/sync/dich-vu-phong', [SyncApiController::class, 'dichVuPhong']);
     Route::get('/sync/users',   [SyncApiController::class, 'users']);
     Route::get('/sync/bac-si',  [SyncApiController::class, 'bacSi']);
     Route::get('/sync/phong',   [SyncApiController::class, 'phong']);
