@@ -26,7 +26,7 @@ class SyncApiController extends Controller
     public function dichVu(): JsonResponse
     {
         $rows = DichVu::query()
-            ->select(['id', 'co_so_id', 'ten', 'thoi_gian_phut', 'thuoc_nhom', 'la_dich_vu', 'active', 'updated_at'])
+            ->select(['id', 'co_so_id', 'ten', 'thoi_gian_phut', 'thuoc_nhom', 'la_dich_vu', 'khong_can_phong', 'active', 'updated_at'])
             ->orderBy('id')
             ->get();
 
