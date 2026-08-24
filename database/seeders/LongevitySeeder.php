@@ -387,7 +387,7 @@ class LongevitySeeder extends Seeder
         $bacSi207 = [
             ['ten' => 'Hoàng Văn Đông',   'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5, 'xuat_hien_moi_co_so' => true],
             ['ten' => 'Lê Huy Thư',       'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5],
-            ['ten' => 'Đặng Công Danh',   'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false, 'phut_kham_ls' => 5],
+            ['ten' => 'Đặng Công Danh',   'chuc_danh' => 'Bác sĩ chuyên khoa y học cổ truyền',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false, 'phut_kham_ls' => 5],
         ];
         foreach ($bacSi207 as $bs) {
             BacSi::updateOrCreate(
