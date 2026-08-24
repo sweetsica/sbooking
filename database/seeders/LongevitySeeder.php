@@ -354,7 +354,9 @@ class LongevitySeeder extends Seeder
         $this->seedPhong($cs207nvt, [
             'Phòng Tư vấn'   => 1,
             'Phòng siêu âm'  => ['so_slot' => 24, 'phut' => 25],
-            'Phòng YHCT'     => 1,
+            // 2026-08-24: HCM YHCT phải là phong_dich_vu (không phải phong_kham) để chọn được
+            // ở bucket "Dịch vụ" (Y học Phương Đông…). Phong_kham → filter dich_vu rỗng.
+            'Phòng YHCT'     => ['kieu' => 'phong_dich_vu', 'so_slot' => 2, 'phut' => 30],
         ]);
 
         // --- CƠ SỞ 3 + 4 ---
