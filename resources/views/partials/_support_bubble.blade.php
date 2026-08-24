@@ -1,24 +1,26 @@
 {{-- Bubble "?" gửi ticket hỗ trợ (bên sbooking). Chỉ hiện khi đã đăng nhập. --}}
+{{-- Không dùng Alpine: các page booking không nạp Alpine → x-show không ẩn được modal (bug: popup tự bung). --}}
 @php $u = auth()->user(); @endphp
-<div x-data="{ open: false }" class="fixed bottom-5 right-5 z-[9999]">
+<div class="fixed bottom-5 right-5 z-[9999]">
     <div class="flex items-center gap-2">
         <a href="/ho-tro" title="Danh sách ticket"
            class="w-10 h-10 rounded-full bg-white border border-slate-300 text-slate-700 shadow flex items-center justify-center hover:bg-slate-50">
             <span class="material-symbols-outlined text-[20px]">list</span>
         </a>
-        <button type="button" @click="open = true"
+        <button type="button" onclick="document.getElementById('supportBubbleModal').classList.remove('hidden')"
                 title="Gửi phản hồi / yêu cầu hỗ trợ"
                 class="w-14 h-14 rounded-full bg-slate-900 hover:bg-slate-800 text-white shadow-lg flex items-center justify-center text-2xl font-bold transition-transform hover:scale-110">
             ?
         </button>
     </div>
 
-    <div x-show="open" x-cloak @click.self="open = false"
-         class="fixed inset-0 z-[10000] bg-black/40 flex items-center justify-center p-4">
+    <div id="supportBubbleModal" class="hidden fixed inset-0 z-[10000] bg-black/40 items-center justify-center p-4"
+         style="display:none" onclick="if(event.target===this)this.classList.add('hidden')">
         <div class="bg-white rounded-xl shadow-2xl max-w-lg w-full max-h-[90vh] overflow-auto">
             <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100">
                 <h3 class="text-lg font-bold">Phản hồi / Yêu cầu hỗ trợ</h3>
-                <button type="button" @click="open = false" class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+                <button type="button" onclick="document.getElementById('supportBubbleModal').classList.add('hidden')"
+                        class="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
             </div>
             <form method="POST" action="/ho-tro" class="p-5 space-y-3">
                 @csrf
@@ -44,7 +46,7 @@
                               class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:border-slate-500"></textarea>
                 </div>
                 <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" @click="open = false"
+                    <button type="button" onclick="document.getElementById('supportBubbleModal').classList.add('hidden')"
                             class="px-4 py-2 rounded-lg border border-slate-300 hover:bg-slate-50">Hủy</button>
                     <button type="submit"
                             class="px-4 py-2 rounded-lg bg-slate-900 hover:bg-slate-800 text-white font-semibold">Gửi</button>
@@ -53,3 +55,6 @@
         </div>
     </div>
 </div>
+<style>
+    #supportBubbleModal:not(.hidden) { display: flex !important; }
+</style>
