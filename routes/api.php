@@ -18,6 +18,7 @@ Route::middleware('scrm.token')->group(function () {
     // để hiển thị lỗi BS trùng lịch / phòng full / khung ngắn ngay tại form, không đợi sync fail.
     Route::post('/bookings/preflight', [BookingApiController::class, 'preflight']);
     Route::put('/bookings/{booking}', [BookingApiController::class, 'update']);
+    Route::delete('/bookings/{booking}', [BookingApiController::class, 'destroy']);
     Route::post('/bookings/{booking}/comments', [BookingApiController::class, 'comment']);
     Route::get('/sync/dich-vu', [SyncApiController::class, 'dichVu']);
     Route::get('/sync/dich-vu-phong', [SyncApiController::class, 'dichVuPhong']);

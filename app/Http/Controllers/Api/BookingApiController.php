@@ -407,4 +407,25 @@ class BookingApiController extends Controller
             'created_at' => $bl->created_at,
         ], 201);
     }
+
+    /**
+     * DELETE /api/bookings/{booking}
+     * Đợt C.3.d (2026-08-25): rollback booking để SCRM handle combo DV 41
+     * (Xông + YHPĐ). Nếu push booking 2 fail sau khi booking 1 OK → SCRM
+     * gọi endpoint này để xoá booking 1, tránh mồ côi.
+     * Force delete (hard) — chỉ dùng cho rollback, không cần audit trail vì
+     * chưa duyệt (trang_thai=cho_duyet).
+     */
+    public function destroy(Booking $booking): JsonResponse
+    {
+        if ($booking->trang_thai !== 'cho_duyet') {
+            return response()->json([
+                'error' => 'Chỉ xoá được booking chờ duyệt (trạng thái hiện: ' . $booking->trang_thai . ').',
+            ], 422);
+        }
+        $id = $booking->id;
+        $booking->delete();
+        Log::info('sbooking.api.destroy', ['booking_id' => $id]);
+        return response()->json(['deleted' => true, 'id' => $id]);
+    }
 }
