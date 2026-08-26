@@ -208,8 +208,15 @@
                                 $stKh === 'huy'     => ['🚫 Hủy',    'bg-red-100 text-red-700'],
                                 default             => ['—',         'bg-transparent text-on-surface-variant/50'],
                             };
+                            // Bôi màu dịu cả dòng theo trạng thái khách (đã tới / trễ / hủy).
+                            $rowTint = match ($stKh) {
+                                'da_toi'  => 'bg-green-50/70 hover:bg-green-100/70',
+                                'toi_tre' => 'bg-amber-50/70 hover:bg-amber-100/70',
+                                'huy'     => 'bg-red-50/70 hover:bg-red-100/70',
+                                default   => 'hover:bg-surface-container-low',
+                            };
                         @endphp
-                        <tr class="hover:bg-surface-container-low cursor-pointer" onclick="window.location='/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}'">
+                        <tr class="{{ $rowTint }} cursor-pointer" onclick="window.location='/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}'">
                             <td class="px-4 py-2.5 text-on-surface-variant">{{ $i + 1 }}</td>
                             <td class="px-4 py-2.5 font-mono text-xs text-secondary">{{ $b->ma_booking ?? '#'.$b->id }}</td>
                             <td class="px-4 py-2.5 font-semibold">{{ $b->khachHang?->ho_ten ?? '—' }}</td>
@@ -261,6 +268,12 @@
         if (tk === 'huy')     return ['🚫 Hủy',    'bg-red-100 text-red-700'];
         return ['—', 'bg-transparent text-on-surface-variant/50'];
     };
+    const rowTintClass = (tk) => {
+        if (tk === 'da_toi')  return 'bg-green-50/70 hover:bg-green-100/70';
+        if (tk === 'toi_tre') return 'bg-amber-50/70 hover:bg-amber-100/70';
+        if (tk === 'huy')     return 'bg-red-50/70 hover:bg-red-100/70';
+        return 'hover:bg-surface-container-low';
+    };
 
     // 2026-08-19 Phase B: 3 loại — Khám LS / Tư vấn / Dịch vụ. 'phong_kham' cũ fallback.
     const loaiBadge = (loai) => {
@@ -301,7 +314,7 @@
                 const [lLabel, lClass] = loaiBadge(b.loai);
                 const dv = b.dich_vu ? `<span class="text-xs text-on-surface-variant ml-1">· ${esc(b.dich_vu)}</span>` : '';
                 return `
-                <tr class="hover:bg-surface-container-low cursor-pointer" onclick="window.location='${esc(b.url)}'">
+                <tr class="${rowTintClass(b.trang_thai_khach)} cursor-pointer" onclick="window.location='${esc(b.url)}'">
                     <td class="px-4 py-2.5 text-on-surface-variant">${i + 1}</td>
                     <td class="px-4 py-2.5 font-mono text-xs text-secondary">${esc(b.ma_booking || ('#' + b.id))}</td>
                     <td class="px-4 py-2.5 font-semibold">${esc(b.ten_khach || '—')}</td>
