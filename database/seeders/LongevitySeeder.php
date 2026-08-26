@@ -14,6 +14,7 @@ use App\Models\PhongBan;
 use App\Models\User;
 use App\Models\VaiTro;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 
 class LongevitySeeder extends Seeder
@@ -110,7 +111,7 @@ class LongevitySeeder extends Seeder
         // 2026-08-09: đồng bộ email @longevity.com.vn khớp SCRM. Match key = name (không phải
         // username) để idempotent kể cả khi username thay đổi qua admin UI.
         // =============================================
-        User::updateOrCreate(['name' => 'Admin Hệ thống'], [
+        $this->writeUser(['name' => 'Admin Hệ thống'], [
             'username'     => 'admin',
             'email'        => 'admin@longevity.com.vn',
             'password'     => Hash::make('59ntn'),
@@ -119,7 +120,7 @@ class LongevitySeeder extends Seeder
             'vai_tro_id'   => $vrAdmin->id,
             'is_admin'     => true,
         ]);
-        User::updateOrCreate(['name' => 'Admin Vận hành'], [
+        $this->writeUser(['name' => 'Admin Vận hành'], [
             'username'     => 'adminvh',
             'email'        => 'adminvh@longevity.com.vn',
             'password'     => Hash::make('59@ntn'),
@@ -134,7 +135,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'baoit', 'name' => 'Bảo IT'],
             ['username' => 'tumod', 'name' => 'Tú MOD'],
         ] as $a) {
-            User::updateOrCreate(['name' => $a['name']], [
+            $this->writeUser(['name' => $a['name']], [
                 'username'     => $a['username'],
                 'email'        => $a['username'] . '@longevity.com.vn',
                 'password'     => Hash::make($a['username']),
@@ -161,7 +162,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'hn.sale08', 'name' => 'Cao Thị Lan Anh',     'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
         ];
         foreach ($salesGiang as $s) {
-            User::updateOrCreate(['name' => $s['name']], [
+            $this->writeUser(['name' => $s['name']], [
                 'username' => $s['username'], 'email' => $s['username'] . '@longevity.com.vn',
                 'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHn,
                 'co_so_id' => $cs59ntn->id, 'phong_ban_id' => $pbTeamGiang->id,
@@ -170,7 +171,7 @@ class LongevitySeeder extends Seeder
         }
 
         // Nguyễn Minh Phương — KTV Da liễu (không thuộc sales team). SCRM username hn.sale05.
-        User::updateOrCreate(['name' => 'Nguyễn Minh Phương'], [
+        $this->writeUser(['name' => 'Nguyễn Minh Phương'], [
             'username'     => 'hn.sale05',
             'email'        => 'hn.sale05@longevity.com.vn',
             'chuc_danh'    => 'KTV',
@@ -197,7 +198,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'dn.cms01',  'name' => 'Lương Thị Kim Phấn',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrTuVanVien->id],
         ];
         foreach ($salesHoi as $s) {
-            User::updateOrCreate(['name' => $s['name']], [
+            $this->writeUser(['name' => $s['name']], [
                 'username' => $s['username'], 'email' => $s['username'] . '@longevity.com.vn',
                 'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHn,
                 'co_so_id' => $cs59ntn->id, 'phong_ban_id' => $pbTeamHoi->id,
@@ -210,7 +211,7 @@ class LongevitySeeder extends Seeder
         // =============================================
 
         // Kim Ngân — DM (Quản lý kinh doanh, quản lý toàn bộ HCM). SCRM = hcm.dm01.
-        User::updateOrCreate(['name' => 'Trần Nguyễn Kim Ngân'], [
+        $this->writeUser(['name' => 'Trần Nguyễn Kim Ngân'], [
             'username'     => 'hcm.dm01',
             'email'        => 'hcm.dm01@longevity.com.vn',
             'chuc_danh'    => 'DM',
@@ -222,7 +223,7 @@ class LongevitySeeder extends Seeder
         ]);
 
         // Ashley — CM (Team lead HCM). Chưa có SCRM counterpart → giữ username cũ.
-        User::updateOrCreate(['name' => 'Ashley'], [
+        $this->writeUser(['name' => 'Ashley'], [
             'username'     => 'ashley34',
             'email'        => 'ashley34@longevity.com.vn',
             'chuc_danh'    => 'CM',
@@ -249,7 +250,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'hcm.cms03',  'name' => 'Huỳnh Bùi Thanh Lan',   'chuc_danh' => 'CM'],
         ];
         foreach ($salesHcm as $s) {
-            User::updateOrCreate(['name' => $s['name']], [
+            $this->writeUser(['name' => $s['name']], [
                 'username' => $s['username'], 'email' => $s['username'] . '@longevity.com.vn',
                 'chuc_danh' => $s['chuc_danh'], 'password' => $matKhauHcm,
                 'co_so_id' => $cs207nvt->id, 'phong_ban_id' => $pbTeamHcm->id,
@@ -272,7 +273,7 @@ class LongevitySeeder extends Seeder
             // 2026-08-09: BS chung có SCRM counterpart → email @longevity.com.vn.
             // KTV / Lễ tân giữ @local (system account, không có SCRM user).
             $isBs = str_starts_with($a['username'], 'bsi');
-            User::updateOrCreate(['name' => $a['name']], [
+            $this->writeUser(['name' => $a['name']], [
                 'username'     => $a['username'],
                 'email'        => $a['username'] . ($isBs ? '@longevity.com.vn' : '@local'),
                 'password'     => Hash::make($a['pw']),
@@ -290,7 +291,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'adminl23tdn', 'name' => 'Admin Cơ sở Đà Nẵng', 'email' => 'admin.dn@longevity.com.vn',  'co_so' => $cslo23tdn, 'pw' => '23@tdn'],
         ];
         foreach ($adminCoSos as $a) {
-            User::updateOrCreate(['username' => $a['username']], [
+            $this->writeUser(['username' => $a['username']], [
                 'username'     => $a['username'],
                 'name'         => $a['name'],
                 'email'        => $a['email'],
@@ -312,7 +313,7 @@ class LongevitySeeder extends Seeder
             ['username' => 'vh.obs05', 'name' => 'Ms Tuyết',     'chuc_danh' => 'CEO'],
         ];
         foreach ($viewers as $v) {
-            User::updateOrCreate(['name' => $v['name']], [
+            $this->writeUser(['name' => $v['name']], [
                 'username'     => $v['username'],
                 'chuc_danh'    => $v['chuc_danh'],
                 'email'        => $v['username'] . '@longevity.com.vn',
@@ -549,5 +550,60 @@ class LongevitySeeder extends Seeder
                 ]);
             }
         }
+    }
+
+    /**
+     * 2026-08-26: updateOrCreate an toàn với duplicate username/email.
+     * Rule: giữ user match theo $matchAttrs (được coi là bản mới/đúng). Nếu slot
+     * username hoặc email đích đang bị user KHÁC chiếm (bản cũ do sync lặp), dời
+     * hết FK sang user giữ lại rồi xoá bản cũ. Nếu chưa có user match → xoá thẳng
+     * bản cũ (FK trên bản cũ sẽ được xoá theo cascade của DB hoặc lỗi visible).
+     */
+    private function writeUser(array $matchAttrs, array $data): User
+    {
+        $keep = User::where($matchAttrs)->first();
+        $keepId = $keep?->id;
+        $username = $data['username'] ?? null;
+        $email    = $data['email'] ?? null;
+
+        if ($username || $email) {
+            $conflicts = User::query()
+                ->when($keepId, fn ($q) => $q->where('id', '!=', $keepId))
+                ->where(function ($q) use ($username, $email) {
+                    if ($username) $q->orWhere('username', $username);
+                    if ($email)    $q->orWhere('email', $email);
+                })
+                ->get();
+            foreach ($conflicts as $conflict) {
+                if ($keepId) $this->reassignUserFks($conflict->id, $keepId);
+                $this->command?->warn("LongevitySeeder: xoá user cũ id={$conflict->id} ('{$conflict->name}') để nhường slot username='{$username}' email='{$email}'.");
+                User::where('id', $conflict->id)->delete();
+            }
+        }
+
+        return User::updateOrCreate($matchAttrs, $data);
+    }
+
+    /**
+     * 2026-08-26: Dời tất cả FK user_id-shaped từ user cũ sang user giữ lại.
+     * Danh sách bảng cứng dựa trên scan schema; nếu về sau có bảng mới ref user, bổ sung tại đây.
+     */
+    private function reassignUserFks(int $oldId, int $newId): void
+    {
+        $refs = [
+            ['booking', 'ktv_user_id'],
+            ['booking', 'nguoi_tao_id'],
+            ['booking', 'tiep_don_user_id'],
+            ['booking_binh_luan', 'user_id'],
+            ['lich_lam_viec', 'nguoi_tao_id'],
+            ['ngay_nghi', 'nguoi_tao_id'],
+            ['support_ticket_messages', 'sender_user_id'],
+            ['support_tickets', 'user_id'],
+        ];
+        foreach ($refs as [$table, $col]) {
+            DB::table($table)->where($col, $oldId)->update([$col => $newId]);
+        }
+        // Sessions: KHÔNG reassign (tránh trao token của user cũ cho user mới) — xoá luôn.
+        DB::table('sessions')->where('user_id', $oldId)->delete();
     }
 }
