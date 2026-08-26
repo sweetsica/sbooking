@@ -1,5 +1,19 @@
 {{-- Bubble "?" gửi ticket hỗ trợ (bên sbooking). Chỉ hiện khi đã đăng nhập. --}}
 @php $u = auth()->user(); @endphp
+{{-- 2026-08-26 fix: dashboard.blade.php không nạp Alpine → x-show/x-cloak không chạy, popup luôn hiện.
+     Nạp Alpine + CSS x-cloak ở đây, guard trùng bằng cờ window để layout khác đã có Alpine không nạp lại. --}}
+@once
+<style>[x-cloak]{display:none!important}</style>
+<script>
+    if (!window.__alpine_loaded__) {
+        window.__alpine_loaded__ = true;
+        var s = document.createElement('script');
+        s.defer = true;
+        s.src = 'https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js';
+        document.head.appendChild(s);
+    }
+</script>
+@endonce
 <div x-data="{ open: false }" class="fixed bottom-5 right-5 z-[9999]">
     <div class="flex items-center gap-2">
         <a href="/ho-tro" title="Danh sách ticket"
