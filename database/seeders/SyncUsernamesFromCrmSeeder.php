@@ -42,7 +42,6 @@ class SyncUsernamesFromCrmSeeder extends Seeder
         'Nguyễn Thị Thanh'          => 'hcm.sale04',
         'Nguyễn Thị Kim Chi'        => 'hcm.sale05',
         'Lê Phát Đạt'               => 'hcm.sale06',
-        'Phan Trần Khánh Quỳn'      => 'hcm.tl01',
 
         // Hà Nội
         // 2026-08-05: rename "Nguyễn Booking 1/Trần Booking 2" → "Tài khoản Booking 1/2" (đồng bộ scrm).
@@ -69,6 +68,8 @@ class SyncUsernamesFromCrmSeeder extends Seeder
         'Nguyễn Trà My'             => 'hn.sale12',
         'Nguyễn Mai Anh'            => 'hn.sale13',
         'Nguyễn Hoành Đức'          => 'hn.tl01',
+        // 2026-08-26: đồng bộ CRM — Quỳnh base @ HN (team-quynh), TL phụ @ team-ashley HCM.
+        'Phan Trần Khánh Quỳnh'     => 'hn.tl02',
         'Lê Thị Phương Tự'          => 'hn.tlkd01',
 
         // Vận hành & Giám sát (Observer)

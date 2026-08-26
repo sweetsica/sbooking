@@ -52,7 +52,7 @@ class HcmStaffSeeder extends Seeder
             ['username' => 'hbtl', 'name' => 'Huỳnh Bùi Thanh Lan', 'email' => 'hbtl@longevity.com.vn', 'chuc_danh' => 'Clinic Manager',  'vai_tro_id' => $vrVanHanh->id,  'phong_ban_id' => $pbSales->id],
             ['username' => 'nmt',  'name' => 'Nguyễn Thị Minh Thư', 'email' => 'nmt@longevity.com.vn',  'chuc_danh' => 'Assistant CM HCM', 'vai_tro_id' => $vrSaleFull->id, 'phong_ban_id' => $pbSales->id],
             // TL
-            ['username' => 'ptkq', 'name' => 'Phan Trần Khánh Quỳn', 'email' => 'ptkq@longevity.com.vn', 'chuc_danh' => 'Team Leader', 'vai_tro_id' => $vrSaleFull->id, 'phong_ban_id' => $pbSales->id],
+            ['username' => 'ptkq', 'name' => 'Phan Trần Khánh Quỳnh', 'email' => 'ptkq@longevity.com.vn', 'chuc_danh' => 'Team Leader', 'vai_tro_id' => $vrSaleFull->id, 'phong_ban_id' => $pbSales->id],
             // SHC + HC (sale)
             ['username' => 'tyn',  'name' => 'Trương Thị Yến Nhi',  'email' => 'tyn@longevity.com.vn',  'chuc_danh' => 'SHC', 'vai_tro_id' => $vrSaleFull->id, 'phong_ban_id' => $pbTuVan->id],
             ['username' => 'nhn',  'name' => 'Nguyễn Thị Hoài Như', 'email' => 'nhn@longevity.com.vn',  'chuc_danh' => 'SHC', 'vai_tro_id' => $vrSaleFull->id, 'phong_ban_id' => $pbTuVan->id],
