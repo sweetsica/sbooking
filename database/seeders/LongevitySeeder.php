@@ -185,8 +185,10 @@ class LongevitySeeder extends Seeder
 
         // =============================================
         // SALES HÀ NỘI — Team Hợi (cơ sở 59 NTN)
-        // 2026-08-09: username theo pattern SCRM. Lương Thị Kim Phấn giờ là dn.cms01
-        // (SCRM đặt scope Đà Nẵng) — sbooking vẫn để cơ sở 59ntn/team_hoi vì sbooking không có DN cơ sở.
+        // 2026-08-09: username theo pattern SCRM.
+        // 2026-08-28: dn.cms01 (Lương Thị Kim Phấn) tách sang cơ sở DN (lo23tdn) — trước
+        //   để HN vì comment cũ "sbooking không có DN cơ sở", nay sbooking đã có lo23tdn.
+        //   Booking cơ sở DN mà tiep_don_user_id thuộc HN → abort 422 "Sale không thuộc cơ sở".
         // =============================================
         $salesHoi = [
             ['username' => 'hn.cms02',  'name' => 'Tạ Văn Hợi',          'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
@@ -196,7 +198,6 @@ class LongevitySeeder extends Seeder
             ['username' => 'hn.sale11', 'name' => 'Phạm Tú Anh',         'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
             ['username' => 'hn.sale12', 'name' => 'Nguyễn Trà My',       'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
             ['username' => 'hn.sale13', 'name' => 'Nguyễn Mai Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
-            ['username' => 'dn.cms01',  'name' => 'Lương Thị Kim Phấn',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrTuVanVien->id],
         ];
         foreach ($salesHoi as $s) {
             $this->writeUser(['name' => $s['name']], [
@@ -206,6 +207,14 @@ class LongevitySeeder extends Seeder
                 'vai_tro_id' => $s['vai_tro_id'], 'is_admin' => false,
             ]);
         }
+
+        // dn.cms01 (Lương Thị Kim Phấn) — CM sale cơ sở DN.
+        $this->writeUser(['name' => 'Lương Thị Kim Phấn'], [
+            'username' => 'dn.cms01', 'email' => 'dn.cms01@longevity.com.vn',
+            'chuc_danh' => 'CM', 'password' => 'l23@tdn',
+            'co_so_id' => $cslo23tdn->id, 'phong_ban_id' => null,
+            'vai_tro_id' => $vrTuVanVien->id, 'is_admin' => false,
+        ]);
 
         // =============================================
         // SALES HCM — Team HCM (STT 19–30 + Ashley)
