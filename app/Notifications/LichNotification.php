@@ -6,7 +6,6 @@ use App\Models\Booking;
 use App\Models\LichHen;
 use App\Support\LichEvent;
 use Illuminate\Bus\Queueable;
-use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -40,11 +39,8 @@ class LichNotification extends Notification
 
     public function via(object $notifiable): array
     {
-        $channels = ['database'];
-        if (! empty($notifiable->email)) {
-            $channels[] = 'mail';
-        }
-        return $channels;
+        // 2026-08-28: bỏ channel mail — chỉ dùng chuông in-app (database).
+        return ['database'];
     }
 
     public function toArray(object $notifiable): array
