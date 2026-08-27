@@ -75,6 +75,7 @@ class LongevitySeeder extends Seeder
         // ---- Phòng ban chuẩn (8 bộ phận / cơ sở) ----
         $phongBanChuan = [
             'sales'            => 'Kinh doanh (Sales)',
+            'tu_van'           => 'Tư vấn viên',
             'admin'            => 'Admin Vận hành',
             'phong_kham_ngoai' => 'Phòng khám Ngoại',
             'phong_chuyen_gia' => 'Phòng chuyên gia',
@@ -288,7 +289,7 @@ class LongevitySeeder extends Seeder
         $adminCoSos = [
             ['username' => 'admin59ntn',  'name' => 'Admin Cơ sở Hà Nội',  'email' => 'admin.hn@longevity.com.vn',  'co_so' => $cs59ntn,   'pw' => '59@ntn'],
             ['username' => 'admin207nvt', 'name' => 'Admin Cơ sở HCM',     'email' => 'admin.hcm@longevity.com.vn', 'co_so' => $cs207nvt,  'pw' => '207@nvt'],
-            ['username' => 'adminl23tdn', 'name' => 'Admin Cơ sở Đà Nẵng', 'email' => 'admin.dn@longevity.com.vn',  'co_so' => $cslo23tdn, 'pw' => '23@tdn'],
+            ['username' => 'adminl23tdn', 'name' => 'Admin Cơ sở Đà Nẵng', 'email' => 'admin.dn@longevity.com.vn',  'co_so' => $cslo23tdn, 'pw' => 'l23@tdn'],
         ];
         foreach ($adminCoSos as $a) {
             $this->writeUser(['username' => $a['username']], [
