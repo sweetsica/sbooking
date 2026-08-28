@@ -86,18 +86,23 @@ class PhongBacSiSeeder extends Seeder
         ));
     }
 
-    /** Nạp title BS từ DB lara-scrm.staff_members (cross-DB query). Trả [name => title]. */
+    /** Nạp title BS từ DB SCRM (cross-DB query). Trả [name => title].
+     *
+     * Tên DB SCRM lấy từ env SCRM_DB_NAME (prod đặt là 'sweetsic_datasource' hoặc gì tương tự);
+     * fallback 'lara-crm' cho dev Laragon. Nếu không có quyền cross-DB → skip enrich title (soft-fail).
+     */
     private function loadScrmTitles(): array
     {
+        $scrmDb = env('SCRM_DB_NAME', 'lara-crm');
         try {
-            $rows = \DB::select("SELECT name, title FROM `lara-crm`.staff_members WHERE role = 'doctor'");
+            $rows = \DB::select("SELECT name, title FROM `{$scrmDb}`.staff_members WHERE role = 'doctor'");
             $out = [];
             foreach ($rows as $r) {
                 $out[$r->name] = $r->title;
             }
             return $out;
         } catch (\Throwable $e) {
-            $this->command?->warn('Không đọc được lara-scrm.staff_members: ' . $e->getMessage());
+            $this->command?->warn("Không đọc được {$scrmDb}.staff_members (skip enrich title BS): " . $e->getMessage());
             return [];
         }
     }
