@@ -148,7 +148,8 @@ class LongevitySeeder extends Seeder
         }
 
         $matKhauHn  = Hash::make('59@ntn');
-        $matKhauHcm = Hash::make('207nvt');
+        $matKhauHcm = Hash::make('207@nvt');
+        $matKhauDn  = Hash::make('l23@tdn');
 
         // =============================================
         // SALES HÀ NỘI — Team Giang (Team Giang HN, cơ sở 59 NTN)
@@ -211,7 +212,7 @@ class LongevitySeeder extends Seeder
         // dn.cms01 (Lương Thị Kim Phấn) — CM sale cơ sở DN.
         $this->writeUser(['name' => 'Lương Thị Kim Phấn'], [
             'username' => 'dn.cms01', 'email' => 'dn.cms01@longevity.com.vn',
-            'chuc_danh' => 'CM', 'password' => 'l23@tdn',
+            'chuc_danh' => 'CM', 'password' => $matKhauDn,
             'co_so_id' => $cslo23tdn->id, 'phong_ban_id' => null,
             'vai_tro_id' => $vrTuVanVien->id, 'is_admin' => false,
         ]);
