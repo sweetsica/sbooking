@@ -1228,7 +1228,11 @@ class BookingController extends Controller
                 }
             }
             if ($booking->bac_si_id && $booking->dich_vu_id && $booking->khung_gio_id) {
-                $err = $this->checkBacSiCapacity((int) $booking->bac_si_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, $ngayStr, $booking->id);
+                // 2026-08-28 fix: truyền gio_bat_dau/gio_ket_thuc từ booking (11:00-11:30) thay vì
+                //   để check fallback dùng range khung_gio (5 phút granular slot) → mất khớp DV cần 30 phút.
+                $bStart = $booking->gio_thuc_hien ? substr($booking->gio_thuc_hien, 0, 5) : null;
+                $bEnd   = $booking->gio_ket_thuc  ? substr($booking->gio_ket_thuc, 0, 5)  : null;
+                $err = $this->checkBacSiCapacity((int) $booking->bac_si_id, (int) $booking->khung_gio_id, (int) $booking->dich_vu_id, $ngayStr, $booking->id, $bStart, $bEnd);
                 if ($err) {
                     \App\Services\CrmPushService::pushValidationErrorAsync($booking, auth()->id(), $err);
                     return back()->with('error', 'Không duyệt được: '.$err);
