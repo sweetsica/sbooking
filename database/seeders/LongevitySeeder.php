@@ -370,7 +370,12 @@ class LongevitySeeder extends Seeder
         ]);
 
         // --- CƠ SỞ 3 + 4 ---
-        $this->seedPhong($cslo23tdn, ['Phòng khám' => 1]);
+        $this->seedPhong($cslo23tdn, [
+            'Phòng khám'          => 1,
+            'Phòng Thủ thuật DN'  => ['kieu' => 'phong_dich_vu', 'so_slot' => 1, 'phut' => 30],
+            'Phòng Metaboost DN'  => ['kieu' => 'phong_dich_vu', 'so_slot' => 3, 'phut' => 120],
+            'Phòng YHCT DN'       => ['kieu' => 'phong_dich_vu', 'so_slot' => 2, 'phut' => 60],
+        ]);
         $this->seedPhong($cs137nct, ['Phòng khám' => 1]);
 
         // =============================================
