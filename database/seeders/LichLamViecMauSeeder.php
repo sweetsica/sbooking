@@ -11,24 +11,49 @@ use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 /**
- * Seed dữ liệu MẪU cho Lịch làm việc (đã duyệt) + Ngày nghỉ của tháng hiện tại,
- * cơ sở 59 NTN. Bác sĩ = DANH MỤC bac_si (gán vào phòng qua phong_bac_si);
- * KTV = ktv mặc định của phòng dịch vụ (tài khoản user).
+ * Seed dữ liệu MẪU cho Lịch làm việc (đã duyệt) + Ngày nghỉ, 3 cơ sở × 3 tháng
+ * (tháng hiện tại + 2 tháng kế tiếp). Bác sĩ = danh mục bac_si (pivot phong_bac_si);
+ * KTV = ktv mặc định của phòng dịch vụ (user).
  */
 class LichLamViecMauSeeder extends Seeder
 {
+    /** Số tháng seed kể từ tháng hiện tại (>=1). */
+    private const MONTHS_AHEAD = 3;
+
+    /** Cơ sở cần seed. */
+    private const CO_SO_SLUGS = ['59ntn', '207nvt', '23tdn'];
+
     public function run(): void
     {
-        $coSo = CoSo::where('slug', '59ntn')->first();
-        if (! $coSo) {
-            return;
+        foreach (self::CO_SO_SLUGS as $slug) {
+            $coSo = CoSo::where('slug', $slug)->first();
+            if (! $coSo) {
+                $this->command?->warn("Bỏ qua {$slug}: không tìm thấy cơ sở.");
+                continue;
+            }
+
+            $phongBacSi = Phong::where('co_so_id', $coSo->id)
+                ->where('kieu_phong', 'phong_kham')
+                ->with('bacSis')->get();
+            $phongDichVu = Phong::where('co_so_id', $coSo->id)
+                ->where('kieu_phong', 'phong_dich_vu')
+                ->whereNotNull('ktv_mac_dinh_id')->get();
+            $bsNghi = BacSi::where('co_so_id', $coSo->id)->orderBy('id')->first();
+
+            // Dọn ngày nghỉ mẫu cũ 1 lần cho cơ sở (không phụ thuộc tháng).
+            NgayNghi::where('co_so_id', $coSo->id)->where('ly_do', 'like', 'Seed mẫu%')->delete();
+
+            for ($m = 0; $m < self::MONTHS_AHEAD; $m++) {
+                $thang = Carbon::now()->startOfMonth()->addMonths($m);
+                $this->seedThang($coSo, $thang, $phongBacSi, $phongDichVu, $bsNghi);
+            }
         }
+    }
 
-        $thang = Carbon::now()->startOfMonth();
-
+    private function seedThang(CoSo $coSo, Carbon $thang, $phongBacSi, $phongDichVu, ?BacSi $bsNghi): void
+    {
         // Dọn lịch cũ của tháng để chạy lại sạch.
         LichLamViec::where('co_so_id', $coSo->id)->whereDate('thang', $thang->toDateString())->delete();
-        NgayNghi::where('co_so_id', $coSo->id)->where('ly_do', 'like', 'Seed mẫu%')->delete();
 
         $lich = LichLamViec::create([
             'co_so_id'    => $coSo->id,
@@ -37,16 +62,6 @@ class LichLamViecMauSeeder extends Seeder
             'ghi_chu'     => 'Lịch mẫu tự sinh',
             'applied_at'  => now(),
         ]);
-
-        // Bác sĩ trực theo phòng (từ pivot phong_bac_si) — cả tháng, ca sáng + chiều.
-        $phongBacSi = Phong::where('co_so_id', $coSo->id)
-            ->where('kieu_phong', 'phong_kham')
-            ->with('bacSis')->get();
-
-        // KTV trực theo phòng dịch vụ (dùng ktv mặc định của phòng nếu có).
-        $phongDichVu = Phong::where('co_so_id', $coSo->id)
-            ->where('kieu_phong', 'phong_dich_vu')
-            ->whereNotNull('ktv_mac_dinh_id')->get();
 
         $rows = [];
         $daysInMonth = (int) $thang->copy()->endOfMonth()->format('d');
@@ -96,23 +111,28 @@ class LichLamViecMauSeeder extends Seeder
             \DB::table('lich_lam_viec_chi_tiet')->insert($chunk);
         }
 
-        // --- Ngày nghỉ mẫu ---
-        $bsNghi = BacSi::where('co_so_id', $coSo->id)->orderBy('id')->first();
-        $ngayNghi = [
-            // Nghỉ toàn cơ sở 1 ngày (giữa tháng)
-            ['loai' => 'co_so', 'doi_tuong_id' => null,
-             'tu_ngay' => $thang->copy()->day(15)->toDateString(), 'den_ngay' => $thang->copy()->day(15)->toDateString(),
-             'ca' => 'ca_ngay', 'ly_do' => 'Seed mẫu: nghỉ lễ toàn cơ sở'],
-        ];
+        // Ngày nghỉ mẫu cho tháng này (nghỉ lễ toàn cơ sở + BS nghỉ phép).
+        NgayNghi::create([
+            'co_so_id'     => $coSo->id,
+            'loai'         => 'co_so',
+            'doi_tuong_id' => null,
+            'tu_ngay'      => $thang->copy()->day(15)->toDateString(),
+            'den_ngay'     => $thang->copy()->day(15)->toDateString(),
+            'ca'           => 'ca_ngay',
+            'ly_do'        => 'Seed mẫu: nghỉ lễ toàn cơ sở',
+        ]);
         if ($bsNghi) {
-            $ngayNghi[] = ['loai' => 'bac_si', 'doi_tuong_id' => $bsNghi->id,
-                'tu_ngay' => $thang->copy()->day(20)->toDateString(), 'den_ngay' => $thang->copy()->day(21)->toDateString(),
-                'ca' => 'ca_ngay', 'ly_do' => 'Seed mẫu: bác sĩ nghỉ phép'];
-        }
-        foreach ($ngayNghi as $nn) {
-            NgayNghi::create($nn + ['co_so_id' => $coSo->id]);
+            NgayNghi::create([
+                'co_so_id'     => $coSo->id,
+                'loai'         => 'bac_si',
+                'doi_tuong_id' => $bsNghi->id,
+                'tu_ngay'      => $thang->copy()->day(20)->toDateString(),
+                'den_ngay'     => $thang->copy()->day(21)->toDateString(),
+                'ca'           => 'ca_ngay',
+                'ly_do'        => 'Seed mẫu: bác sĩ nghỉ phép',
+            ]);
         }
 
-        $this->command?->info('Đã seed lịch làm việc + ngày nghỉ mẫu tháng ' . $thang->format('m/Y') . ' cho 59 NTN.');
+        $this->command?->info("✓ {$coSo->slug} — tháng " . $thang->format('m/Y'));
     }
 }
