@@ -6,6 +6,7 @@ use App\Models\Booking;
 use App\Models\LichHen;
 use App\Support\LichEvent;
 use Illuminate\Bus\Queueable;
+use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
 /**
@@ -27,7 +28,7 @@ use Illuminate\Notifications\Notification;
  *  - co_so_slug   : slug cơ sở (để build URL)
  *  - ghi_chu      : ly_do_tu_choi nếu có
  */
-class LichNotification extends Notification
+class LichNotification extends Notification implements ShouldQueue
 {
     use Queueable;
 
