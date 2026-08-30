@@ -47,6 +47,14 @@ Route::prefix('v1')->middleware(['scrm.token', 'throttle:api-v1'])->group(functi
         ->parameters(['bac-si' => 'bac_si']);
     Route::post('bac-si/{bac_si}/attach-phong',   [\App\Http\Controllers\Api\V1\BacSiController::class, 'attachPhong']);
     Route::post('bac-si/{bac_si}/detach-phong',   [\App\Http\Controllers\Api\V1\BacSiController::class, 'detachPhong']);
+
+    // Phase B
+    Route::apiResource('phong', \App\Http\Controllers\Api\V1\PhongController::class);
+    Route::post('phong/{phong}/attach-bac-si', [\App\Http\Controllers\Api\V1\PhongController::class, 'attachBacSi']);
+    Route::post('phong/{phong}/detach-bac-si', [\App\Http\Controllers\Api\V1\PhongController::class, 'detachBacSi']);
+
+    Route::apiResource('dich-vu', \App\Http\Controllers\Api\V1\DichVuController::class)
+        ->parameters(['dich-vu' => 'dich_vu']);
 });
 
 // Protected
