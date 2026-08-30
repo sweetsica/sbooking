@@ -28,6 +28,27 @@ Route::middleware('scrm.token')->group(function () {
     Route::get('/sync/khung-gio', [SyncApiController::class, 'khungGio']);
 });
 
+// ═══════════════════════════════════════════════════════════════════
+// API v1 — CRUD chuẩn cho các entity (dùng bearer token scrm.token,
+// throttle 60 req/min/token, cover phong_ban, co_so, bac_si, user, …).
+// Phase A (2026-08-30): users + phong_ban + co_so + bac_si.
+// ═══════════════════════════════════════════════════════════════════
+Route::prefix('v1')->middleware(['scrm.token', 'throttle:api-v1'])->group(function () {
+    Route::apiResource('users',     \App\Http\Controllers\Api\V1\UserController::class);
+    Route::patch('users/{user}/move', [\App\Http\Controllers\Api\V1\UserController::class, 'move']);
+
+    Route::apiResource('phong-ban', \App\Http\Controllers\Api\V1\PhongBanController::class)
+        ->parameters(['phong-ban' => 'phong_ban']);
+
+    Route::apiResource('co-so',     \App\Http\Controllers\Api\V1\CoSoController::class)
+        ->parameters(['co-so' => 'co_so']);
+
+    Route::apiResource('bac-si',    \App\Http\Controllers\Api\V1\BacSiController::class)
+        ->parameters(['bac-si' => 'bac_si']);
+    Route::post('bac-si/{bac_si}/attach-phong',   [\App\Http\Controllers\Api\V1\BacSiController::class, 'attachPhong']);
+    Route::post('bac-si/{bac_si}/detach-phong',   [\App\Http\Controllers\Api\V1\BacSiController::class, 'detachPhong']);
+});
+
 // Protected
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/auth/me',      [AuthApiController::class, 'me']);
