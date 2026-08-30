@@ -157,6 +157,7 @@ class LongevitySeeder extends Seeder
         // =============================================
         $salesGiang = [
             ['username' => 'hn.cms01',  'name' => 'Trần Thị Thu Giang',  'chuc_danh' => 'CM',  'vai_tro_id' => $vrSalesLead->id],
+            ['username' => 'hn.tl02',   'name' => 'Phan Trần Khánh Quỳnh', 'chuc_danh' => 'TL', 'vai_tro_id' => $vrSalesLead->id],
             ['username' => 'hn.sale03', 'name' => 'Trần Huy Kiên',       'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
             ['username' => 'hn.sale04', 'name' => 'Nguyễn Hương Giang',  'chuc_danh' => 'SHC', 'vai_tro_id' => $vrTuVanVien->id],
             ['username' => 'hn.sale06', 'name' => 'Nguyễn Thị Anh',      'chuc_danh' => 'HC',  'vai_tro_id' => $vrTuVanVien->id],
@@ -245,10 +246,11 @@ class LongevitySeeder extends Seeder
             'is_admin'     => false,
         ]);
 
-        // 2026-08-09: SCRM username theo pattern hcm.sale*/hcm.cms*. ptkq20 chưa có SCRM
-        // counterpart nên giữ nguyên. ltpt26 (Trợ lý KD) → hn.tlkd01 (SCRM đặt scope HN).
+        // 2026-08-09: SCRM username theo pattern hcm.sale*/hcm.cms*.
+        // ltpt26 (Trợ lý KD) → hn.tlkd01 (SCRM đặt scope HN).
+        // 2026-08-30: Phan Trần Khánh Quỳnh (ptkq20) chuyển sang HN Team Giang (hn.tl02),
+        //   khớp SCRM OrgStaffSeeder team-quynh (HN base).
         $salesHcm = [
-            ['username' => 'ptkq20',     'name' => 'Phan Trần Khánh Quỳnh', 'chuc_danh' => 'TL'],
             ['username' => 'hcm.sale01', 'name' => 'Trương Thị Yến Nhi',    'chuc_danh' => 'SHC'],
             ['username' => 'hcm.sale02', 'name' => 'Nguyễn Thị Hoài Như',   'chuc_danh' => 'SHC'],
             ['username' => 'hcm.sale03', 'name' => 'Huỳnh Thị My My',       'chuc_danh' => 'HC'],

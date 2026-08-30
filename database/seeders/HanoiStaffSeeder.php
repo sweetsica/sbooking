@@ -50,6 +50,8 @@ class HanoiStaffSeeder extends Seeder
             ['username' => 'ttg', 'name' => 'Trần Thị Thu Giang', 'email' => 'ttg@longevity.com.vn', 'chuc_danh' => 'Clinic Manager', 'vai_tro_id' => $vrVanHanh->id, 'phong_ban_id' => $pbSales->id],
             ['username' => 'tvh', 'name' => 'Tạ Văn Hợi',         'email' => 'tvh@longevity.com.vn', 'chuc_danh' => 'Clinic Manager', 'vai_tro_id' => $vrVanHanh->id, 'phong_ban_id' => $pbSales->id],
             ['username' => 'nhd', 'name' => 'Nguyễn Hoành Đức',   'email' => 'nhd@longevity.com.vn', 'chuc_danh' => 'Team Leader',    'vai_tro_id' => $vrVanHanh->id, 'phong_ban_id' => $pbSales->id],
+            // 2026-08-30: Phan Trần Khánh Quỳnh chuyển từ HCM về HN (team-quynh, base HN).
+            ['username' => 'ptkq', 'name' => 'Phan Trần Khánh Quỳnh', 'email' => 'ptkq@longevity.com.vn', 'chuc_danh' => 'Team Leader', 'vai_tro_id' => $vrVanHanh->id, 'phong_ban_id' => $pbSales->id],
 
             // Team Hoi booking (HC) — dedicated booking staff → nhan_vien
             ['username' => 'thk', 'name' => 'Trần Huy Kiên',      'email' => 'thk@longevity.com.vn', 'chuc_danh' => 'HC', 'vai_tro_id' => $vrNhanVien->id, 'phong_ban_id' => $pbSales->id],
