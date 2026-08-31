@@ -17,7 +17,7 @@ class HnDnTestFlowSeeder extends Seeder
     public function run(): void
     {
         $csHn = CoSo::where('slug', '59ntn')->firstOrFail();
-        $csDn = CoSo::where('slug', '23tdn')->firstOrFail();
+        $csDn = CoSo::where('slug', 'lo23tdn')->firstOrFail();
 
         $vrNhanVien = VaiTro::where('ma', 'nhan_vien')->firstOrFail();
         $vrVanHanh  = VaiTro::where('ma', 'quan_tri_van_hanh')->firstOrFail();
