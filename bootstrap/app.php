@@ -13,8 +13,9 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
-            'admin'      => \App\Http\Middleware\EnsureAdmin::class,
-            'scrm.token' => \App\Http\Middleware\EnsureScrmToken::class,
+            'admin'         => \App\Http\Middleware\EnsureAdmin::class,
+            'scrm.token'    => \App\Http\Middleware\EnsureScrmToken::class,
+            'api.audit'     => \App\Http\Middleware\LogApiAudit::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

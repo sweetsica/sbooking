@@ -33,7 +33,7 @@ Route::middleware('scrm.token')->group(function () {
 // throttle 60 req/min/token, cover phong_ban, co_so, bac_si, user, …).
 // Phase A (2026-08-30): users + phong_ban + co_so + bac_si.
 // ═══════════════════════════════════════════════════════════════════
-Route::prefix('v1')->middleware(['scrm.token', 'throttle:api-v1'])->group(function () {
+Route::prefix('v1')->middleware(['scrm.token', 'throttle:api-v1', 'api.audit'])->group(function () {
     Route::apiResource('users',     \App\Http\Controllers\Api\V1\UserController::class);
     Route::patch('users/{user}/move', [\App\Http\Controllers\Api\V1\UserController::class, 'move']);
 
@@ -65,6 +65,10 @@ Route::prefix('v1')->middleware(['scrm.token', 'throttle:api-v1'])->group(functi
 
     Route::get('bookings/export', [\App\Http\Controllers\Api\V1\BookingController::class, 'export']);
     Route::apiResource('bookings', \App\Http\Controllers\Api\V1\BookingController::class);
+
+    // Phase D: audit + inspect
+    Route::get('audit-logs', [\App\Http\Controllers\Api\V1\AuditLogController::class, 'index']);
+    Route::get('inspect/booking/{id}', [\App\Http\Controllers\Api\V1\InspectController::class, 'booking']);
 });
 
 // Protected
