@@ -55,6 +55,16 @@ Route::prefix('v1')->middleware(['scrm.token', 'throttle:api-v1'])->group(functi
 
     Route::apiResource('dich-vu', \App\Http\Controllers\Api\V1\DichVuController::class)
         ->parameters(['dich-vu' => 'dich_vu']);
+
+    // Phase C: LichLamViec + Bookings (song song /api/bookings cũ).
+    Route::apiResource('lich-lam-viec', \App\Http\Controllers\Api\V1\LichLamViecController::class)
+        ->parameters(['lich-lam-viec' => 'lich_lam_viec']);
+    Route::get   ('lich-lam-viec/{lich_lam_viec}/chi-tiet',              [\App\Http\Controllers\Api\V1\LichLamViecController::class, 'chiTiets']);
+    Route::post  ('lich-lam-viec/{lich_lam_viec}/chi-tiet',              [\App\Http\Controllers\Api\V1\LichLamViecController::class, 'storeChiTiet']);
+    Route::delete('lich-lam-viec/{lich_lam_viec}/chi-tiet/{chi_tiet}',   [\App\Http\Controllers\Api\V1\LichLamViecController::class, 'destroyChiTiet']);
+
+    Route::get('bookings/export', [\App\Http\Controllers\Api\V1\BookingController::class, 'export']);
+    Route::apiResource('bookings', \App\Http\Controllers\Api\V1\BookingController::class);
 });
 
 // Protected
