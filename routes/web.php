@@ -268,6 +268,8 @@ Route::prefix('{co_so:slug}')->group(function () {
             Route::get('/', [SettingsController::class, 'index'])->name('index');
             // Nhật ký thông báo — admin only.
             Route::get('/nhat-ky-thong-bao', [\App\Http\Controllers\NotificationLogController::class, 'index'])->name('notification-log');
+            // 2026-09-02 — Nhật ký hành động (login/booking CRUD/duyệt lịch) từ public/logs.md.
+            Route::get('/nhat-ky-hanh-dong', [\App\Http\Controllers\Admin\PublicLogController::class, 'index'])->name('nhat-ky-hanh-dong');
             // Cấu hình qua Excel — phải khai TRƯỚC route catch-all `/{section}` bên dưới.
             Route::get('/cau-hinh-excel', fn (\App\Models\CoSo $co_so) => view('longevity.settings.cau-hinh-excel', ['coSo' => $co_so]))->name('cauhinh-excel');
             Route::get('/cau-hinh-excel/xuat', [ExcelController::class, 'exportCauHinh'])->name('cauhinh.xuat');
