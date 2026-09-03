@@ -16,7 +16,7 @@ class Booking extends Model
         'ma_booking',
         'co_so_id', 'loai_dat_lich', 'khach_hang_id', 'phong_id', 'khung_gio_id', 'dich_vu_id',
         // 2026-08-05: bac_si_id FK → bac_si.id (bảng danh mục, KHÔNG phải users). ktv_user_id/sale_id/nguoi_tao_id FK → users.id.
-        'bac_si_id', 'ktv_user_id', 'sale_id', 'nguoi_tao_id',
+        'bac_si_id', 'ho_tro_id', 'ktv_user_id', 'sale_id', 'nguoi_tao_id',
         'ngay_dat', 'gio_thuc_hien', 'gio_ket_thuc',
         'so_luong',
         'nguon', 'ket_hop_medical', 'lan_dau', 'khach_tang', 'khach_tang_ghi_chu',
@@ -147,6 +147,11 @@ class Booking extends Model
     public function bacSi(): BelongsTo
     {
         return $this->belongsTo(BacSi::class, 'bac_si_id');
+    }
+
+    public function hoTro(): BelongsTo
+    {
+        return $this->belongsTo(BacSi::class, 'ho_tro_id');
     }
 
     public function ktv(): BelongsTo

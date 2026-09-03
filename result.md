@@ -1,5 +1,33 @@
 # lara-sbooking — Nhật ký kết quả
 
+## 2026-09-04 — Booking: thêm "Nhân sự hỗ trợ" (KTV/DD) 🚧
+
+Nhánh `eighteenth`. Trạng thái: Phase 1 (backend + schema) + Phase 2 (form create) done. Còn: form edit populate old value + Phase 3 notification + Phase 4 sync SCRM + Phase 5 report.
+
+### Design chốt (v3)
+- Không dùng pivot, chỉ thêm 1 cột `booking.ho_tro_id` nullable (FK → `bac_si`).
+- 1 người chính (BS/KTV — cột `bac_si_id` hiện tại) + 1 người hỗ trợ (KTV/DD — cột mới `ho_tro_id`). Không quá 2 người/ca.
+- `ho_tro_id` optional cả về schema lẫn UI — dv nào cần thì admin cơ sở tự chọn.
+
+### Phase 1 — Schema + Model + Controller ✅
+- Migration [2026_09_04_100000_add_ho_tro_id_to_booking.php](database/migrations/2026_09_04_100000_add_ho_tro_id_to_booking.php) — cột `booking.ho_tro_id` nullable + FK.
+- [Booking.php](app/Models/Booking.php) — fillable + relationship `hoTro()`.
+- [BookingController.php](app/Http/Controllers/BookingController.php) — 2 chỗ validate (store+update) `different:bac_si_id` + exists; 2 chỗ save; 2 chỗ capacity check gọi lại `checkBacSiCapacity` cho `ho_tro_id`.
+- [BookingFields.php](app/Support/BookingFields.php) — thêm key `ho_tro_id` "Nhân sự hỗ trợ (KTV/DD)".
+
+### Phase 2 — Form create ✅
+- [longevity/create.blade.php:406-413](resources/views/longevity/create.blade.php) — thêm `<select id="ho_tro" name="ho_tro_id">` ngay dưới dropdown BS.
+- JS `syncHoTro()`: mirror danh sách từ `bac_si` sau mỗi `loadBacSi()`, exclude BS đã chọn. Reactive khi đổi BS chính.
+- `trackable` array cập nhật để `ho_tro_id` chịu phân quyền field-level.
+
+### TODO còn lại
+- **Form edit**: populate `data-old="{{ $booking->ho_tro_id }}"` để giữ giá trị cũ khi mở edit. Chờ merge với template edit.
+- **Phase 3 notification**: `LichNotification` gửi in-app cho `ho_tro` (nếu có).
+- **Phase 4 sync SCRM**: mirror `ho_tro_id` → `sb_bookings`/`booking_logs` bên scrm (migration + payload).
+- **Phase 5 report**: cột nhân sự hỗ trợ trong export xlsx (nếu cần).
+
+---
+
 ## 2026-09-03 — Reset phòng + dịch vụ HCM theo bản chốt PKD + pivot dv↔BS ✅
 
 Nhánh `seventeenth`. Data HN + ĐN không đụng.

@@ -763,6 +763,7 @@ class BookingController extends Controller
             // 2026-08-07: sale_id giờ nullable — form ẩn Sale select, fallback auth()->id() phía dưới.
             'sale_id'       => ['nullable', Rule::exists('users', 'id')],
             'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
+            'ho_tro_id' => ['nullable', 'different:bac_si_id', Rule::exists('bac_si', 'id')],
             'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
             // 2026-08-07: đổi so_lieu_trinh (text "1/10") → so_luong (int ≥ 1). Bỏ so_luong_lo + dung_tich_lo.
             'so_luong'      => ['nullable', 'integer', 'min:1'],
@@ -814,6 +815,13 @@ class BookingController extends Controller
             $err = $this->checkBacSiCapacity((int) $data['bac_si_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], null, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
             if ($err) {
                 return back()->withInput()->withErrors(['bac_si_id' => $err]);
+            }
+        }
+        // 2026-09-04 — Phase 1d: capacity check cho hỗ trợ (dùng chung logic BS).
+        if (! empty($data['ho_tro_id']) && ! empty($data['dich_vu_id'])) {
+            $err = $this->checkBacSiCapacity((int) $data['ho_tro_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], null, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
+            if ($err) {
+                return back()->withInput()->withErrors(['ho_tro_id' => 'Nhân sự hỗ trợ: ' . $err]);
             }
         }
 
@@ -870,6 +878,7 @@ class BookingController extends Controller
             'khung_gio_id'  => $data['khung_gio_id'],
             'dich_vu_id'    => $data['dich_vu_id'] ?? null,
             'bac_si_id' => $data['bac_si_id'] ?? null,
+            'ho_tro_id' => $data['ho_tro_id'] ?? null,
             'ktv_user_id'   => $data['ktv_user_id'] ?? null,
             // 2026-08-07: fallback sale_id = auth user khi form ẩn Sale select.
             'sale_id'       => $data['sale_id'] ?? auth()->id(),
@@ -970,6 +979,7 @@ class BookingController extends Controller
             // 2026-08-07: sale_id giờ nullable — form ẩn Sale select, fallback auth()->id() phía dưới.
             'sale_id'       => ['nullable', Rule::exists('users', 'id')],
             'bac_si_id' => ['nullable', Rule::exists('bac_si', 'id')],
+            'ho_tro_id' => ['nullable', 'different:bac_si_id', Rule::exists('bac_si', 'id')],
             'ktv_user_id'   => ['nullable', Rule::exists('ktv', 'id')],
             // 2026-08-07: đổi so_lieu_trinh (text "1/10") → so_luong (int ≥ 1). Bỏ so_luong_lo + dung_tich_lo.
             'so_luong'      => ['nullable', 'integer', 'min:1'],
@@ -1023,6 +1033,12 @@ class BookingController extends Controller
                 return back()->withInput()->withErrors(['bac_si_id' => $err]);
             }
         }
+        if (! empty($data['ho_tro_id']) && ! empty($data['dich_vu_id'])) {
+            $err = $this->checkBacSiCapacity((int) $data['ho_tro_id'], (int) $data['khung_gio_id'], (int) $data['dich_vu_id'], $data['ngay_dat'], $booking->id, $data['gio_thuc_hien'] ?? null, $data['gio_ket_thuc'] ?? null);
+            if ($err) {
+                return back()->withInput()->withErrors(['ho_tro_id' => 'Nhân sự hỗ trợ: ' . $err]);
+            }
+        }
 
         // Slot phòng (bỏ qua booking đang sửa)
         $phong = Phong::find($data['phong_id']);
@@ -1063,6 +1079,7 @@ class BookingController extends Controller
             'khung_gio_id'    => $data['khung_gio_id'],
             'dich_vu_id'      => $data['dich_vu_id'],
             'bac_si_id'  => $data['bac_si_id'] ?? null,
+            'ho_tro_id'  => $data['ho_tro_id'] ?? null,
             'ktv_user_id'     => $data['ktv_user_id'] ?? null,
             // 2026-08-07: fallback auth user cho sale_id ẩn.
             'sale_id'         => $data['sale_id'] ?? auth()->id(),

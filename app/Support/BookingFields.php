@@ -63,6 +63,7 @@ class BookingFields
             'so_luong'        => 'Số lượng',
             'ket_hop_medical' => 'Kết hợp Medical',
             'bac_si_id'  => 'Bác sĩ',
+            'ho_tro_id'  => 'Nhân sự hỗ trợ (KTV/DD)',
             'ktv_user_id'     => 'Kỹ thuật viên',
             'ghi_chu'         => 'Ghi chú',
 
@@ -104,7 +105,7 @@ class BookingFields
             'dau_thoi_gian', 'ho_ten', 'so_dien_thoai', 'email',
             'ngay_dat', 'phong_id', 'khung_gio_id', 'gio_thuc_hien', 'gio_ket_thuc',
             'nguon', 'sale_id', 'dich_vu_id', 'so_luong', 'ket_hop_medical',
-            'bac_si_id', 'ktv_user_id', 'ghi_chu',
+            'bac_si_id', 'ho_tro_id', 'ktv_user_id', 'ghi_chu',
         ];
         return array_intersect_key($all, array_flip($keys));
     }
