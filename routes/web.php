@@ -149,6 +149,19 @@ Route::middleware('auth')->group(function () {
         return response()->json(['data' => $users, 'source' => 'local', 'fallback_reason' => $reason]);
     })->name('api.sales-in-cosolow');
 
+    // 2026-09-04: list bac_si active của cơ sở — cho modal duyệt sửa BS + Hỗ trợ y tế.
+    Route::get('/api/bac-si-in-coso', function (\Illuminate\Http\Request $r) {
+        $coSoId = (int) $r->query('co_so_id');
+        if (! $coSoId) return response()->json(['data' => []]);
+        $rows = \App\Models\BacSi::where('active', true)
+            ->where(function ($q) use ($coSoId) {
+                $q->where('co_so_id', $coSoId)->orWhere('xuat_hien_moi_co_so', true);
+            })
+            ->orderBy('ten')
+            ->get(['id', 'ten', 'chuc_danh']);
+        return response()->json(['data' => $rows]);
+    })->name('api.bac-si-in-coso');
+
     // Thông báo (in-app)
     Route::get('/thong-bao',                        [ThongBaoController::class, 'index'])->name('thongbao.index');
     Route::get('/thong-bao/summary',                [ThongBaoController::class, 'summary'])->name('thongbao.summary');

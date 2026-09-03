@@ -35,8 +35,15 @@ Bên [lara-scrm](../lara-scrm/result.md): migration `sb_ho_tro_id` + Livewire pr
 ### Phase 5 — Report: skip
 Chờ nhu cầu thực tế.
 
+### Phase 6 — Modal duyệt sửa BS + Ho_tro y tế ✅
+Yêu cầu: admin lúc duyệt lịch có thể chỉnh Bác sĩ + Nhân sự hỗ trợ y tế (ngoài Sale tiếp đón).
+- [routes/web.php](routes/web.php) — thêm endpoint `GET /api/bac-si-in-coso?co_so_id=X` trả list BS active.
+- [_approve_modal.blade.php](resources/views/longevity/partials/_approve_modal.blade.php) — 2 dropdown "Bác sĩ chính" + "Nhân sự hỗ trợ" bên trên "Ghi chú"; JS `loadBacSiYte()` + `fillBacSi()` render list; đổi BS chính → exclude khỏi Ho_tro dropdown.
+- [show.blade.php](resources/views/longevity/show.blade.php) — truyền thêm `bac_si_id` + `ho_tro_id` vào opts của `openApprove()`.
+- [BookingController::duyet()](app/Http/Controllers/BookingController.php) — validate + save 2 field (`bac_si_id` + `ho_tro_id`, rule `different:bac_si_id` cho ho_tro).
+
 ### TODO còn lại
-- Capacity check bên `BookingApiController` (scrm push): chỉ check bs_capacity cho `bac_si_id`, chưa check cho `ho_tro_id`. Nếu book cùng người 2 lần (chính + hỗ trợ ở booking khác) có thể conflict. Chưa critical, defer.
+- Capacity check bên `BookingApiController` (scrm push): chỉ check bs_capacity cho `bac_si_id`, chưa check cho `ho_tro_id`. Chưa critical, defer.
 
 ---
 

@@ -1188,11 +1188,23 @@ class BookingController extends Controller
                 'gio_ket_thuc'        => ['nullable', 'regex:/^\d{2}:\d{2}(:\d{2})?$/'],
                 'tiep_don_user_id'    => ['required', 'integer', 'exists:users,id'],
                 'tiep_don_ho_tro_id'  => ['nullable', 'integer', 'exists:users,id', 'different:tiep_don_user_id'],
+                // 2026-09-04: Admin có thể sửa BS + Nhân sự hỗ trợ y tế khi duyệt.
+                'bac_si_id'           => ['nullable', 'integer', 'exists:bac_si,id'],
+                'ho_tro_id'           => ['nullable', 'integer', 'exists:bac_si,id', 'different:bac_si_id'],
                 'ghi_chu'             => ['nullable', 'string', 'max:2000'],
             ], [
                 'tiep_don_user_id.required'    => 'Vui lòng chọn Sale tiếp đón trước khi duyệt.',
                 'tiep_don_ho_tro_id.different' => 'Sale hỗ trợ phải khác Sale tiếp đón gốc.',
+                'ho_tro_id.different'          => 'Nhân sự hỗ trợ phải khác Bác sĩ chính.',
             ]);
+
+            // 2026-09-04: cập nhật BS + hỗ trợ y tế nếu admin có sửa (giữ nguyên nếu không truyền).
+            if (array_key_exists('bac_si_id', $data)) {
+                $booking->bac_si_id = $data['bac_si_id'] ?: null;
+            }
+            if (array_key_exists('ho_tro_id', $data)) {
+                $booking->ho_tro_id = $data['ho_tro_id'] ?: null;
+            }
 
             if (! empty($data['gio_thuc_hien'])) $booking->gio_thuc_hien = $data['gio_thuc_hien'];
             if (! empty($data['gio_ket_thuc']))  $booking->gio_ket_thuc  = $data['gio_ket_thuc'];

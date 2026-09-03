@@ -65,6 +65,24 @@
                     </div>
                 </div>
 
+                {{-- 2026-09-04: Admin duyệt có thể sửa Bác sĩ + Hỗ trợ y tế (danh mục bac_si). --}}
+                <div class="grid grid-cols-2 gap-2 pt-1 border-t border-outline-variant/50">
+                    <div>
+                        <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Bác sĩ chính</label>
+                        <select name="bac_si_id" id="approve-bs-select"
+                                class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md">
+                            <option value="">— giữ nguyên —</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Nhân sự hỗ trợ</label>
+                        <select name="ho_tro_id" id="approve-ho-tro-yte-select"
+                                class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md">
+                            <option value="">— không có —</option>
+                        </select>
+                    </div>
+                </div>
+
                 <div>
                     <label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Ghi chú</label>
                     <textarea name="ghi_chu" rows="2" class="w-full px-3 py-2 rounded-lg border border-outline-variant bg-surface-container-lowest text-body-md"></textarea>
@@ -98,6 +116,34 @@
     var teleRow = document.getElementById('approve-tele-row');
     var teleName = document.getElementById('approve-tele-name');
     var lockBadge = document.getElementById('approve-sale-lock-badge');
+    // 2026-09-04: BS + Hỗ trợ y tế (danh mục bac_si).
+    var selBs = document.getElementById('approve-bs-select');
+    var selHtYte = document.getElementById('approve-ho-tro-yte-select');
+    function fillBacSi(select, list, placeholder, currentId, excludeId){
+        select.innerHTML = '<option value="">' + placeholder + '</option>';
+        (list || []).forEach(function(bs){
+            if (excludeId && Number(excludeId) === Number(bs.id)) return;
+            var opt = document.createElement('option');
+            var label = (bs.chuc_danh ? bs.chuc_danh + ' ' : '') + bs.ten;
+            opt.value = bs.id; opt.textContent = label;
+            if (currentId && Number(currentId) === Number(bs.id)) opt.selected = true;
+            select.appendChild(opt);
+        });
+    }
+    function loadBacSiYte(coSoId){
+        return fetch('/api/bac-si-in-coso?co_so_id=' + coSoId + '&_=' + Date.now(),
+            {headers:{Accept:'application/json'}, cache:'no-store'})
+            .then(r => r.ok ? r.json() : {data:[]})
+            .then(j => j.data || []).catch(() => []);
+    }
+    if (selBs) selBs.addEventListener('change', function(){
+        // Đổi BS chính → xóa Hỗ trợ nếu trùng.
+        if (selHtYte.value && selHtYte.value === selBs.value) selHtYte.value = '';
+        // Re-render selHtYte để hide option trùng.
+        var currentHt = selHtYte.value;
+        var list = Array.from(selBs.options).slice(1).map(o => ({id: o.value, ten: o.textContent, chuc_danh: ''}));
+        fillBacSi(selHtYte, list, '— không có —', currentHt, selBs.value);
+    });
 
     // Nguồn "tự tạo" — sale tiếp đón chính bị fix cứng = creator, chỉ được thêm hỗ trợ.
     var SELF_OWNED = ['sa', 'ba', 'mkt_br'];
@@ -199,6 +245,16 @@
 
         fillOptions(sel, [], '— chọn sale phụ trách —', tiepDonId);
         fillOptions(selHT, [], '— chọn sale hỗ trợ —', null);
+
+        // 2026-09-04: load BS + Ho_tro y tế cho cơ sở.
+        if (selBs) {
+            fillBacSi(selBs, [], '— giữ nguyên —', null);
+            fillBacSi(selHtYte, [], '— không có —', null);
+            loadBacSiYte(coSoId).then(function(bsList){
+                fillBacSi(selBs, bsList, '— giữ nguyên —', opts.bac_si_id);
+                fillBacSi(selHtYte, bsList, '— không có —', opts.ho_tro_id, opts.bac_si_id);
+            });
+        }
 
         loadSales(coSoId, opts.ngay_dat).then(function(list){
             // 2026-08-19: self-owned mà thiếu id (booking cũ) → tra theo TÊN creator/tele trong list sale
