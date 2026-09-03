@@ -116,6 +116,7 @@ class BookingApiController extends Controller
             'gio_ket_thuc'  => ['nullable', 'string'],
             'dich_vu_id'    => ['nullable', 'integer', 'exists:dich_vu,id'],
             'bac_si_id'     => ['nullable', 'integer', 'exists:bac_si,id'],
+            'ho_tro_id'     => ['nullable', 'integer', 'different:bac_si_id', 'exists:bac_si,id'],
             'phong_id'      => ['nullable', 'integer', 'exists:phong,id'],
             'khung_gio_id'  => ['nullable', 'integer', 'exists:khung_gio,id'],
         ]);
@@ -168,6 +169,7 @@ class BookingApiController extends Controller
             'gio_ket_thuc'   => ['nullable', 'string'], // Phase 6.25.C fix
             'dich_vu_id'     => ['nullable', 'integer', 'exists:dich_vu,id'],
             'bac_si_id'      => ['nullable', 'integer', 'exists:bac_si,id'],
+            'ho_tro_id'      => ['nullable', 'integer', 'different:bac_si_id', 'exists:bac_si,id'],
             'phong_id'       => ['nullable', 'integer', 'exists:phong,id'],
             'khung_gio_id'   => ['nullable', 'integer', 'exists:khung_gio,id'],
             // 2026-08-19 Phase B: 'phong_kham' giữ hỗ trợ backward-compat, sẽ map thành 'kham_ls'.
@@ -253,6 +255,7 @@ class BookingApiController extends Controller
                     'loai_dat_lich' => $loaiDatLich,
                     'dich_vu_id'    => $data['dich_vu_id'] ?? null,
                     'bac_si_id'     => $data['bac_si_id'] ?? null,
+                    'ho_tro_id'     => $data['ho_tro_id'] ?? null,
                     'phong_id'      => $data['phong_id'] ?? null,
                     'khung_gio_id'  => $data['khung_gio_id'] ?? null,
                     'ngay_dat'      => $data['ngay_dat'],
@@ -321,6 +324,7 @@ class BookingApiController extends Controller
             'gio_thuc_hien'   => ['nullable', 'string'],
             'dich_vu_id'      => ['nullable', 'integer', 'exists:dich_vu,id'],
             'bac_si_id'       => ['nullable', 'integer', 'exists:bac_si,id'],
+            'ho_tro_id'       => ['nullable', 'integer', 'different:bac_si_id', 'exists:bac_si,id'],
             'phong_id'        => ['nullable', 'integer', 'exists:phong,id'],
             'khung_gio_id'    => ['nullable', 'integer', 'exists:khung_gio,id'],
             'tiep_don_user_id' => ['nullable', 'integer', 'exists:users,id'],
