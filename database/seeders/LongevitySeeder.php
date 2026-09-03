@@ -402,18 +402,13 @@ class LongevitySeeder extends Seeder
         }
 
         // --- 207 NVT ---
-        BacSi::where('co_so_id', $cs207nvt->id)->whereIn('ten', ['Bác sĩ Đồng', 'Bác sĩ Da liễu', 'Bác sĩ YHCT'])->delete();
-        $bacSi207 = [
-            ['ten' => 'Hoàng Văn Đông',   'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5, 'xuat_hien_moi_co_so' => true],
-            ['ten' => 'Lê Huy Thư',       'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => true,  'phut_kham_ls' => 5],
-            ['ten' => 'Đặng Công Danh',   'chuc_danh' => 'BS.',  'nhan_tu_van' => true,  'phut_tu_van' => 30, 'nhan_kham_ls' => false, 'phut_kham_ls' => 5],
-        ];
-        foreach ($bacSi207 as $bs) {
-            BacSi::updateOrCreate(
-                ['co_so_id' => $cs207nvt->id, 'ten' => $bs['ten']],
-                $bs + ['gio_bat_dau' => '08:00', 'gio_ket_thuc' => '17:00', 'active' => true]
-            );
-        }
+        // Dọn dòng cũ chưa có prefix "Bác sĩ " (data trước bản chốt 2026-09-03).
+        BacSi::where('co_so_id', $cs207nvt->id)
+            ->whereIn('ten', ['Bác sĩ Đồng', 'Bác sĩ Da liễu', 'Bác sĩ YHCT',
+                              'Hoàng Văn Đông', 'Lê Huy Thư', 'Đặng Công Danh'])
+            ->delete();
+        // Nhân sự HCM chốt tại BacSiKtvDdSeeder (bản chốt PKD 2026-09-03) —
+        // không seed BS ở đây nữa để tránh trùng tên/khác chuẩn.
 
         // --- KTV 59 NTN ---
         $ktv59 = [

@@ -1,5 +1,33 @@
 # lara-sbooking — Nhật ký kết quả
 
+## 2026-09-03 — Reset phòng + dịch vụ HCM theo bản chốt PKD + pivot dv↔BS ✅
+
+Nhánh `seventeenth`. Data HN + ĐN không đụng.
+
+### Migration
+- [database/migrations/2026_09_03_140000_reset_hcm_phong_dich_vu.php](database/migrations/2026_09_03_140000_reset_hcm_phong_dich_vu.php)
+  - Tạo bảng pivot `dich_vu_bac_si` (`dich_vu_id, bac_si_id, unique`) — map dv ↔ nhân sự thực hiện.
+  - **BREAKING**: xoá toàn bộ `booking` HCM (co_so_id=2, cả done lẫn chưa done), `phong_bac_si` HCM, `dich_vu_phong` HCM, `chi_tiet_phan_cong` phòng HCM, `ngay_nghi` phòng HCM, rồi xoá `phong` + `dich_vu` HCM. User đã chốt được clear + đã backup DB trước khi chạy.
+
+### Seeders mới
+- [database/seeders/BacSiKtvDdSeeder.php](database/seeders/BacSiKtvDdSeeder.php) — 15 nhân sự HCM (8 BS gồm Bsi Quỳnh + Y sĩ Thuận, 4 KTV, 3 DD) + 7 BS HN. `chuc_danh` viết đầy đủ ("Kỹ thuật viên"/"Điều dưỡng").
+- [database/seeders/HcmPhongResetSeeder.php](database/seeders/HcmPhongResetSeeder.php) — 14 phòng HCM có suffix tầng (T1..T6), `phut_moi_khach` khớp dv chính, `loai='kham'`.
+- [database/seeders/HcmDichVuResetSeeder.php](database/seeders/HcmDichVuResetSeeder.php) — 23 dv + pivot `dich_vu_phong` (27 dòng). Đổi tên BJR/PRP/HA/PRF thành "Tiêm ... (1 khớp)". Split EAQ (1 vùng) thành 2 dv (1 vùng) + (toàn bộ).
+- [database/seeders/HcmDichVuBacSiSeeder.php](database/seeders/HcmDichVuBacSiSeeder.php) — 45 dòng pivot dv↔nhân sự HCM theo mapping ảnh PKD.
+
+### Seeder cũ dọn
+- [LongevitySeeder.php:404](database/seeders/LongevitySeeder.php) — block seed 3 BS HCM cũ ("Hoàng Văn Đông", "Lê Huy Thư", "Đặng Công Danh" không prefix) đã gỡ + thêm vào danh sách delete để migrate:fresh không tạo dòng trùng.
+
+### Kết quả prod (sbooking.sweetsica.com)
+- 14 phòng HCM ✓
+- 23 dv HCM + 27 pivot dv-phòng + 45 pivot dv-BS ✓
+- 15 BS HCM (đã dọn 3 dòng cũ id 8/9/10) ✓
+
+### Đi kèm bên scrm
+- `php artisan sb:sync-bac-si` → 25 BS mirror về `sb_bac_si` (15 mới + 10 update).
+
+---
+
 ## 2026-08-10 — Booking trễ + Dừng nhận lead + tách nút tiếp tân/sale + nút quay lại phase 3 ✅
 
 Nhánh `tenth`. Đi kèm patch bên [lara-scrm](../lara-scrm/result.md) cùng ngày (final-01).
