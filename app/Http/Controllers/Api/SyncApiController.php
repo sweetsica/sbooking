@@ -55,6 +55,24 @@ class SyncApiController extends Controller
     }
 
     /**
+     * GET /api/sync/dich-vu-bac-si
+     * Trả pivot DV ↔ nhân sự (BS/KTV/DD) — bản chốt 2026-09-03.
+     */
+    public function dichVuBacSi(): JsonResponse
+    {
+        $rows = \DB::table('dich_vu_bac_si')
+            ->select(['dich_vu_id', 'bac_si_id', 'updated_at'])
+            ->orderBy('dich_vu_id')
+            ->orderBy('bac_si_id')
+            ->get();
+
+        return response()->json([
+            'count' => $rows->count(),
+            'data'  => $rows,
+        ]);
+    }
+
+    /**
      * GET /api/sync/users
      * Trả danh sách user sbooking để scrm map (Phase C1.e — sync note/CV 2 chiều).
      */
