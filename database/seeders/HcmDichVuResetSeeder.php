@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
  * Seed 23 dịch vụ HCM sau reset + pivot dich_vu_phong.
  *
  * Nguồn: ảnh 1 (22 dv) + split "EAQ (1 vùng)" → 2 dv "(1 vùng)" + "(toàn bộ)" theo Q4 chốt.
- * Đổi tên: BJR/PRP/HA*/PRF → "Tiêm ... (1 khớp)" cho đồng bộ.
+ * Đổi tên: BJR, PRP, HA 1 phần trăm, HA 2 phần trăm, PRF → "Tiêm ... (1 khớp)" cho đồng bộ.
  *
  * Phụ thuộc: HcmPhongResetSeeder đã chạy (cần phòng để pivot).
  */
