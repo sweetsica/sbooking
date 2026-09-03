@@ -263,16 +263,22 @@
 </select>
 </div>
 @if ($isDichVu)
+{{-- 2026-09-04 (design v3): form dv dùng BS chính + Nhân viên hỗ trợ, KTV cũ bỏ khỏi UI. --}}
 <div>
-<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Kỹ thuật viên (KTV)</label>
-<select name="ktv_user_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md">
-<option value="">-- Chọn --</option>
-@foreach ($ktvs as $k)
-<option value="{{ $k->id }}" @selected(old('ktv_user_id', $bk?->ktv_user_id)==$k->id)>{{ $k->ten_day_du }}</option>
-@endforeach
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Bác sĩ chính <span class="text-on-surface-variant/60 text-[11px]" id="bs_hint"></span></label>
+<select id="bac_si" name="bac_si_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" data-old="{{ old('bac_si_id', $bk?->bac_si_id) }}">
+<option value="">-- Chọn khung giờ trước --</option>
 </select>
-<p id="ktv_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
+<p id="bs_lich_warn" class="hidden text-error text-body-sm mt-1.5 flex items-center gap-1"><span class="material-symbols-outlined text-[16px]">warning</span><span></span></p>
 </div>
+<div class="mt-4">
+<label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Nhân sự hỗ trợ <span class="text-on-surface-variant/60 text-[11px]">— KTV/DD phụ ca (tùy chọn)</span></label>
+<select id="ho_tro" name="ho_tro_id" class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md" data-old="{{ old('ho_tro_id', $bk?->ho_tro_id) }}">
+<option value="">-- Không có --</option>
+</select>
+</div>
+{{-- Backward compat: giữ input hidden để không mất KTV cũ khi edit booking cũ; new booking = null. --}}
+<input type="hidden" name="ktv_user_id" value="{{ old('ktv_user_id', $bk?->ktv_user_id) }}"/>
 @endif
 </div>
 </div>

@@ -20,11 +20,23 @@ Nhánh `eighteenth`. Trạng thái: Phase 1 (backend + schema) + Phase 2 (form c
 - JS `syncHoTro()`: mirror danh sách từ `bac_si` sau mỗi `loadBacSi()`, exclude BS đã chọn. Reactive khi đổi BS chính.
 - `trackable` array cập nhật để `ho_tro_id` chịu phân quyền field-level.
 
+### Phase 2b — Form DV (option A) ✅
+Form dv trước đây chỉ có dropdown KTV (`ktv_user_id`, ref bảng `ktv` cũ). Chốt option A với user:
+- Bỏ KTV dropdown khỏi UI (giữ `<input type="hidden" name="ktv_user_id" value="...">` cho backward compat booking cũ).
+- Thay bằng 2 dropdown mới: **Bác sĩ chính** (`bac_si_id`) + **Nhân sự hỗ trợ** (`ho_tro_id`), reuse cùng JS `loadBacSi()` + `syncHoTro()` như form khám.
+- Preload old value qua `data-old="{{ old(...) ?? $bk?->ho_tro_id }}"` để form edit giữ giá trị cũ.
+
+### Phase 3 — Notification: N/A
+Kiểm tra `NotificationRecipientResolver`: comment sẵn rằng `bac_si_id` là **danh mục** (không phải user account) nên KHÔNG nằm trong pool nhận in-app. `ho_tro_id` cũng ref bảng `bac_si` → cùng nhánh, không có user để notify. Đóng phase 3 — không cần làm gì.
+
+### Phase 4 — Sync SCRM ✅
+Bên [lara-scrm](../lara-scrm/result.md): migration `sb_ho_tro_id` + Livewire prop + Blade dropdown + SbookingClient push kèm `ho_tro_id`.
+
+### Phase 5 — Report: skip
+Chờ nhu cầu thực tế.
+
 ### TODO còn lại
-- **Form edit**: populate `data-old="{{ $booking->ho_tro_id }}"` để giữ giá trị cũ khi mở edit. Chờ merge với template edit.
-- **Phase 3 notification**: `LichNotification` gửi in-app cho `ho_tro` (nếu có).
-- **Phase 4 sync SCRM**: mirror `ho_tro_id` → `sb_bookings`/`booking_logs` bên scrm (migration + payload).
-- **Phase 5 report**: cột nhân sự hỗ trợ trong export xlsx (nếu cần).
+- Capacity check bên `BookingApiController` (scrm push): chỉ check bs_capacity cho `bac_si_id`, chưa check cho `ho_tro_id`. Nếu book cùng người 2 lần (chính + hỗ trợ ở booking khác) có thể conflict. Chưa critical, defer.
 
 ---
 
