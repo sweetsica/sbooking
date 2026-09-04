@@ -152,12 +152,13 @@
     var THEME_AMBER = 'border-amber-300 bg-amber-50 text-amber-900';
     var THEME_BLUE  = 'border-sky-300 bg-sky-50 text-sky-900';
 
+    // 2026-09-04 (Phase 6.26.d): trả cả object (source + fallback_reason) để cảnh báo UPS chưa chốt.
     function loadSales(coSoId, ngayDat){
         var url = '/api/sales-in-cosolow?co_so_id=' + coSoId + '&_=' + Date.now();
         if (ngayDat) url += '&ngay_dat=' + encodeURIComponent(ngayDat);
         return fetch(url, {headers:{Accept:'application/json'}, cache:'no-store'})
-            .then(r => r.ok ? r.json() : {data:[]})
-            .then(j => j.data || []).catch(() => []);
+            .then(r => r.ok ? r.json() : {data:[], source:'error'})
+            .catch(() => ({data:[], source:'error'}));
     }
     function optionFor(u){
         var opt = document.createElement('option');
@@ -256,7 +257,9 @@
             });
         }
 
-        loadSales(coSoId, opts.ngay_dat).then(function(list){
+        loadSales(coSoId, opts.ngay_dat).then(function(resp){
+            var list = (resp && resp.data) || [];
+            var respSource = resp && resp.source;
             // 2026-08-19: self-owned mà thiếu id (booking cũ) → tra theo TÊN creator/tele trong list sale
             //   để vẫn lock được. Match không phân biệt hoa thường và khoảng trắng thừa.
             if (isSelfOwned && ! lockToSbookingId) {
@@ -290,6 +293,31 @@
                 sel.style.pointerEvents = '';
                 sel.style.background = '';
                 removeHiddenTiepDon();
+
+                // Phase 6.26.d (2026-09-04): nguồn UPS-based (MKT) — auto-gợi ý sale bucket A rảnh
+                // hoặc cảnh báo "Chưa chốt UPS list" nếu response không phải source='ups'.
+                var isUpsSource = (srcLower === 'mkt');
+                if (isUpsSource && !tiepDonId) {
+                    if (respSource === 'ups') {
+                        // Ưu tiên bucket A rảnh, fallback A bận, fallback B/C rảnh, fallback bất cứ.
+                        var pick = list.find(function(u){ return u.bucket === 'A' && !u.busy; })
+                                || list.find(function(u){ return u.bucket === 'A'; })
+                                || list.find(function(u){ return (u.bucket === 'B' || u.bucket === 'C') && !u.busy; })
+                                || list.find(function(u){ return !!u.bucket; });
+                        if (pick) {
+                            sel.value = pick.id;
+                            srcNote.textContent = '💡 Gợi ý UPS: ' + pick.name + (pick.bucket ? ' (bucket ' + pick.bucket + (pick.busy ? ' · đang bận' : ' · rảnh') + ')' : '') + '. Admin có thể đổi tay nếu cần.';
+                            srcInfo.className = 'p-3 rounded-lg border text-body-sm border-sky-300 bg-sky-50 text-sky-900';
+                        }
+                    } else if (respSource === 'local' || respSource === 'error') {
+                        // UPS chưa chốt hôm nay — cảnh báo, buộc admin chọn tay.
+                        var dateLbl = (opts.ngay_dat || '').split('-').reverse().slice(0,2).join('/') || 'hôm nay';
+                        srcNote.textContent = '⚠ Chưa chốt UPS list ngày ' + dateLbl + ' — vui lòng chọn tay Sale tiếp đón bên dưới.';
+                        srcInfo.className = 'p-3 rounded-lg border text-body-sm border-amber-300 bg-amber-50 text-amber-900';
+                        srcIcon.textContent = 'warning';
+                    }
+                    // future_all_users: booking tương lai, giữ note mặc định (admin chọn tay).
+                }
             }
         });
 
