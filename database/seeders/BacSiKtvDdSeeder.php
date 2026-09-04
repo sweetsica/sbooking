@@ -84,8 +84,15 @@ class BacSiKtvDdSeeder extends Seeder
             [$csHcm->id, 'DD Hồng Gấm',             $dd, []],
 
             // ── Đà Nẵng (Khối chuyên môn) ────────────────────────────────
-            [$csDn->id,  'Mai Tấn Mẫn',             $bsThuong, ['chuc_danh' => 'Giám đốc chuyên môn']],
-            [$csDn->id,  'Nguyễn Thị Phượng',       $ktv, ['chuc_danh' => 'KTV Xét nghiệm']],
+            // 2026-09-04: mở rộng theo bảng PKD DN — KTV/DD làm kham_ls (override nhan_kham_ls=true).
+            [$csDn->id,  'Mai Tấn Mẫn',              $bsThuong, ['chuc_danh' => 'Giám đốc chuyên môn']],
+            [$csDn->id,  'Bác sĩ Nguyễn Văn Đăng',   $bsThuong, []],
+            [$csDn->id,  'Nguyễn Thị Phượng',        array_merge($ktv, ['nhan_kham_ls' => true]), ['chuc_danh' => 'KTV Xét nghiệm']],
+            [$csDn->id,  'KTV Lê Nữ Như Ngọc',       array_merge($ktv, ['nhan_kham_ls' => true]), []],
+            [$csDn->id,  'DD Hoàng Trinh',           array_merge($dd,  ['nhan_kham_ls' => true]), []],
+            [$csDn->id,  'DD Ngọc Bích',             array_merge($dd,  ['nhan_kham_ls' => true]), []],
+            [$csDn->id,  'DD Ánh Tuyết',             array_merge($dd,  ['nhan_kham_ls' => true]), []],
+            [$csDn->id,  'DD Đỗ Hoa',                array_merge($dd,  ['nhan_kham_ls' => true]), []],
         ];
 
         $created = 0; $updated = 0;
