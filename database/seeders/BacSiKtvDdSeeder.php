@@ -11,7 +11,7 @@ use Illuminate\Database\Seeder;
  * vào bảng `bac_si` theo dữ liệu chốt ngày 2026-09-03.
  *
  * Idempotent theo (co_so_id, ten). KHÔNG xóa dòng khác — chỉ upsert.
- * Cơ sở Đà Nẵng không đụng (user tự quản 1 BS bên đó).
+ * Đà Nẵng: chỉ seed nhân sự Khối chuyên môn (BS/GĐCM) — điều dưỡng/KTV bên đó user tự quản.
  *
  * Chức danh: viết đầy đủ ("Kỹ thuật viên", "Điều dưỡng") thay vì viết tắt (KTV/DD).
  */
@@ -21,6 +21,7 @@ class BacSiKtvDdSeeder extends Seeder
     {
         $csHn  = CoSo::where('slug', '59ntn')->firstOrFail();
         $csHcm = CoSo::where('slug', '207nvt')->firstOrFail();
+        $csDn  = CoSo::where('slug', 'lo23tdn')->firstOrFail();
 
         // Preset field cho từng nhóm.
         $bsThuong = [
@@ -81,6 +82,9 @@ class BacSiKtvDdSeeder extends Seeder
             [$csHcm->id, 'DD Thu Loan',             $dd, []],
             [$csHcm->id, 'DD Tam Tuấn',             $dd, []],
             [$csHcm->id, 'DD Hồng Gấm',             $dd, []],
+
+            // ── Đà Nẵng (Khối chuyên môn) ────────────────────────────────
+            [$csDn->id,  'Mai Tấn Mẫn',             $bsThuong, ['chuc_danh' => 'Giám đốc chuyên môn']],
         ];
 
         $created = 0; $updated = 0;
