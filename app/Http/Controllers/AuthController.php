@@ -113,9 +113,9 @@ class AuthController extends Controller
             return "/{$coSo->slug}/lich-tu-van";
         }
 
-        // Nhân viên → trang tạo booking
+        // 2026-09-04: /dat-lich-tham-kham đã chặn (tạo booking chuyển sang Datasource) → về danh sách.
         if ($vaiTroMa === 'nhan_vien') {
-            return "/{$coSo->slug}/dat-lich-tham-kham";
+            return "/{$coSo->slug}/danh-sach";
         }
 
         return "/{$coSo->slug}/lich-hen";

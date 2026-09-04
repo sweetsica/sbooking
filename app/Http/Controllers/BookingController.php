@@ -29,29 +29,15 @@ class BookingController extends Controller
     use AuthorizesByPhanQuyen;
     public function create(CoSo $co_so, Request $request)
     {
-        $this->authorizePerm('them_booking');
-
-        return view('longevity.create', $this->formData($co_so, 'kham_ls') + [
-            'bk' => null,
-            'allowedFields' => null,
-            'loaiDatLich' => 'kham_ls',
-            'prefill' => $this->prefillFromQuery($request),
-            'returnUrl' => $this->safeReturnUrl($request->query('return_url')),
-        ]);
+        // 2026-09-04 — Ép luồng tạo booking đi qua Datasource để lead/KPI/report đồng bộ.
+        // Form store() cũng abort(410) — defense-in-depth với form cache.
+        return view('longevity.booking-blocked', ['coSo' => $co_so]);
     }
 
-    /** Form đặt lịch dịch vụ - chỉ Phòng + KTV + Dịch vụ (không có BS). */
+    /** Form đặt lịch dịch vụ — CHẶN, chuyển sang Datasource (từ 2026-09-04). */
     public function createDichVu(CoSo $co_so, Request $request)
     {
-        $this->authorizePerm('them_booking');
-
-        return view('longevity.create', $this->formData($co_so, 'phong_dich_vu') + [
-            'bk' => null,
-            'allowedFields' => null,
-            'loaiDatLich' => 'dich_vu',
-            'prefill' => $this->prefillFromQuery($request),
-            'returnUrl' => $this->safeReturnUrl($request->query('return_url')),
-        ]);
+        return view('longevity.booking-blocked', ['coSo' => $co_so]);
     }
 
     /** Lấy prefill khách hàng từ query (SCRM gửi sang khi mở form). */
@@ -90,11 +76,10 @@ class BookingController extends Controller
         return $url;
     }
 
-    /** Store cho đặt lịch dịch vụ - ép loai_dat_lich + bỏ BS check. */
+    /** Store cho đặt lịch dịch vụ — CHẶN từ 2026-09-04. */
     public function storeDichVu(CoSo $co_so, Request $request)
     {
-        $request->merge(['loai_dat_lich' => 'dich_vu', 'bac_si_id' => null]);
-        return $this->store($co_so, $request);
+        abort(410, 'Tạo booking đã chuyển sang Datasource. Vui lòng mở SCRM để tạo lịch — sbooking không nhận form tạo mới nữa.');
     }
 
     public function edit(CoSo $co_so, Booking $booking)
@@ -749,7 +734,9 @@ class BookingController extends Controller
 
     public function store(CoSo $co_so, Request $request)
     {
-        $this->authorizePerm('them_booking');
+        // 2026-09-04 — CHẶN: mọi booking mới phải tạo qua Datasource.
+        // (API `/api/bookings` cho datasource push vẫn hoạt động — route riêng, không đụng.)
+        abort(410, 'Tạo booking đã chuyển sang Datasource. Vui lòng mở SCRM để tạo lịch — sbooking không nhận form tạo mới nữa.');
 
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],

@@ -2,6 +2,15 @@
 
 Format: mỗi lần chốt tạo 1 block `## vX.Y.Z — YYYY-MM-DD` + bullets. Mới nhất ở trên cùng.
 
+## v0.16.1 — 2026-09-04
+
+- **CHẶN tạo booking trực tiếp bên sbooking** — mọi lịch mới phải qua Datasource để lead/KPI/report đồng bộ.
+  - `create` + `createDichVu` render trang info "Chuyển sang Datasource" + CTA link `AppSetting::scrm_url`.
+  - `store` + `storeDichVu` abort 410 (defense-in-depth với form cache/duplicate submit).
+  - Redirect root cho vai trò `nhan_vien` + AuthController sau login → về `/danh-sach` thay vì trang tạo.
+  - API `POST /api/bookings` (datasource push) KHÔNG đụng — route riêng.
+  - Luồng `/dat-lich-tu-van` (LichHen) chưa chặn — tư vấn là model riêng.
+
 ## v0.16.0 — 2026-09-04
 
 - **Rename URL đặt lịch** cho đồng bộ với `/dat-lich-dich-vu`:

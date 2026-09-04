@@ -26,8 +26,9 @@ Route::get('/', function () {
     if (in_array($ma, ['bac_si', 'bac_si_tu_van'], true)) {
         return redirect("/{$cs->slug}/lich-tu-van");
     }
+    // 2026-09-04: /dat-lich-tham-kham đã chặn (chuyển tạo booking sang Datasource) → về danh sách.
     if ($ma === 'nhan_vien') {
-        return redirect("/{$cs->slug}/dat-lich-tham-kham");
+        return redirect("/{$cs->slug}/danh-sach");
     }
     return redirect("/{$cs->slug}/lich-hen");
 });
