@@ -536,7 +536,7 @@
 <span class="material-symbols-outlined text-[40px] opacity-50">{{ $approvalMode ? 'task_alt' : 'event_busy' }}</span>
 <p class="text-body-md">{{ $approvalMode ? 'Không còn đơn nào đang chờ duyệt.' : 'Chưa có lịch hẹn nào khớp bộ lọc.' }}</p>
 @unless ($approvalMode)
-<a href="/{{ $coSo->slug }}/tao-moi" class="mt-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg font-semibold text-body-sm">+ Đặt lịch phòng khám</a>
+<a href="/{{ $coSo->slug }}/dat-lich-tham-kham" class="mt-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg font-semibold text-body-sm">+ Đặt lịch phòng khám</a>
 @endunless
 </div>
 </td>
@@ -562,7 +562,7 @@ Không có kết quả
 <!-- Floating Action Button — 2026-08-10: ẩn với sale (HC/SHC/CM/DM), chỉ Admin/Lễ tân được tạo mới. -->
 @php $__saleHideCreate = in_array(auth()->user()?->chuc_danh, ['HC', 'SHC', 'CM', 'DM'], true) && ! (bool) auth()->user()?->is_admin; @endphp
 @if (! $__saleHideCreate)
-<a href="/{{ $coSo->slug }}/tao-moi" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50 group">
+<a href="/{{ $coSo->slug }}/dat-lich-tham-kham" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50 group">
 <span class="material-symbols-outlined text-[28px]">add</span>
 <span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Thêm lịch hẹn mới</span>
 </a>

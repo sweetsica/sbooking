@@ -52,7 +52,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=ngay" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
 <a href="/{{ $coSo->slug }}/bac-si?ngay={{ $date->format('Y-m-d') }}&view=thang" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
 </div>
-<a href="/{{ $coSo->slug }}/tao-moi" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
+<a href="/{{ $coSo->slug }}/dat-lich-tham-kham" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
 <span>Tạo Booking</span>
 </a>

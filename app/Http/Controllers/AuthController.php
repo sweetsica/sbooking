@@ -115,7 +115,7 @@ class AuthController extends Controller
 
         // Nhân viên → trang tạo booking
         if ($vaiTroMa === 'nhan_vien') {
-            return "/{$coSo->slug}/tao-moi";
+            return "/{$coSo->slug}/dat-lich-tham-kham";
         }
 
         return "/{$coSo->slug}/lich-hen";

@@ -65,7 +65,7 @@ class RoleAccessTest extends TestCase
     public function test_D1_admin_tao_booking_ok(): void
     {
         $this->actingAs($this->admin)
-            ->get("/{$this->coSo->slug}/tao-moi")
+            ->get("/{$this->coSo->slug}/dat-lich-tham-kham")
             ->assertOk();
     }
 
@@ -97,7 +97,7 @@ class RoleAccessTest extends TestCase
     public function test_D2_van_hanh_tao_booking_ok(): void
     {
         $this->actingAs($this->vanHanh)
-            ->get("/{$this->coSo->slug}/tao-moi")
+            ->get("/{$this->coSo->slug}/dat-lich-tham-kham")
             ->assertOk();
     }
 
@@ -150,7 +150,7 @@ class RoleAccessTest extends TestCase
     {
         // có them_booking
         $this->actingAs($this->tuVanVien)
-            ->get("/{$this->coSo->slug}/tao-moi")
+            ->get("/{$this->coSo->slug}/dat-lich-tham-kham")
             ->assertOk();
     }
 
@@ -185,7 +185,7 @@ class RoleAccessTest extends TestCase
     {
         // bac_si không có them_booking (chỉ là noPerm wrapper)
         $this->actingAs($this->bacSiUser)
-            ->get("/{$this->coSo->slug}/tao-moi")
+            ->get("/{$this->coSo->slug}/dat-lich-tham-kham")
             ->assertForbidden();
     }
 
@@ -216,7 +216,7 @@ class RoleAccessTest extends TestCase
     public function test_D5_ktv_tao_booking_403(): void
     {
         $this->actingAs($this->ktv)
-            ->get("/{$this->coSo->slug}/tao-moi")
+            ->get("/{$this->coSo->slug}/dat-lich-tham-kham")
             ->assertForbidden();
     }
 
@@ -251,8 +251,8 @@ class RoleAccessTest extends TestCase
 
     public function test_D6_guest_tao_moi_redirect_login(): void
     {
-        // Sau fix #5: /tao-moi nay ở trong nhóm auth middleware → guest 302 → /login
-        $this->get("/{$this->coSo->slug}/tao-moi")
+        // Sau fix #5: /dat-lich-tham-kham nay ở trong nhóm auth middleware → guest 302 → /login
+        $this->get("/{$this->coSo->slug}/dat-lich-tham-kham")
             ->assertRedirect('/login');
     }
 

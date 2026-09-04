@@ -178,7 +178,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <div class="flex flex-col items-center gap-2 text-on-surface-variant">
 <span class="material-symbols-outlined text-[40px] opacity-50">event_busy</span>
 <p class="text-body-md">Chưa có lịch tư vấn nào khớp bộ lọc.</p>
-<a href="/{{ $coSo->slug }}/dat-kham" class="mt-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg font-semibold text-body-sm">+ Tạo lịch tư vấn</a>
+<a href="/{{ $coSo->slug }}/dat-lich-tu-van" class="mt-2 px-4 py-2 bg-secondary-container text-on-secondary-container rounded-lg font-semibold text-body-sm">+ Tạo lịch tư vấn</a>
 </div>
 </td>
 </tr>
@@ -200,7 +200,7 @@ Không có kết quả
 </div>
 </main>
 
-<a href="/{{ $coSo->slug }}/dat-kham" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50 group">
+<a href="/{{ $coSo->slug }}/dat-lich-tu-van" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50 group">
 <span class="material-symbols-outlined text-[28px]">add</span>
 <span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Thêm lịch tư vấn</span>
 </a>

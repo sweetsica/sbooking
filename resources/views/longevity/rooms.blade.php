@@ -42,7 +42,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <span class="material-symbols-outlined text-[20px]">filter_list</span>
 <span>Lọc</span>
 </button>
-<a href="/{{ $coSo->slug }}/tao-moi" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
+<a href="/{{ $coSo->slug }}/dat-lich-tham-kham" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
 <span>Tạo booking</span>
 </a>

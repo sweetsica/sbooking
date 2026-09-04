@@ -47,7 +47,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <span class="material-symbols-outlined text-[20px]">filter_list</span>
 <span>Xem</span>
 </button>
-<a href="/{{ $coSo->slug }}/dat-kham" class="col-span-2 sm:col-auto sm:ml-auto h-[42px] w-full sm:w-auto px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
+<a href="/{{ $coSo->slug }}/dat-lich-tu-van" class="col-span-2 sm:col-auto sm:ml-auto h-[42px] w-full sm:w-auto px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
 <span class="material-symbols-outlined text-[20px]">add</span>
 <span>Tạo Booking</span>
 </a>
@@ -176,7 +176,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 </div>
 </main>
 
-<a href="/{{ $coSo->slug }}/dat-kham" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50 group">
+<a href="/{{ $coSo->slug }}/dat-lich-tu-van" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg hover:scale-105 active:scale-95 transition-all flex items-center justify-center z-50 group">
 <span class="material-symbols-outlined text-[28px]">add</span>
 <span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Tạo lịch tư vấn</span>
 </a>

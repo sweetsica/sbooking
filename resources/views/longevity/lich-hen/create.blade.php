@@ -44,7 +44,7 @@ body { background-color: #f7f9fb; }
 @endif
 
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden mb-12">
-<form class="p-8" id="lichhen-form" method="POST" action="{{ $editing ? '/'.$coSo->slug.'/sua-tu-van/'.$lh->id : '/'.$coSo->slug.'/dat-kham' }}">
+<form class="p-8" id="lichhen-form" method="POST" action="{{ $editing ? '/'.$coSo->slug.'/sua-tu-van/'.$lh->id : '/'.$coSo->slug.'/dat-lich-tu-van' }}">
 @csrf
 @if ($editing) @method('PUT') @endif
 <div class="mb-10 grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -166,7 +166,7 @@ body { background-color: #f7f9fb; }
         let data = { slots: [] };
         if (bacSi && bacSi.value) {
             try {
-                const r = await fetch(`/${slug}/dat-kham/ca-kham?bac_si_id=${bacSi.value}&ngay=${encodeURIComponent(ngay ? ngay.value : '')}${editId ? `&except=${editId}` : ''}`);
+                const r = await fetch(`/${slug}/dat-lich-tu-van/ca-kham?bac_si_id=${bacSi.value}&ngay=${encodeURIComponent(ngay ? ngay.value : '')}${editId ? `&except=${editId}` : ''}`);
                 data = await r.json();
             } catch (e) {}
         }
@@ -196,7 +196,7 @@ body { background-color: #f7f9fb; }
         if (v.length < 6) { sdtMsg.classList.add('hidden'); return; }
         timer = setTimeout(async () => {
             try {
-                const r = await fetch(`/${slug}/dat-kham/check-sdt?sdt=${encodeURIComponent(v)}`);
+                const r = await fetch(`/${slug}/dat-lich-tu-van/check-sdt?sdt=${encodeURIComponent(v)}`);
                 const j = await r.json();
                 if (j.ton_tai) {
                     sdtMsg.textContent = '*đã tồn tại số điện thoại' + (j.ho_ten ? ' (' + j.ho_ten + ')' : '');

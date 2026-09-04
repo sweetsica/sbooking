@@ -27,7 +27,7 @@ Route::get('/', function () {
         return redirect("/{$cs->slug}/lich-tu-van");
     }
     if ($ma === 'nhan_vien') {
-        return redirect("/{$cs->slug}/tao-moi");
+        return redirect("/{$cs->slug}/dat-lich-tham-kham");
     }
     return redirect("/{$cs->slug}/lich-hen");
 });
@@ -184,22 +184,24 @@ Route::prefix('{co_so:slug}')->group(function () {
 
     // ----- CẦN ĐĂNG NHẬP -----
     Route::middleware('auth')->group(function () {
-        // Form tạo đặt phòng / lịch tư vấn — nhân viên đặt hộ khách (sale_id required).
-        Route::get('/tao-moi',           [BookingController::class, 'create'])->name('booking.create');
-        Route::post('/tao-moi',          [BookingController::class, 'store'])->name('booking.store');
-        Route::get('/tao-moi/khung-gio', [BookingController::class, 'khungGio'])->name('booking.khunggio');
-        Route::get('/tao-moi/check-sdt', [BookingController::class, 'checkPhone'])->name('booking.checksdt');
-        Route::get('/tao-moi/check-ktv', [BookingController::class, 'checkKtv'])->name('booking.checkktv');
-        Route::get('/tao-moi/check-bac-si', [BookingController::class, 'checkBacSi'])->name('booking.checkbs');
+        // Form tạo đặt phòng khám — nhân viên đặt hộ khách (sale_id required).
+        // 2026-09-04: rename /tao-moi → /dat-lich-tham-kham cho đồng bộ với /dat-lich-dich-vu, /dat-lich-tu-van.
+        Route::get('/dat-lich-tham-kham',           [BookingController::class, 'create'])->name('booking.create');
+        Route::post('/dat-lich-tham-kham',          [BookingController::class, 'store'])->name('booking.store');
+        Route::get('/dat-lich-tham-kham/khung-gio', [BookingController::class, 'khungGio'])->name('booking.khunggio');
+        Route::get('/dat-lich-tham-kham/check-sdt', [BookingController::class, 'checkPhone'])->name('booking.checksdt');
+        Route::get('/dat-lich-tham-kham/check-ktv', [BookingController::class, 'checkKtv'])->name('booking.checkktv');
+        Route::get('/dat-lich-tham-kham/check-bac-si', [BookingController::class, 'checkBacSi'])->name('booking.checkbs');
 
         // Đặt lịch dịch vụ (chỉ phòng + KTV, không có BS)
         Route::get('/dat-lich-dich-vu',  [BookingController::class, 'createDichVu'])->name('booking.dichvu.create');
         Route::post('/dat-lich-dich-vu', [BookingController::class, 'storeDichVu'])->name('booking.dichvu.store');
 
-        Route::get('/dat-kham',            [LichHenController::class, 'create'])->name('lichhen.create');
-        Route::post('/dat-kham',           [LichHenController::class, 'store'])->name('lichhen.store');
-        Route::get('/dat-kham/ca-kham',    [LichHenController::class, 'caKham'])->name('lichhen.cakham');
-        Route::get('/dat-kham/check-sdt',  [LichHenController::class, 'checkPhone'])->name('lichhen.checksdt');
+        // 2026-09-04: rename /dat-kham → /dat-lich-tu-van (đồng bộ).
+        Route::get('/dat-lich-tu-van',            [LichHenController::class, 'create'])->name('lichhen.create');
+        Route::post('/dat-lich-tu-van',           [LichHenController::class, 'store'])->name('lichhen.store');
+        Route::get('/dat-lich-tu-van/ca-kham',    [LichHenController::class, 'caKham'])->name('lichhen.cakham');
+        Route::get('/dat-lich-tu-van/check-sdt',  [LichHenController::class, 'checkPhone'])->name('lichhen.checksdt');
 
         Route::get('/phong',     [PageController::class, 'rooms'])->name('phong');
         // 2026-08-04 (SCRM T10): /lich-hen giờ = dashboard 4 widget + list. Timeline gantt cũ dời sang /lich-hen/timeline.

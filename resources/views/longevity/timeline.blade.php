@@ -167,7 +167,7 @@
 <div class="col-span-2 sm:col-auto flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto sm:ml-auto">
 <!-- Chuyển Ngày ↔ Tháng -->
 <div class="flex bg-surface-container-low rounded-lg p-1 h-[42px]">
-@php $kieuQS = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '&kieu=dich_vu' : ''; $createUrl = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/tao-moi'; $createLabel = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? 'Đặt lịch dịch vụ' : 'Đặt lịch phòng khám'; @endphp
+@php $kieuQS = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '&kieu=dich_vu' : ''; $createUrl = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/dat-lich-tham-kham'; $createLabel = ($kieu ?? 'phong_kham') === 'phong_dich_vu' ? 'Đặt lịch dịch vụ' : 'Đặt lịch phòng khám'; @endphp
 <a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=ngay{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
 <a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=thang{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
 </div>

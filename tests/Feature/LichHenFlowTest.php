@@ -67,7 +67,7 @@ class LichHenFlowTest extends TestCase
     public function test_C1_1_validation_required(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/dat-kham", [])
+            ->post("/{$this->coSo->slug}/dat-lich-tu-van", [])
             ->assertSessionHasErrors(['ho_ten', 'so_dien_thoai', 'bac_si_id', 'ca_kham_id', 'sale_id']);
     }
 
@@ -76,7 +76,7 @@ class LichHenFlowTest extends TestCase
         $this->makeLichHen();
 
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/dat-kham", $this->lichHenPayload(['so_dien_thoai' => '0944444444']))
+            ->post("/{$this->coSo->slug}/dat-lich-tu-van", $this->lichHenPayload(['so_dien_thoai' => '0944444444']))
             ->assertSessionHasErrors(['ca_kham_id']);
 
         $this->assertSame(1, LichHen::count());
@@ -85,7 +85,7 @@ class LichHenFlowTest extends TestCase
     public function test_C1_5_tao_thanh_cong(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/dat-kham", $this->lichHenPayload())
+            ->post("/{$this->coSo->slug}/dat-lich-tu-van", $this->lichHenPayload())
             ->assertRedirect("/{$this->coSo->slug}/ds-tu-van");
 
         $lh = LichHen::first();
@@ -96,7 +96,7 @@ class LichHenFlowTest extends TestCase
     {
         $this->makeLichHen();
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/dat-kham", $this->lichHenPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tu-van", $this->lichHenPayload([
                 'ngay_hen' => now()->addDays(2)->toDateString(),
                 'so_dien_thoai' => '0944444444',
             ]));
@@ -106,14 +106,14 @@ class LichHenFlowTest extends TestCase
 
     public function test_C1_guest_redirect_login(): void
     {
-        $this->post("/{$this->coSo->slug}/dat-kham", $this->lichHenPayload())
+        $this->post("/{$this->coSo->slug}/dat-lich-tu-van", $this->lichHenPayload())
             ->assertRedirect('/login');
     }
 
     public function test_C1_ngay_qua_khu_bi_chan(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/dat-kham", $this->lichHenPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tu-van", $this->lichHenPayload([
                 'ngay_hen' => now()->subDay()->toDateString(),
             ]))
             ->assertSessionHasErrors(['ngay_hen']);

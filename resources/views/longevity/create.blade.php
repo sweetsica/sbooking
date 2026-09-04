@@ -144,7 +144,7 @@
 <!-- Main Form Card -->
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl shadow-sm overflow-hidden mb-12">
 @php $isDichVu = ($loaiDatLich ?? 'kham_ls') === 'dich_vu'; @endphp
-<form class="p-8" id="booking-form" method="POST" action="{{ $editing ? '/'.$coSo->slug.'/sua-dat-phong/'.$bk->id : ($isDichVu ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/tao-moi') }}">
+<form class="p-8" id="booking-form" method="POST" action="{{ $editing ? '/'.$coSo->slug.'/sua-dat-phong/'.$bk->id : ($isDichVu ? '/'.$coSo->slug.'/dat-lich-dich-vu' : '/'.$coSo->slug.'/dat-lich-tham-kham') }}">
 <input type="hidden" name="loai_dat_lich" value="{{ $isDichVu ? 'dich_vu' : ($loaiDatLich ?? 'kham_ls') }}"/>
 @csrf
 @if ($editing) @method('PUT') @endif
@@ -158,7 +158,7 @@
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Địa điểm <span class="text-error">*</span></label>
 <select id="co-so-selector" @if($editing) disabled @endif
-    onchange="if(this.value && this.value!=='{{ $coSo->slug }}') { window.location.href='/'+this.value+'{{ $isDichVu ? '/dat-lich-dich-vu' : '/tao-moi' }}'; }"
+    onchange="if(this.value && this.value!=='{{ $coSo->slug }}') { window.location.href='/'+this.value+'{{ $isDichVu ? '/dat-lich-dich-vu' : '/dat-lich-tham-kham' }}'; }"
     class="w-full px-4 py-2.5 bg-surface border border-outline rounded-lg form-input-focus transition-all text-body-md @if($editing) opacity-70 cursor-not-allowed @endif">
     @foreach ($allCoSos as $cs)
         <option value="{{ $cs->slug }}" @selected($cs->slug === $coSo->slug)>{{ $cs->ten }}</option>
@@ -499,7 +499,7 @@
             if (editId) params.append('except', editId);
             if (dvEl && dvEl.value) params.append('dich_vu_id', dvEl.value);
             try {
-                const r = await fetch(`/${slug}/tao-moi/khung-gio?${params}`);
+                const r = await fetch(`/${slug}/dat-lich-tham-kham/khung-gio?${params}`);
                 data = await r.json();
             } catch (e) {}
         }
@@ -670,7 +670,7 @@
         if (bsHint) bsHint.textContent = '(đang kiểm tra…)';
 
         try {
-            const r = await fetch(`/${slug}/tao-moi/check-bac-si?${params}`, { signal: bsAbortCtl.signal });
+            const r = await fetch(`/${slug}/dat-lich-tham-kham/check-bac-si?${params}`, { signal: bsAbortCtl.signal });
             const j = await r.json();
             const list = j.list || [];
             bsCoLich = j.co_lich !== false;
@@ -733,7 +733,7 @@
         if (ktvAbortCtl) ktvAbortCtl.abort();
         ktvAbortCtl = new AbortController();
         try {
-            const r = await fetch(`/${slug}/tao-moi/check-ktv?${params}`, { signal: ktvAbortCtl.signal });
+            const r = await fetch(`/${slug}/dat-lich-tham-kham/check-ktv?${params}`, { signal: ktvAbortCtl.signal });
             const j = await r.json();
             const list = j.list || [];
             ktvCoLich = j.co_lich !== false;
@@ -766,7 +766,7 @@
         if (v.length < 6) { sdtMsg.classList.add('hidden'); return; }
         timer = setTimeout(async () => {
             try {
-                const r = await fetch(`/{{ $coSo->slug }}/tao-moi/check-sdt?sdt=${encodeURIComponent(v)}`);
+                const r = await fetch(`/{{ $coSo->slug }}/dat-lich-tham-kham/check-sdt?sdt=${encodeURIComponent(v)}`);
                 const j = await r.json();
                 if (j.ton_tai) {
                     sdtMsg.textContent = '*đã tồn tại số điện thoại' + (j.ho_ten ? ' (' + j.ho_ten + ')' : '');

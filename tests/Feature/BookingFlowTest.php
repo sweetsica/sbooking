@@ -21,7 +21,7 @@ class BookingFlowTest extends TestCase
     public function test_A1_1_khach_dat_thanh_cong(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload())
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload())
             ->assertRedirect("/{$this->coSo->slug}/danh-sach")
             ->assertSessionHas('ok');
 
@@ -34,10 +34,10 @@ class BookingFlowTest extends TestCase
     public function test_A1_6_khach_cu_reuse_va_doi_ten(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['ho_ten' => 'Nguyễn A', 'so_dien_thoai' => '0900000001']));
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload(['ho_ten' => 'Nguyễn A', 'so_dien_thoai' => '0900000001']));
 
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'ho_ten' => 'Nguyễn A Đổi', 'so_dien_thoai' => '0900000001',
                 'khung_gio_id' => $this->khung10->id, 'gio_thuc_hien' => '10:00', 'gio_ket_thuc' => '11:00',
             ]));
@@ -50,12 +50,12 @@ class BookingFlowTest extends TestCase
     public function test_A3_2_phong_slot2_full_thi_block(): void
     {
         $payload = $this->bookingPayload();
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $payload + ['so_dien_thoai' => '0900000010']);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $payload + ['so_dien_thoai' => '0900000011']);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $payload + ['so_dien_thoai' => '0900000010']);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $payload + ['so_dien_thoai' => '0900000011']);
 
         // booking #3 cùng khung phải bị chặn
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $payload + ['so_dien_thoai' => '0900000012'])
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $payload + ['so_dien_thoai' => '0900000012'])
             ->assertSessionHasErrors(['khung_gio_id']);
 
         $this->assertSame(2, Booking::count());
@@ -64,9 +64,9 @@ class BookingFlowTest extends TestCase
     public function test_A3_3_phong_slot1_full_thi_block(): void
     {
         $p = $this->bookingPayload(['phong_id' => $this->phongSlot1->id, 'khung_gio_id' => $this->khung9_p1->id]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p + ['so_dien_thoai' => '0900000020']);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p + ['so_dien_thoai' => '0900000020']);
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $p + ['so_dien_thoai' => '0900000021'])
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p + ['so_dien_thoai' => '0900000021'])
             ->assertSessionHasErrors(['khung_gio_id']);
 
         $this->assertSame(1, Booking::count());
@@ -75,8 +75,8 @@ class BookingFlowTest extends TestCase
     public function test_A3_4_khac_ngay_khong_block(): void
     {
         $p = $this->bookingPayload(['phong_id' => $this->phongSlot1->id, 'khung_gio_id' => $this->khung9_p1->id]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0900000020']));
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, [
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0900000020']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, [
             'so_dien_thoai' => '0900000021',
             'ngay_dat' => now()->addDays(2)->toDateString(),
         ]));
@@ -88,7 +88,7 @@ class BookingFlowTest extends TestCase
     public function test_A4_1_trung_bs_co_warning_van_luu(): void
     {
         $p1 = $this->bookingPayload(['bac_si_id' => $this->bacSi->id]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p1 + ['so_dien_thoai' => '0900000030']);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p1 + ['so_dien_thoai' => '0900000030']);
 
         // booking 2 ở phòng B cùng giờ với BS Z
         $p2 = $this->bookingPayload([
@@ -97,7 +97,7 @@ class BookingFlowTest extends TestCase
             'bac_si_id' => $this->bacSi->id,
             'so_dien_thoai' => '0900000031',
         ]);
-        $resp = $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p2);
+        $resp = $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p2);
         $resp->assertRedirect("/{$this->coSo->slug}/danh-sach")->assertSessionHas('warning');
 
         $this->assertSame(2, Booking::count());
@@ -109,7 +109,7 @@ class BookingFlowTest extends TestCase
             'bac_si_id' => $this->bacSi->id,
             'gio_thuc_hien' => '09:00', 'gio_ket_thuc' => '10:00',
         ]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p1 + ['so_dien_thoai' => '0900000040']);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p1 + ['so_dien_thoai' => '0900000040']);
 
         $p2 = $this->bookingPayload([
             'phong_id' => $this->phongSlot1->id, 'khung_gio_id' => $this->khung9_p1->id,
@@ -117,7 +117,7 @@ class BookingFlowTest extends TestCase
             'gio_thuc_hien' => '10:00', 'gio_ket_thuc' => '11:00',
             'so_dien_thoai' => '0900000041',
         ]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p2);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p2);
 
         // session('warning') có thể null/undefined - kiểm tra không có hoặc null
         $warning = session('warning');
@@ -128,14 +128,14 @@ class BookingFlowTest extends TestCase
     public function test_A5_1_trung_ktv_bi_chan(): void
     {
         $p1 = $this->bookingPayload(['ktv_user_id' => $this->ktv->id]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p1 + ['so_dien_thoai' => '0900000050']);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p1 + ['so_dien_thoai' => '0900000050']);
 
         // KTV X có lịch khung_gio=9 ngày X → đặt cùng khung_gio_id (vẫn check theo khung_gio_id)
         $p2 = $this->bookingPayload([
             'ktv_user_id' => $this->ktv->id,
             'so_dien_thoai' => '0900000051',
         ]);
-        $resp = $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p2);
+        $resp = $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p2);
         $resp->assertSessionHasErrors(['ktv_user_id']);
 
         $this->assertSame(1, Booking::count());
@@ -144,14 +144,14 @@ class BookingFlowTest extends TestCase
     public function test_A5_2_ktv_khac_ngay_ok(): void
     {
         $p1 = $this->bookingPayload(['ktv_user_id' => $this->ktv->id]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p1 + ['so_dien_thoai' => '0900000060']);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p1 + ['so_dien_thoai' => '0900000060']);
 
         $p2 = $this->bookingPayload([
             'ktv_user_id' => $this->ktv->id,
             'ngay_dat' => now()->addDays(2)->toDateString(),
             'so_dien_thoai' => '0900000061',
         ]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p2);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p2);
 
         $this->assertSame(2, Booking::count());
     }
@@ -160,7 +160,7 @@ class BookingFlowTest extends TestCase
     public function test_A7_1_required_fields(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", [])
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", [])
             ->assertSessionHasErrors(['ho_ten', 'so_dien_thoai', 'phong_id', 'khung_gio_id', 'dich_vu_id', 'sale_id']);
     }
 
@@ -168,7 +168,7 @@ class BookingFlowTest extends TestCase
     {
         // Sai format HH:MM bị reject
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['gio_thuc_hien' => '9-15']))
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload(['gio_thuc_hien' => '9-15']))
             ->assertSessionHasErrors(['gio_thuc_hien']);
     }
 
@@ -176,7 +176,7 @@ class BookingFlowTest extends TestCase
     {
         // Khung 09:00-10:00, đặt giờ thực hiện 08:30 → chặn
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'gio_thuc_hien' => '08:30', 'gio_ket_thuc' => '09:30',
             ]))
             ->assertSessionHasErrors(['gio_thuc_hien']);
@@ -186,7 +186,7 @@ class BookingFlowTest extends TestCase
     {
         // Khung 09:00-10:00, kết thúc 10:30 → chặn
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'gio_thuc_hien' => '09:00', 'gio_ket_thuc' => '10:30',
             ]))
             ->assertSessionHasErrors(['gio_ket_thuc']);
@@ -196,7 +196,7 @@ class BookingFlowTest extends TestCase
     {
         // 09:30 → 09:00 (ngược) → chặn
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'gio_thuc_hien' => '09:30', 'gio_ket_thuc' => '09:00',
             ]))
             ->assertSessionHasErrors(['gio_ket_thuc']);
@@ -206,7 +206,7 @@ class BookingFlowTest extends TestCase
     {
         // Phút bất kỳ HH:MM (vd 25) phải chấp nhận để hỗ trợ BS có phút riêng (Bác Hồng 25p)
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'gio_thuc_hien' => '09:00',
                 'gio_ket_thuc' => '09:25',
             ]))
@@ -216,7 +216,7 @@ class BookingFlowTest extends TestCase
     public function test_A7_4_sdt_co_space_duoc_trim(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['so_dien_thoai' => '0912 345 678']));
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload(['so_dien_thoai' => '0912 345 678']));
 
         $kh = KhachHang::first();
         $this->assertSame('0912345678', $kh->so_dien_thoai);
@@ -229,7 +229,7 @@ class BookingFlowTest extends TestCase
             'loai' => 'cong_dong', 'so_slot_toi_da' => 1, 'trang_thai' => 'hoat_dong',
         ]);
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['phong_id' => $phongCs2->id]))
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload(['phong_id' => $phongCs2->id]))
             ->assertSessionHasErrors(['phong_id']);
     }
 
@@ -237,7 +237,7 @@ class BookingFlowTest extends TestCase
     public function test_A2_5_ngay_qua_khu_bi_chan(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['ngay_dat' => now()->subDay()->toDateString()]))
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload(['ngay_dat' => now()->subDay()->toDateString()]))
             ->assertSessionHasErrors(['ngay_dat']);
     }
 
@@ -246,7 +246,7 @@ class BookingFlowTest extends TestCase
     {
         // BK1: phòng A, khung 09:00 (09:00-10:00), KTV X
         $p1 = $this->bookingPayload(['ktv_user_id' => $this->ktv->id]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $p1);
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p1);
 
         // BK2: phòng B (slot=1), khung 09:00 phòng B (09:00-10:00), CÙNG KTV X
         $p2 = $this->bookingPayload([
@@ -256,7 +256,7 @@ class BookingFlowTest extends TestCase
             'so_dien_thoai' => '0900000099',
         ]);
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $p2)
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $p2)
             ->assertSessionHasErrors(['ktv_user_id']);
     }
 
@@ -278,12 +278,12 @@ class BookingFlowTest extends TestCase
             'bac_si_id' => $this->bsCaHai->id,
             'dich_vu_id' => $this->dichVuTuVan->id,
         ]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000001']));
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000002']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0930000001']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0930000002']));
 
         // booking #3 cùng khung + BS → vượt 60p, bị chặn
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000003']))
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0930000003']))
             ->assertSessionHasErrors(['bac_si_id']);
 
         $this->assertSame(2, Booking::count());
@@ -298,11 +298,11 @@ class BookingFlowTest extends TestCase
             'dich_vu_id' => $this->dichVuKhamLs->id,
         ]);
         for ($i = 1; $i <= 12; $i++) {
-            $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '09300000'.sprintf('%02d', $i)]));
+            $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '09300000'.sprintf('%02d', $i)]));
         }
         // booking #13 → 12×5=60 đã full
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0930000099']))
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0930000099']))
             ->assertSessionHasErrors(['bac_si_id']);
 
         $this->assertSame(12, Booking::count());
@@ -316,12 +316,12 @@ class BookingFlowTest extends TestCase
             'khung_gio_id' => $this->khung9Big->id,
             'bac_si_id' => $this->bsCaHai->id,
         ];
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload($base + [
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload($base + [
             'dich_vu_id' => $this->dichVuTuVan->id,
             'so_dien_thoai' => '0930000010',
         ]));
         for ($i = 1; $i <= 6; $i++) {
-            $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload($base + [
+            $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload($base + [
                 'dich_vu_id' => $this->dichVuKhamLs->id,
                 'so_dien_thoai' => '09300001'.sprintf('%02d', $i),
             ]));
@@ -329,7 +329,7 @@ class BookingFlowTest extends TestCase
         $this->assertSame(7, Booking::count());
 
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload($base + [
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload($base + [
                 'dich_vu_id' => $this->dichVuKhamLs->id,
                 'so_dien_thoai' => '0930000098',
             ]))
@@ -340,7 +340,7 @@ class BookingFlowTest extends TestCase
     {
         // BS chỉ nhận khám LS, nhưng đặt dịch vụ tư vấn → chặn
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'bac_si_id' => $this->bsChiKhamLs->id,
                 'dich_vu_id' => $this->dichVuTuVan->id,
             ]))
@@ -350,7 +350,7 @@ class BookingFlowTest extends TestCase
     public function test_A8_5_bs_khong_nhan_kham_ls_bi_chan(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'bac_si_id' => $this->bsChiTuVan->id,
                 'dich_vu_id' => $this->dichVuKhamLs->id,
             ]))
@@ -366,12 +366,12 @@ class BookingFlowTest extends TestCase
             'bac_si_id' => $this->bsCaHai->id,
             'dich_vu_id' => $this->dichVuTuVan->id,
         ]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0931000001']));
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0931000002']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0931000001']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0931000002']));
 
         // Chuyển sang BS khác (Chỉ Tư Vấn) → OK (capacity tính riêng từng BS)
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'phong_id' => $this->phongBig->id,
                 'khung_gio_id' => $this->khung9Big->id,
                 'bac_si_id' => $this->bsChiTuVan->id,
@@ -398,12 +398,12 @@ class BookingFlowTest extends TestCase
             'bac_si_id' => $bsHong->id,
             'dich_vu_id' => $sieuAm->id,
         ]);
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0932000001']));
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0932000002']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0932000001']));
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0932000002']));
 
         // booking #3 (25p nữa) → 75p > 60 → chặn
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", array_merge($p, ['so_dien_thoai' => '0932000003']))
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", array_merge($p, ['so_dien_thoai' => '0932000003']))
             ->assertSessionHasErrors(['bac_si_id']);
     }
 
@@ -411,7 +411,7 @@ class BookingFlowTest extends TestCase
     public function test_A9_1_bs_global_da_co_lich_co_so_khac_bi_chan(): void
     {
         // bsGlobal đã có lịch tư vấn 30p ở cơ sở 1 khung 09:00-10:00
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
             'phong_id' => $this->phongBig->id,
             'khung_gio_id' => $this->khung9Big->id,
             'bac_si_id' => $this->bsCaHai->id,
@@ -436,7 +436,7 @@ class BookingFlowTest extends TestCase
 
         // Đặt BS Cả Hai (global) tại cơ sở 2 cùng giờ → vượt 60p vì đã dùng 30p cs1
         // 2 booking 30p mỗi cái = 60p, OK. Thêm cái thứ 2 ở cs2 nữa thì 90p > 60 → chặn
-        $this->actingAs($this->admin)->post("/{$this->coSo2->slug}/tao-moi", $this->bookingPayload([
+        $this->actingAs($this->admin)->post("/{$this->coSo2->slug}/dat-lich-tham-kham", $this->bookingPayload([
             'phong_id' => $phongCs2->id,
             'khung_gio_id' => $khungCs2->id,
             'bac_si_id' => $this->bsCaHai->id,
@@ -448,7 +448,7 @@ class BookingFlowTest extends TestCase
 
         // Thêm 1 cái nữa cùng giờ → vượt
         $this->actingAs($this->admin)
-            ->post("/{$this->coSo2->slug}/tao-moi", $this->bookingPayload([
+            ->post("/{$this->coSo2->slug}/dat-lich-tham-kham", $this->bookingPayload([
                 'phong_id' => $phongCs2->id,
                 'khung_gio_id' => $khungCs2->id,
                 'bac_si_id' => $this->bsCaHai->id,
@@ -465,14 +465,14 @@ class BookingFlowTest extends TestCase
     public function test_A9_2_check_bac_si_api(): void
     {
         // bsCaHai có 1 booking 30p ở khung9Big
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
             'phong_id' => $this->phongBig->id,
             'khung_gio_id' => $this->khung9Big->id,
             'bac_si_id' => $this->bsCaHai->id,
             'dich_vu_id' => $this->dichVuTuVan->id,
             'so_dien_thoai' => '0941000001',
         ]));
-        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload([
+        $this->actingAs($this->vanHanh)->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload([
             'phong_id' => $this->phongBig->id,
             'khung_gio_id' => $this->khung9Big->id,
             'bac_si_id' => $this->bsCaHai->id,
@@ -482,7 +482,7 @@ class BookingFlowTest extends TestCase
 
         // API: chọn tu_van, khung 09:00 → bsCaHai đầy, bsChiTuVan còn rảnh
         $resp = $this->actingAs($this->vanHanh)
-            ->getJson("/{$this->coSo->slug}/tao-moi/check-bac-si?phong_id={$this->phongBig->id}&dich_vu_id={$this->dichVuTuVan->id}&ngay=".now()->addDay()->toDateString()."&gio_bat_dau=09:00&gio_ket_thuc=10:00");
+            ->getJson("/{$this->coSo->slug}/dat-lich-tham-kham/check-bac-si?phong_id={$this->phongBig->id}&dich_vu_id={$this->dichVuTuVan->id}&ngay=".now()->addDay()->toDateString()."&gio_bat_dau=09:00&gio_ket_thuc=10:00");
 
         $resp->assertOk();
         $list = collect($resp->json('list'));
@@ -514,7 +514,7 @@ class BookingFlowTest extends TestCase
     public function test_A10_2_dat_lich_phong_kham_van_ok(): void
     {
         $resp = $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload());
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload());
 
         $resp->assertRedirect();
         $bk = Booking::first();
@@ -524,7 +524,7 @@ class BookingFlowTest extends TestCase
     public function test_A10_4_form_kham_chi_show_phong_kham(): void
     {
         $resp = $this->actingAs($this->vanHanh)
-            ->get("/{$this->coSo->slug}/tao-moi");
+            ->get("/{$this->coSo->slug}/dat-lich-tham-kham");
 
         $resp->assertOk();
         $resp->assertSee('Phòng A');
@@ -626,7 +626,7 @@ class BookingFlowTest extends TestCase
     {
         // Đặt phòng khám thiếu sale_id → vẫn báo lỗi
         $resp = $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['sale_id' => null]));
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload(['sale_id' => null]));
 
         $resp->assertSessionHasErrors(['sale_id']);
     }
@@ -642,7 +642,7 @@ class BookingFlowTest extends TestCase
     public function test_A1_2_bs_null_ok(): void
     {
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $this->bookingPayload(['bac_si_id' => null, 'ktv_user_id' => null]))
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $this->bookingPayload(['bac_si_id' => null, 'ktv_user_id' => null]))
             ->assertRedirect();
 
         $this->assertNull(Booking::first()->bac_si_id);

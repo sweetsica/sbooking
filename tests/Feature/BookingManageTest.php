@@ -226,7 +226,7 @@ class BookingManageTest extends TestCase
             'so_dien_thoai' => '0922222222',
         ]);
         $this->actingAs($this->vanHanh)
-            ->post("/{$this->coSo->slug}/tao-moi", $payload)
+            ->post("/{$this->coSo->slug}/dat-lich-tham-kham", $payload)
             ->assertSessionHasNoErrors();
     }
 
