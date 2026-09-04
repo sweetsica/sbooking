@@ -33,7 +33,7 @@ class DnDichVuSeeder extends Seeder
                 'ten'        => $phongTen,
                 'kieu_phong'     => 'phong_kham',
                 'so_slot_toi_da' => 1,
-                'active'     => 1,
+                'trang_thai'     => 'hoat_dong',
                 'created_at' => $now,
                 'updated_at' => $now,
             ]);
