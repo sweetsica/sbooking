@@ -68,6 +68,23 @@ class UserController extends BaseV1Controller
         return $this->ok($user->fresh());
     }
 
+    /**
+     * POST /api/v1/users/{id}/toggle-busy — Phase 6.26.c (2026-09-04).
+     * SCRM push flip users.dung_nhan_lead khi sale toggle busy bên data source.
+     * Body: { dung_nhan_lead: bool }. Idempotent.
+     */
+    public function toggleBusy(Request $req, User $user): JsonResponse
+    {
+        $data = $req->validate([
+            'dung_nhan_lead' => ['required', 'boolean'],
+        ]);
+        $user->update(['dung_nhan_lead' => (bool) $data['dung_nhan_lead']]);
+        return response()->json([
+            'id' => $user->id,
+            'dung_nhan_lead' => (bool) $user->dung_nhan_lead,
+        ]);
+    }
+
     private function validated(Request $req, ?int $ignoreId = null): array
     {
         return $req->validate([

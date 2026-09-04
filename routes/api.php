@@ -40,6 +40,8 @@ Route::middleware('scrm.token')->group(function () {
 Route::prefix('v1')->middleware(['scrm.token', 'throttle:api-v1', 'api.audit'])->group(function () {
     Route::apiResource('users',     \App\Http\Controllers\Api\V1\UserController::class);
     Route::patch('users/{user}/move', [\App\Http\Controllers\Api\V1\UserController::class, 'move']);
+    // Phase 6.26.c (2026-09-04) — SCRM sync trạng thái busy khi sale toggle bên data source.
+    Route::post('users/{user}/toggle-busy', [\App\Http\Controllers\Api\V1\UserController::class, 'toggleBusy']);
 
     Route::apiResource('phong-ban', \App\Http\Controllers\Api\V1\PhongBanController::class)
         ->parameters(['phong-ban' => 'phong_ban']);

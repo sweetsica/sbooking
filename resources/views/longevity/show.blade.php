@@ -235,6 +235,11 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
         @elseif ($booking->sale)
             <span class="ml-1 text-[11px] text-on-surface-variant/60 italic">· CRM phase 3</span>
         @endif
+        {{-- Phase 6.26.c (2026-09-04): badge cảnh báo khi Sale tiếp đón đang bận (dung_nhan_lead=true).
+             Admin thấy để chủ động phân người khác khi khách check-in. --}}
+        @if ($booking->tiepDonUser?->dung_nhan_lead)
+            <span class="ml-1 text-[11px] text-amber-800 bg-amber-100 px-1.5 py-0.5 rounded font-semibold">· Sale hiện đang bận</span>
+        @endif
     </div>
     @if ($booking->tiepDonHoTro)
         <div class="mt-1 text-body-sm">

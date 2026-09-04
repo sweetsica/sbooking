@@ -169,17 +169,14 @@
     $__showDungNhanLead = $__u && ! $__u->is_admin && ! in_array($__u->vaiTro?->ma, $__excludeRoleMa, true);
     $__isPaused = (bool) ($__u->dung_nhan_lead ?? false);
 @endphp
+{{-- 2026-09-04 (Phase 6.26.c): sale toggle busy bên SCRM, sbooking chỉ hiển thị read-only.
+     Route /dung-nhan-lead giữ lại nếu admin cần vào tay, nhưng UI này chuyển thành badge. --}}
 @if ($__showDungNhanLead)
-    <form method="POST" action="/dung-nhan-lead" class="shrink-0"
-          onsubmit="return confirm('{{ $__isPaused ? 'Tiếp đón lại — bạn sẽ quay về vòng chia UPS?' : 'Tạm dừng tiếp đón — tạm loại bạn khỏi vòng chia UPS?' }}');">
-        @csrf
-        <button type="submit"
-                title="{{ $__isPaused ? 'Bạn đang tạm dừng tiếp đón — bấm để tiếp đón lại' : 'Tạm dừng tiếp đón (loại khỏi UPS)' }}"
-                class="px-2.5 py-1.5 rounded-full flex items-center gap-1.5 text-body-sm font-semibold transition-all whitespace-nowrap {{ $__isPaused ? 'bg-slate-200 text-slate-800 hover:bg-slate-300' : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200' }}">
-            <span class="material-symbols-outlined text-[18px]">{{ $__isPaused ? 'pause_circle' : 'notifications_active' }}</span>
-            <span class="hidden lg:inline">{{ $__isPaused ? 'Đang tạm dừng' : 'Đang tiếp đón' }}</span>
-        </button>
-    </form>
+    <span title="Toggle Bận/Nhận đã chuyển sang Data Source (SCRM). Bấm trên trang SCRM để đổi trạng thái."
+          class="px-2.5 py-1.5 rounded-full flex items-center gap-1.5 text-body-sm font-semibold whitespace-nowrap cursor-not-allowed opacity-90 {{ $__isPaused ? 'bg-slate-200 text-slate-800' : 'bg-emerald-100 text-emerald-800' }}">
+        <span class="material-symbols-outlined text-[18px]">{{ $__isPaused ? 'pause_circle' : 'notifications_active' }}</span>
+        <span class="hidden lg:inline">{{ $__isPaused ? 'Đang tạm dừng' : 'Đang tiếp đón' }}</span>
+    </span>
 @endif
 <div class="flex items-center gap-0.5 sm:gap-2 border-l border-outline-variant pl-1 sm:pl-2 xl:pl-4 shrink-0">
 <details class="relative shrink-0" id="thongbao-details">
