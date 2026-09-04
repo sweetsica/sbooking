@@ -690,6 +690,7 @@ class BookingController extends Controller
             return [
                 'id'        => $bs->id,
                 'name'      => $bs->ten_day_du,
+                'chuc_danh' => (string) $bs->chuc_danh,
                 'available' => $fit && ! $busy,
                 'truc'      => $truc->has($bs->id), // có trực phòng+ngày+ca không
                 'nghi'      => $nghiIds->contains($bs->id), // có ngày nghỉ phủ ngày/ca không

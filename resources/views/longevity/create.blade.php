@@ -676,7 +676,7 @@
             bsCoLich = j.co_lich !== false;
             const cur = bacSi.value;
             bacSi.innerHTML = '<option value="">-- Chọn --</option>' + list.map(b =>
-                `<option value="${b.id}" data-truc="${b.truc ? 1 : 0}" data-nghi="${b.nghi ? 1 : 0}" ${b.available ? '' : 'disabled'}>${b.name}${b.available ? '' : ' — (' + (b.reason || 'không khả dụng') + ')'}</option>`
+                `<option value="${b.id}" data-truc="${b.truc ? 1 : 0}" data-nghi="${b.nghi ? 1 : 0}" data-chuc-danh="${(b.chuc_danh || '').replace(/"/g, '&quot;')}" ${b.available ? '' : 'disabled'}>${b.name}${b.available ? '' : ' — (' + (b.reason || 'không khả dụng') + ')'}</option>`
             ).join('');
             if (cur && bacSi.querySelector(`option[value="${cur}"]:not([disabled])`)) bacSi.value = cur;
             if (bsHint) bsHint.textContent = list.length ? '' : '(không có bác sĩ phù hợp)';
@@ -689,12 +689,17 @@
     }
     const hoTro = document.getElementById('ho_tro');
     const oldHoTro = hoTro ? (hoTro.dataset.old || hoTro.value || '') : '';
+    // 2026-09-04 — ưu tiên KTV/DD (loại BS, Y sĩ, GĐCM…) theo prefix chuc_danh.
+    // Fallback: nếu DV không gán KTV/DD nào (pivot rỗng) → cho chọn tất người trong danh sách.
+    const HO_TRO_ALLOW = /^(KTV|Kỹ thuật viên|Điều dưỡng|DD)\b/i;
     function syncHoTro() {
         if (!hoTro || !bacSi) return;
         const chosen = bacSi.value;
         const cur = hoTro.value || oldHoTro;
-        const opts = [...bacSi.options]
-            .filter(o => o.value && o.value !== chosen)
+        const candidates = [...bacSi.options].filter(o => o.value && o.value !== chosen);
+        const ktvDd = candidates.filter(o => HO_TRO_ALLOW.test(o.dataset.chucDanh || ''));
+        const finalList = ktvDd.length ? ktvDd : candidates; // fallback: chưa gán KTV/DD → hiện tất.
+        const opts = finalList
             .map(o => `<option value="${o.value}" ${o.disabled ? 'disabled' : ''}>${o.textContent}</option>`)
             .join('');
         hoTro.innerHTML = '<option value="">-- Không có --</option>' + opts;
