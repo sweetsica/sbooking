@@ -75,9 +75,22 @@
         ];
     @endphp
     <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
+        @php
+            // 2026-09-04: widget link phải carry loai/nhom/ngay/q để đang ở "Lịch tư vấn"
+            // click "Lịch chờ duyệt" không bị nhảy về "Lịch khám" (default kieu_phong).
+            $__widgetCarry = array_filter([
+                'loai' => $loai ?? null,
+                'nhom' => $nhom ?? null,
+                'ngay' => ($ngay ?? '') ?: null,
+                'q'    => ($search ?? '') ?: null,
+            ], fn ($v) => $v !== null && $v !== '');
+        @endphp
         @foreach ($widgets as $w)
-            @php $c = $colorMap[$w['color']]; $active = $tab === $w['key']; @endphp
-            <a href="?tab={{ $w['key'] }}" class="block border-2 rounded-xl p-4 transition-all {{ $c['bg'] }} {{ $active ? $c['ring'].' ring-2 '.$c['border'] : $c['border'].' hover:'.$c['ring'].' hover:ring-2' }}">
+            @php
+                $c = $colorMap[$w['color']]; $active = $tab === $w['key'];
+                $__widgetQs = http_build_query(['tab' => $w['key']] + $__widgetCarry);
+            @endphp
+            <a href="?{{ $__widgetQs }}" class="block border-2 rounded-xl p-4 transition-all {{ $c['bg'] }} {{ $active ? $c['ring'].' ring-2 '.$c['border'] : $c['border'].' hover:'.$c['ring'].' hover:ring-2' }}">
                 <div class="flex items-start justify-between mb-2">
                     <span class="material-symbols-outlined {{ $c['text'] }} opacity-80">{{ $w['icon'] }}</span>
                     @if ($active) <span class="text-[10px] font-bold uppercase {{ $c['text'] }} opacity-70">Đang xem</span> @endif

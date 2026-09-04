@@ -61,12 +61,23 @@ class NotificationLogController extends Controller
         $userIds = $items->getCollection()->pluck('notifiable_id')->unique()->all();
         $users   = User::whereIn('id', $userIds)->get()->keyBy('id');
 
-        // Danh sách event để filter dropdown (distinct từ data)
+        // Danh sách event để filter dropdown (distinct từ data).
+        // 2026-09-04: pluck('data->event') qua query builder trả stdClass với property
+        // literal 'data->event' — vài row data null/thiếu event → "Undefined property".
+        // Fix: extract JSON path an toàn ở tầng PHP, đồng thời tương thích cả 2 kiểu
+        // (data lưu array/JSON string).
         $eventOptions = DatabaseNotification::query()
             ->where('notifiable_type', User::class)
-            ->distinct()
-            ->pluck('data->event')
+            ->whereNotNull('data')
+            ->pluck('data')
+            ->map(function ($d) {
+                if (is_array($d))  return $d['event'] ?? null;
+                if (is_string($d)) return json_decode($d, true)['event'] ?? null;
+                if (is_object($d)) return $d->event ?? null;
+                return null;
+            })
             ->filter()
+            ->unique()
             ->values()
             ->all();
 
