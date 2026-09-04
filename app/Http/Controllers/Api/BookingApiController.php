@@ -413,6 +413,90 @@ class BookingApiController extends Controller
     }
 
     /**
+     * POST /api/bookings/{booking}/trang-thai-khach — Phase 6.26.a (2026-09-04).
+     * SCRM sale tiếp đón đánh trạng thái khách bên data source, push sang sbooking.
+     * Guard: sbooking_user_id phải khớp booking.tiep_don_user_id (hoặc sale_id fallback).
+     * Toggle như UI sbooking: bấm lại đúng trạng thái đang có → clear về null.
+     */
+    public function trangThaiKhach(\App\Models\Booking $booking, Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'trang_thai_khach' => ['nullable', \Illuminate\Validation\Rule::in(['da_toi', 'toi_tre', 'huy'])],
+            'sbooking_user_id' => ['required', 'integer', 'exists:users,id'],
+            'scrm_user_name'   => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $uid = (int) $data['sbooking_user_id'];
+        if ($booking->tiep_don_user_id !== $uid && $booking->sale_id !== $uid) {
+            return response()->json([
+                'error' => 'User không phải sale tiếp đón / sale phụ trách của booking này.',
+            ], 403);
+        }
+
+        $moi = $data['trang_thai_khach'] ?? null;
+        $booking->trang_thai_khach = ($booking->trang_thai_khach === $moi) ? null : $moi;
+        $booking->save();
+
+        Log::info('sbooking.api.trang_thai_khach', [
+            'booking_id' => $booking->id,
+            'trang_thai_khach' => $booking->trang_thai_khach,
+            'actor_sbooking_user_id' => $uid,
+            'actor_scrm_name' => $data['scrm_user_name'] ?? null,
+        ]);
+
+        return response()->json([
+            'id' => $booking->id,
+            'trang_thai_khach' => $booking->trang_thai_khach,
+            'updated_at' => $booking->updated_at,
+        ]);
+    }
+
+    /**
+     * POST /api/bookings/{booking}/trang-thai-tiep-don — Phase 6.26.a (2026-09-04).
+     * SCRM sale tiếp đón bấm "Đang tiếp đón / Hoàn tất" bên data source.
+     * Guard: sbooking_user_id phải khớp booking.tiep_don_user_id (hoặc sale_id).
+     */
+    public function trangThaiTiepDon(\App\Models\Booking $booking, Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'trang_thai_tiep_don' => ['required', \Illuminate\Validation\Rule::in(['dang_tiep_don', 'hoan_tat'])],
+            'sbooking_user_id'    => ['required', 'integer', 'exists:users,id'],
+            'scrm_user_name'      => ['nullable', 'string', 'max:120'],
+        ]);
+
+        $uid = (int) $data['sbooking_user_id'];
+        if ($booking->tiep_don_user_id !== $uid && $booking->sale_id !== $uid) {
+            return response()->json([
+                'error' => 'User không phải sale tiếp đón / sale phụ trách của booking này.',
+            ], 403);
+        }
+
+        $moi = $data['trang_thai_tiep_don'];
+        $updates = ['trang_thai_tiep_don' => $moi];
+        if ($moi === 'dang_tiep_don') {
+            $updates['tiep_don_bat_dau']  = now();
+            $updates['tiep_don_hoan_tat'] = null;
+        } else {
+            $updates['tiep_don_hoan_tat'] = now();
+        }
+        $booking->update($updates);
+
+        Log::info('sbooking.api.trang_thai_tiep_don', [
+            'booking_id' => $booking->id,
+            'trang_thai_tiep_don' => $moi,
+            'actor_sbooking_user_id' => $uid,
+            'actor_scrm_name' => $data['scrm_user_name'] ?? null,
+        ]);
+
+        return response()->json([
+            'id' => $booking->id,
+            'trang_thai_tiep_don' => $moi,
+            'tiep_don_bat_dau'    => $booking->tiep_don_bat_dau,
+            'tiep_don_hoan_tat'   => $booking->tiep_don_hoan_tat,
+        ]);
+    }
+
+    /**
      * DELETE /api/bookings/{booking}
      * Đợt C.3.d (2026-08-25): rollback booking để SCRM handle combo DV 41
      * (Xông + YHPĐ). Nếu push booking 2 fail sau khi booking 1 OK → SCRM

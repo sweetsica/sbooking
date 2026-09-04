@@ -8,6 +8,11 @@
     $ttk = $booking->trang_thai_khach;
     $ttkNhan = ['da_toi' => 'Khách đã tới', 'toi_tre' => 'Khách tới trễ', 'huy' => 'Khách hủy'];
     $done = $booking->trang_thai === 'da_xong';
+    // Phase 6.26.a (2026-09-04): Sale không thao tác 3 hành động (trạng thái khách / tiếp đón / comment)
+    // bên sbooking nữa — làm bên SCRM. Admin vẫn giữ nút để fallback khi SCRM sự cố.
+    $__isSaleRole = in_array(auth()->user()?->chuc_danh, ['HC', 'SHC', 'CM', 'DM'], true)
+        && ! (bool) auth()->user()?->is_admin;
+    $__hideSaleActions = $__isSaleRole;
 @endphp
 <div class="mb-6 rounded-xl bg-surface-container-lowest border border-outline-variant shadow-sm overflow-hidden">
 <div class="flex items-center gap-2 px-5 py-3 border-b border-outline-variant bg-surface-container-low/50">
@@ -34,7 +39,9 @@
         : ['da_toi' => ['Khách đã tới', 'how_to_reg'], 'toi_tre' => ['Khách tới trễ', 'schedule'], 'huy' => ['Khách hủy', 'person_off']];
 @endphp
 {{-- 2026-08-10 — Group 1: nút tiếp tân. Group 2 (sale, ml-auto): "Đang tiếp đón" + "Đã xong". --}}
-<div class="flex flex-wrap items-center gap-2">
+{{-- 2026-08-10 — Group 1: nút tiếp tân. Group 2 (sale, ml-auto): "Đang tiếp đón" + "Đã xong".
+     2026-09-04 (Phase 6.26.a): ẩn 3 nút trạng thái khách nếu là sale — sale làm bên SCRM. --}}
+<div class="flex flex-wrap items-center gap-2" @if ($__hideSaleActions) style="display:none" @endif>
 @foreach ($__ttOptions as $val => $meta)
 <form method="POST" action="/{{ $coSo->slug }}/trang-thai-khach/{{ $booking->id }}"
       onsubmit="return confirm('Xác nhận đổi trạng thái sang: {{ $meta[0] }}?{{ $confirmSuffix }}');">
@@ -62,8 +69,9 @@
         </button>
     </form>
 @endif
-{{-- 2026-08-10 — Nút "Đang tiếp đón / Hoàn tất" hiện cho sale được gán (tiep_don_user_id hoặc sale_id). --}}
-@if ($booking->tiep_don_user_id === auth()->id() || $booking->sale_id === auth()->id())
+{{-- 2026-08-10 — Nút "Đang tiếp đón / Hoàn tất" hiện cho sale được gán (tiep_don_user_id hoặc sale_id).
+     2026-09-04 (Phase 6.26.a): ẩn cho sale — sale bấm bên SCRM. Admin vẫn thấy khi được gán. --}}
+@if (! $__hideSaleActions && ($booking->tiep_don_user_id === auth()->id() || $booking->sale_id === auth()->id()))
     @php $__tdBusy = $booking->trang_thai_tiep_don === 'dang_tiep_don'; @endphp
     <form method="POST" action="/{{ $coSo->slug }}/tiep-don/{{ $booking->id }}"
           onsubmit="return confirm('Xác nhận: {{ $__tdBusy ? 'Hoàn tất tiếp đón' : 'Bắt đầu tiếp đón khách' }}?');">
@@ -112,7 +120,8 @@
 </div>
 
 {{-- Phần 3: ô nhập bình luận --}}
-@if ($canBinhLuan)
+{{-- 2026-09-04 (Phase 6.26.a): sale nhập comment bên SCRM, ẩn ô ở sbooking. Admin giữ. --}}
+@if ($canBinhLuan && ! $__hideSaleActions)
 <form method="POST" action="/{{ $coSo->slug }}/binh-luan/{{ $booking->id }}" class="px-5 py-4 border-t border-outline-variant flex items-end gap-2">
 @csrf
 <textarea name="noi_dung" rows="2" required placeholder="Nhập bình luận / phản ánh của khách..." class="flex-1 px-3 py-2 rounded-lg text-body-md border border-outline-variant bg-surface focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none transition-all resize-none">{{ old('noi_dung') }}</textarea>

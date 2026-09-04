@@ -20,6 +20,9 @@ Route::middleware('scrm.token')->group(function () {
     Route::put('/bookings/{booking}', [BookingApiController::class, 'update']);
     Route::delete('/bookings/{booking}', [BookingApiController::class, 'destroy']);
     Route::post('/bookings/{booking}/comments', [BookingApiController::class, 'comment']);
+    // Phase 6.26.a (2026-09-04): SCRM sale tiếp đón thao tác bên data source, push sang sbooking.
+    Route::post('/bookings/{booking}/trang-thai-khach',    [BookingApiController::class, 'trangThaiKhach']);
+    Route::post('/bookings/{booking}/trang-thai-tiep-don', [BookingApiController::class, 'trangThaiTiepDon']);
     Route::get('/sync/dich-vu', [SyncApiController::class, 'dichVu']);
     Route::get('/sync/dich-vu-phong', [SyncApiController::class, 'dichVuPhong']);
     Route::get('/sync/dich-vu-bac-si', [SyncApiController::class, 'dichVuBacSi']);
