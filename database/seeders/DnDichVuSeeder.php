@@ -235,5 +235,9 @@ class DnDichVuSeeder extends Seeder
         ));
         if ($missingP)  $this->command?->warn('Phòng không có: ' . implode(', ', array_unique($missingP)));
         if ($missingBs) $this->command?->warn('Nhân sự không có (chạy BacSiKtvDdSeeder trước?): ' . implode(', ', array_unique($missingBs)));
+
+        // 2026-09-04: backfill khung_gio cho phòng mới tạo — bypass LongevitySeeder::seedPhong() (dùng insert thô).
+        // Không có bước này → API /khung-gio trả empty → dropdown khung giờ bên data trống.
+        $this->call(EnsurePhongKhungGioSeeder::class);
     }
 }

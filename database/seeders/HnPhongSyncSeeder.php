@@ -131,5 +131,8 @@ class HnPhongSyncSeeder extends Seeder
         ));
         if ($missingDv) $this->command?->warn('DV không tồn tại (bỏ qua): ' . implode(', ', $missingDv));
         if ($missingPhong) $this->command?->warn('Phòng không tìm thấy: ' . implode(', ', array_unique($missingPhong)));
+
+        // 2026-09-04: backfill khung_gio cho phòng mới tạo — bypass LongevitySeeder::seedPhong() (dùng insert thô).
+        $this->call(EnsurePhongKhungGioSeeder::class);
     }
 }
