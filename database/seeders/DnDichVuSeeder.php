@@ -31,8 +31,8 @@ class DnDichVuSeeder extends Seeder
             $phongId = DB::table('phong')->insertGetId([
                 'co_so_id'   => $csDn->id,
                 'ten'        => $phongTen,
-                'kieu_phong' => 'phong_kham',
-                'so_slot'    => 1,
+                'kieu_phong'     => 'phong_kham',
+                'so_slot_toi_da' => 1,
                 'active'     => 1,
                 'created_at' => $now,
                 'updated_at' => $now,
