@@ -2,6 +2,10 @@
 
 Format: mỗi lần chốt tạo 1 block `## vX.Y.Z — YYYY-MM-DD` + bullets. Mới nhất ở trên cùng.
 
+## v0.16.2 — 2026-09-04
+
+- **Dashboard thêm widget "Đã từ chối (7 ngày)"** — booking `tu_choi` updated_at trong 7 ngày qua, tab `?tab=rejected`. Grid dashboard giãn từ 5 → 6 cột. Trước đây booking từ chối chỉ hiện trong `/danh-sach` chung → admin/sale dễ miss.
+
 ## v0.16.1 — 2026-09-04
 
 - **CHẶN tạo booking trực tiếp bên sbooking** — mọi lịch mới phải qua Datasource để lead/KPI/report đồng bộ.

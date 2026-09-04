@@ -299,9 +299,17 @@ class PageController extends Controller
         // vì chờ duyệt có thể là lịch tương lai user cần biết ngay).
         $approvalCount = (clone $base())->where('trang_thai', 'cho_duyet')->count();
 
+        // 2026-09-04: widget mới "Đã từ chối" — booking tu_choi cập nhật trong 7 ngày qua.
+        //   Mục đích: sale/admin thấy ngay số booking bị reject để re-book / gọi lại khách,
+        //   không bị lẫn với danh sách chung.
+        $rejectedCount = (clone $base())
+            ->where('trang_thai', 'tu_choi')
+            ->where('updated_at', '>=', now()->subDays(7))
+            ->count();
+
         // 2026-08-19: default = null (show tất cả). Click widget "Lịch hôm nay" (tab=today)
         //   mới filter theo ngay_dat=today. Trước đây default='today' nhưng logic không filter → confusing.
-        $tab = in_array($request->query('tab'), ['today', 'approval', 'processing', 'upcoming', 'done'], true)
+        $tab = in_array($request->query('tab'), ['today', 'approval', 'processing', 'upcoming', 'done', 'rejected'], true)
             ? $request->query('tab') : null;
 
         // 2026-08-10: filter theo nhóm dịch vụ (tu_van / kham_ls). null = tất cả.
@@ -327,6 +335,10 @@ class PageController extends Controller
                 ->whereBetween('gio_thuc_hien', [$now->format('H:i:s'), $in1h->format('H:i:s')]);
         } elseif ($tab === 'done') {
             $listQ->whereDate('ngay_dat', $today)->where('trang_thai', 'da_xong');
+        } elseif ($tab === 'rejected') {
+            // 2026-09-04: tab "Đã từ chối" — booking tu_choi trong 7 ngày qua, xếp mới nhất trước.
+            $listQ->where('trang_thai', 'tu_choi')
+                ->where('updated_at', '>=', now()->subDays(7));
         } elseif ($tab === 'today') {
             // 2026-08-19: chỉ khi click widget "Lịch hôm nay" mới filter ngay_dat=today.
             //   Default (tab=null) → show tất cả.
@@ -391,6 +403,7 @@ class PageController extends Controller
             'approvalCount' => $approvalCount,
             'processingCount' => $processingCount,
             'upcomingCount' => $upcomingCount, 'doneCount' => $doneCount,
+            'rejectedCount' => $rejectedCount,
             'tab' => $tab, 'nhom' => $nhom, 'bookings' => $bookings,
             'active' => $activeKey,
             'kieu' => $kieu,

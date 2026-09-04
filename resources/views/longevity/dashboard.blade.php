@@ -62,6 +62,8 @@
             ['key'=>'processing', 'label'=>'Đang xử lý',              'desc'=>'Khách đã tới — đang tiếp đón / khám',                  'value'=>$processingCount, 'color'=>'amber',   'icon'=>'schedule'],
             ['key'=>'upcoming',   'label'=>'Sắp tới (trong 1 giờ)',   'desc'=>'Đã duyệt, giờ hẹn trong vòng 60 phút tới',             'value'=>$upcomingCount,   'color'=>'violet',  'icon'=>'alarm'],
             ['key'=>'done',       'label'=>'Đã hoàn thành',           'desc'=>'Đã khám xong / kết thúc buổi',                          'value'=>$doneCount,       'color'=>'emerald', 'icon'=>'task_alt'],
+            // 2026-09-04: widget "Đã từ chối" — booking bị Admin bấm Từ chối trong 7 ngày qua.
+            ['key'=>'rejected',   'label'=>'Đã từ chối (7 ngày)',     'desc'=>'Booking bị từ chối gần đây — gọi lại khách / đặt lại',  'value'=>$rejectedCount,   'color'=>'red',     'icon'=>'cancel'],
         ];
         $colorMap = [
             'blue'    => ['bg'=>'bg-blue-50','border'=>'border-blue-200','ring'=>'ring-blue-400','text'=>'text-blue-700'],
@@ -69,9 +71,10 @@
             'amber'   => ['bg'=>'bg-amber-50','border'=>'border-amber-200','ring'=>'ring-amber-400','text'=>'text-amber-700'],
             'violet'  => ['bg'=>'bg-violet-50','border'=>'border-violet-200','ring'=>'ring-violet-400','text'=>'text-violet-700'],
             'emerald' => ['bg'=>'bg-emerald-50','border'=>'border-emerald-200','ring'=>'ring-emerald-400','text'=>'text-emerald-700'],
+            'red'     => ['bg'=>'bg-red-50','border'=>'border-red-300','ring'=>'ring-red-500','text'=>'text-red-800'],
         ];
     @endphp
-    <div class="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+    <div class="grid grid-cols-2 lg:grid-cols-6 gap-3 mb-6">
         @foreach ($widgets as $w)
             @php $c = $colorMap[$w['color']]; $active = $tab === $w['key']; @endphp
             <a href="?tab={{ $w['key'] }}" class="block border-2 rounded-xl p-4 transition-all {{ $c['bg'] }} {{ $active ? $c['ring'].' ring-2 '.$c['border'] : $c['border'].' hover:'.$c['ring'].' hover:ring-2' }}">
