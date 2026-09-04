@@ -85,6 +85,7 @@ class BacSiKtvDdSeeder extends Seeder
 
             // ── Đà Nẵng (Khối chuyên môn) ────────────────────────────────
             [$csDn->id,  'Mai Tấn Mẫn',             $bsThuong, ['chuc_danh' => 'Giám đốc chuyên môn']],
+            [$csDn->id,  'Nguyễn Thị Phượng',       $ktv, ['chuc_danh' => 'KTV Xét nghiệm']],
         ];
 
         $created = 0; $updated = 0;
