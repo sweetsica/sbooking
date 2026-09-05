@@ -2,6 +2,22 @@
 
 Format: mỗi lần chốt tạo 1 block `## vX.Y.Z — YYYY-MM-DD` + bullets. Mới nhất ở trên cùng.
 
+## v0.17.0 — 2026-09-04
+
+- **Phase 6.26 — Sale làm bên SCRM, sbooking chỉ read-only cho sale**:
+  - `POST /api/bookings/{id}/trang-thai-khach` + `/trang-thai-tiep-don` (SCRM push, guard `sbooking_user_id === tiep_don_user_id | sale_id`, log actor SCRM). `/comments` đã có sẵn từ Phase C1.f — reuse.
+  - Blade `partials/trang-thai-lich-hen.blade.php`: ẩn 3 nút trạng thái khách + toggle tiếp đón + ô comment với user role sale (chuc_danh HC/SHC/CM/DM, không admin). Admin giữ fallback.
+  - `POST /api/v1/users/{id}/toggle-busy` — SCRM push flip `users.dung_nhan_lead` khi sale toggle "Bận" bên SCRM.
+  - `topnav.blade.php`: nút toggle busy đổi thành badge read-only (tooltip nhắc bấm bên SCRM). Route `/dung-nhan-lead` giữ cho admin fallback nếu cần.
+  - `show.blade.php`: badge amber `· Sale hiện đang bận` cạnh tên `tiepDonUser` khi `dung_nhan_lead=true` — admin biết chủ động phân người khác lúc check-in.
+- **Modal Duyệt — gợi ý UPS + cảnh báo "Chưa chốt UPS list"**:
+  - Nguồn MKT chưa có `tiep_don_user_id`: `/api/sales-in-cosolow` trả `source='ups'` → auto-fill dropdown ưu tiên bucket A rảnh > A bận > B/C rảnh. Note xanh "💡 Gợi ý UPS".
+  - `source='local|error'` → banner amber "⚠ Chưa chốt UPS list ngày DD/MM" + admin bắt buộc chọn tay.
+  - `source='future_all_users'` giữ hành vi cũ (booking tương lai, all users cơ sở).
+- **Widget dashboard carry filter `loai/nhom/ngay/q`** — trước bấm widget "Lịch chờ duyệt" ở tab Tư vấn nhảy về Lịch khám (mất `loai`).
+- **Fix `nhat-ky-thong-bao`** `stdClass::$data->event` — pluck('data->event') qua Query Builder trả stdClass literal property; extract JSON path ở PHP layer.
+- **`deploy/cron/queue-drain.sh`** cho sbooking — trước queue worker không chạy 24/7 → LichNotification (ShouldQueue) tồn 5 ngày. Host add cron mỗi phút.
+
 ## v0.16.2 — 2026-09-04
 
 - **Dashboard thêm widget "Đã từ chối (7 ngày)"** — booking `tu_choi` updated_at trong 7 ngày qua, tab `?tab=rejected`. Grid dashboard giãn từ 5 → 6 cột. Trước đây booking từ chối chỉ hiện trong `/danh-sach` chung → admin/sale dễ miss.
