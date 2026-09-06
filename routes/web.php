@@ -291,7 +291,10 @@ Route::prefix('{co_so:slug}')->group(function () {
             Route::get('/cau-hinh-excel/xuat', [ExcelController::class, 'exportCauHinh'])->name('cauhinh.xuat');
             Route::post('/cau-hinh-excel/nhap', [ExcelController::class, 'importCauHinh'])->name('cauhinh.nhap');
             // Tổng hợp lịch đặt — KHAI TRƯỚC route catch-all `/{section}`.
-            Route::get('/tong-hop-lich-dat', [\App\Http\Controllers\TongHopLichDatController::class, 'index'])->name('tong-hop-lich-dat');
+            Route::get('/tong-hop-lich-dat',        [\App\Http\Controllers\TongHopLichDatController::class, 'index'])->name('tong-hop-lich-dat');
+            Route::get('/tong-hop-lich-dat/mau',    [\App\Http\Controllers\TongHopLichDatController::class, 'mau'])->name('tong-hop-lich-dat.mau');
+            Route::post('/tong-hop-lich-dat/nhap',  [\App\Http\Controllers\TongHopLichDatController::class, 'nhap'])->name('tong-hop-lich-dat.nhap');
+            Route::get('/tong-hop-lich-dat/nhap/loi/{token}', [\App\Http\Controllers\TongHopLichDatController::class, 'taiFileLoi'])->name('tong-hop-lich-dat.taifileloi');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
 
             // Ghi + các mục quản trị khác: CHỈ ADMIN

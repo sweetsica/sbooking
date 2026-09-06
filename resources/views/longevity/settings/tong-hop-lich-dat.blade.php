@@ -40,14 +40,55 @@
 <p class="text-body-sm text-on-surface-variant">Gộp Lịch khám (K) + Lịch tư vấn (TV) + Lịch dịch vụ (DV) của <strong>{{ $coSo->ten }}</strong>. Xuất/Nhập Excel cho admin hệ thống.</p>
 </div>
 </div>
-<div class="flex items-center gap-2">
+<div class="flex items-center gap-2 flex-wrap">
 <button type="button" disabled title="Sắp có ở Phase 2" class="px-4 py-2 bg-surface-container-high text-on-surface-variant/60 font-semibold rounded-lg flex items-center gap-2 cursor-not-allowed">
 <span class="material-symbols-outlined text-[20px]">download</span> Xuất Excel
 </button>
-<button type="button" disabled title="Sắp có ở Phase 4" class="px-4 py-2 bg-surface-container-high text-on-surface-variant/60 font-semibold rounded-lg flex items-center gap-2 cursor-not-allowed">
+<a href="{{ route('settings.tong-hop-lich-dat.mau', $coSo->slug) }}" class="px-4 py-2 border border-outline text-on-surface font-semibold rounded-lg hover:bg-surface-container-low flex items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">description</span> Tải mẫu nhập
+</a>
+<button type="button" onclick="document.getElementById('form-nhap-xlsx').classList.toggle('hidden')" class="px-4 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
 <span class="material-symbols-outlined text-[20px]">upload</span> Nhập Excel
 </button>
 </div>
+</div>
+
+{{-- Alert import result --}}
+@if (session('import_ok'))
+<div class="mb-4 p-3 rounded-lg bg-green-50 border border-green-200 text-green-800 flex items-center gap-2">
+<span class="material-symbols-outlined">check_circle</span>
+<span>{{ session('import_ok') }}</span>
+</div>
+@endif
+@if (session('import_error'))
+<div class="mb-4 p-3 rounded-lg bg-red-50 border border-red-200 text-red-800">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined">error</span>
+<span class="font-semibold">{{ session('import_error') }}</span>
+</div>
+@if (session('import_error_token'))
+<div class="mt-2">
+<a href="{{ route('settings.tong-hop-lich-dat.taifileloi', [$coSo->slug, session('import_error_token')]) }}" class="inline-flex items-center gap-1 px-3 py-1.5 bg-red-600 text-white text-sm font-semibold rounded hover:bg-red-700">
+<span class="material-symbols-outlined text-[16px]">download</span> Tải file lỗi (đã bôi đỏ ô sai)
+</a>
+</div>
+@endif
+</div>
+@endif
+
+{{-- Form upload xlsx (ẩn mặc định) --}}
+<div id="form-nhap-xlsx" class="mb-4 hidden bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
+<form method="POST" action="{{ route('settings.tong-hop-lich-dat.nhap', $coSo->slug) }}" enctype="multipart/form-data" class="flex items-center gap-3 flex-wrap">
+@csrf
+<div class="flex-1 min-w-[300px]">
+<label class="text-label-caps font-label-caps text-on-surface-variant block mb-1">Chọn file .xlsx</label>
+<input type="file" name="file" accept=".xlsx,.xls" required class="block w-full text-body-sm file:mr-3 file:px-4 file:py-2 file:border-0 file:bg-secondary-container file:text-on-secondary-container file:rounded-lg file:cursor-pointer"/>
+</div>
+<button type="submit" class="px-4 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
+<span class="material-symbols-outlined text-[20px]">upload_file</span> Nhập
+</button>
+<p class="text-body-sm text-on-surface-variant w-full">Fail-fast: 1 dòng lỗi → toàn file bị chặn, không dòng nào được ghi. Chưa có mẫu? Bấm <strong>Tải mẫu nhập</strong> trước.</p>
+</form>
 </div>
 
 {{-- Counter --}}
