@@ -61,9 +61,11 @@ class TongHopLichDatController extends Controller
         // Chuẩn hoá thành 1 collection thống nhất để render bảng đơn.
         $rows = collect();
 
+        $slug = $co_so->slug;
         foreach ($bookings as $b) {
             $la_dv = $b->loai_dat_lich === 'dich_vu';
             $rows->push((object) [
+                'id'           => $b->id,
                 'phan_loai'    => $la_dv ? 'DV' : 'K',
                 'phan_loai_label' => $la_dv ? 'Lịch dịch vụ' : 'Lịch khám',
                 'ma_dl'        => 'BKG-'.str_pad((string) $b->id, 6, '0', STR_PAD_LEFT),
@@ -76,11 +78,15 @@ class TongHopLichDatController extends Controller
                 'trang_thai'   => $b->trang_thai,       // cho_duyet | da_duyet | da_xong | tu_choi
                 'ket_qua'      => $this->ketQuaBooking($b),
                 'sort_key'     => optional($b->ngay_dat)->format('Y-m-d').' '.($b->gio_thuc_hien ?? ''),
+                'url_show'     => "/{$slug}/xem-dat-phong/{$b->id}",
+                'url_edit'     => "/{$slug}/sua-dat-phong/{$b->id}",
+                'url_destroy'  => "/{$slug}/xoa-dat-phong/{$b->id}",
             ]);
         }
 
         foreach ($lichHens as $l) {
             $rows->push((object) [
+                'id'           => $l->id,
                 'phan_loai'    => 'TV',
                 'phan_loai_label' => 'Lịch tư vấn',
                 'ma_dl'        => 'TVN-'.str_pad((string) $l->id, 6, '0', STR_PAD_LEFT),
@@ -93,6 +99,9 @@ class TongHopLichDatController extends Controller
                 'trang_thai'   => $l->trang_thai,
                 'ket_qua'      => null,   // lich_hen không có "đã xong"
                 'sort_key'     => optional($l->ngay_hen)->format('Y-m-d').' '.(optional($l->caKham)->gio_bat_dau ?? ''),
+                'url_show'     => "/{$slug}/xem-tu-van/{$l->id}",
+                'url_edit'     => "/{$slug}/sua-tu-van/{$l->id}",
+                'url_destroy'  => "/{$slug}/xoa-tu-van/{$l->id}",
             ]);
         }
 

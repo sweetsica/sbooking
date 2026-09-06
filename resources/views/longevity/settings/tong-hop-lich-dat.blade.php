@@ -113,6 +113,7 @@
 <th class="px-4 py-3 whitespace-nowrap">Giờ hẹn</th>
 <th class="px-4 py-3 whitespace-nowrap">Trạng thái</th>
 <th class="px-4 py-3 whitespace-nowrap">Kết quả</th>
+<th class="px-4 py-3 text-right whitespace-nowrap">Thao tác</th>
 </tr>
 </thead>
 <tbody class="divide-y divide-outline-variant/60">
@@ -136,9 +137,19 @@
 <span class="px-2 py-0.5 rounded-full text-label-caps font-label-caps {{ $ttC }}">{{ $ttT }}</span>
 </td>
 <td class="px-4 py-3 text-on-surface-variant">{{ $r->ket_qua ?? '—' }}</td>
+<td class="px-4 py-3">
+<div class="flex items-center justify-end gap-1">
+<a href="{{ $r->url_show }}" class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-lg" title="Xem chi tiết"><span class="material-symbols-outlined text-[18px]">visibility</span></a>
+<a href="{{ $r->url_edit }}" class="p-1.5 text-on-surface-variant hover:text-secondary hover:bg-secondary/10 rounded-lg" title="Sửa"><span class="material-symbols-outlined text-[18px]">edit</span></a>
+<form method="POST" action="{{ $r->url_destroy }}" onsubmit="return confirm('Xóa {{ $r->phan_loai_label }} của {{ $r->ten_khach }}?');">
+@csrf @method('DELETE')
+<button type="submit" class="p-1.5 text-on-surface-variant hover:text-error hover:bg-error/10 rounded-lg" title="Xóa"><span class="material-symbols-outlined text-[18px]">delete</span></button>
+</form>
+</div>
+</td>
 </tr>
 @empty
-<tr><td colspan="10" class="px-4 py-10 text-center text-on-surface-variant">Chưa có lịch nào khớp bộ lọc.</td></tr>
+<tr><td colspan="11" class="px-4 py-10 text-center text-on-surface-variant">Chưa có lịch nào khớp bộ lọc.</td></tr>
 @endforelse
 </tbody>
 </table>
