@@ -9,11 +9,12 @@
     $q = $filters['q'] ?? '';
     $action = '/'.$coSo->slug.'/thiet-lap/tong-hop-lich-dat';
 
+    // 3 màu tương phản mạnh, phân biệt rõ K / TV / DV (không phụ thuộc M3 token tối).
     $badgeClass = fn ($pl) => match ($pl) {
-        'K'  => 'bg-primary-container/60 text-on-primary-container',
-        'TV' => 'bg-tertiary-container/60 text-on-tertiary-container',
-        'DV' => 'bg-secondary-container/60 text-on-secondary-container',
-        default => 'bg-surface-container-high text-on-surface-variant',
+        'K'  => 'bg-blue-100 text-blue-800 ring-1 ring-blue-200',
+        'TV' => 'bg-amber-100 text-amber-800 ring-1 ring-amber-200',
+        'DV' => 'bg-emerald-100 text-emerald-800 ring-1 ring-emerald-200',
+        default => 'bg-slate-100 text-slate-700 ring-1 ring-slate-200',
     };
     $ttLabel = [
         'cho_duyet' => ['Chờ duyệt', 'bg-yellow-100 text-yellow-800'],

@@ -39,7 +39,7 @@ tailwind.config = {
 
 <div class="bg-surface-container-lowest border border-outline-variant rounded-2xl shadow-sm p-8">
 <h1 class="text-xl font-headline font-bold mb-1">Đăng nhập hệ thống</h1>
-<p class="text-sm text-on-surface-variant mb-6">Quản lý đặt lịch Longevity — nhập tài khoản để tiếp tục.</p>
+<p class="text-sm text-on-surface-variant mb-6">Quản lý đặt lịch Longevity — Chỉ sử dụng cho admin, bác sĩ và KTV, Điều dưỡng.</p>
 
 @if ($errors->any())
 <div class="mb-5 px-4 py-3 rounded-xl bg-error-container text-on-error-container text-sm flex items-center gap-2">
