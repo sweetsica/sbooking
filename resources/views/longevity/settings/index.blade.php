@@ -42,6 +42,11 @@
             'mota' => 'Ngày nghỉ chung / theo nhân sự áp dụng riêng cho cơ sở này.',
             'href' => '/'.$coSo->slug.'/ngay-nghi'];
     }
+    if ($isAdmin) {
+        $external[] = ['ten' => 'Tổng hợp lịch đặt', 'icon' => 'table_view',
+            'mota' => 'Gộp Lịch khám / Tư vấn / Dịch vụ của cơ sở này; xuất Excel + nhập Excel (có mẫu). Chỉ admin hệ thống.',
+            'href' => '/'.$coSo->slug.'/thiet-lap/tong-hop-lich-dat'];
+    }
 @endphp
 
 @php

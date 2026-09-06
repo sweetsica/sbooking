@@ -290,6 +290,8 @@ Route::prefix('{co_so:slug}')->group(function () {
             Route::get('/cau-hinh-excel', fn (\App\Models\CoSo $co_so) => view('longevity.settings.cau-hinh-excel', ['coSo' => $co_so]))->name('cauhinh-excel');
             Route::get('/cau-hinh-excel/xuat', [ExcelController::class, 'exportCauHinh'])->name('cauhinh.xuat');
             Route::post('/cau-hinh-excel/nhap', [ExcelController::class, 'importCauHinh'])->name('cauhinh.nhap');
+            // Tổng hợp lịch đặt — KHAI TRƯỚC route catch-all `/{section}`.
+            Route::get('/tong-hop-lich-dat', [\App\Http\Controllers\TongHopLichDatController::class, 'index'])->name('tong-hop-lich-dat');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
 
             // Ghi + các mục quản trị khác: CHỈ ADMIN

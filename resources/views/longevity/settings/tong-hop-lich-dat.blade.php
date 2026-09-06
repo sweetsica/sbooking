@@ -1,0 +1,146 @@
+@extends('longevity.settings.layout')
+@section('title', 'Tổng hợp lịch đặt')
+
+@section('content')
+@php
+    $phanLoai = $filters['phanLoai'] ?? 'all';
+    $tu = $filters['tu'] ?? '';
+    $den = $filters['den'] ?? '';
+    $q = $filters['q'] ?? '';
+    $action = '/'.$coSo->slug.'/thiet-lap/tong-hop-lich-dat';
+
+    $badgeClass = fn ($pl) => match ($pl) {
+        'K'  => 'bg-primary-container/60 text-on-primary-container',
+        'TV' => 'bg-tertiary-container/60 text-on-tertiary-container',
+        'DV' => 'bg-secondary-container/60 text-on-secondary-container',
+        default => 'bg-surface-container-high text-on-surface-variant',
+    };
+    $ttLabel = [
+        'cho_duyet' => ['Chờ duyệt', 'bg-yellow-100 text-yellow-800'],
+        'da_duyet'  => ['Đã duyệt', 'bg-green-100 text-green-800'],
+        'da_xong'   => ['Đã xong', 'bg-green-100 text-green-800'],
+        'tu_choi'   => ['Từ chối', 'bg-red-100 text-red-700'],
+    ];
+@endphp
+
+<div class="flex items-center gap-2 text-body-sm text-on-surface-variant mb-4">
+<a href="/{{ $coSo->slug }}/thiet-lap" class="hover:text-secondary">Thiết lập</a>
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+<span class="text-on-surface font-semibold">Tổng hợp lịch đặt</span>
+</div>
+
+<div class="flex items-start justify-between gap-4 mb-6 flex-wrap">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-secondary-container/40 text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined">table_view</span>
+</div>
+<div>
+<h2 class="text-headline-lg font-headline-lg">Tổng hợp lịch đặt</h2>
+<p class="text-body-sm text-on-surface-variant">Gộp Lịch khám (K) + Lịch tư vấn (TV) + Lịch dịch vụ (DV) của <strong>{{ $coSo->ten }}</strong>. Xuất/Nhập Excel cho admin hệ thống.</p>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button type="button" disabled title="Sắp có ở Phase 2" class="px-4 py-2 bg-surface-container-high text-on-surface-variant/60 font-semibold rounded-lg flex items-center gap-2 cursor-not-allowed">
+<span class="material-symbols-outlined text-[20px]">download</span> Xuất Excel
+</button>
+<button type="button" disabled title="Sắp có ở Phase 4" class="px-4 py-2 bg-surface-container-high text-on-surface-variant/60 font-semibold rounded-lg flex items-center gap-2 cursor-not-allowed">
+<span class="material-symbols-outlined text-[20px]">upload</span> Nhập Excel
+</button>
+</div>
+</div>
+
+{{-- Counter --}}
+<div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+@foreach ([['total','Tổng','table_rows'],['K','Lịch khám','stethoscope'],['TV','Lịch tư vấn','forum'],['DV','Lịch dịch vụ','healing']] as [$k,$l,$icon])
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 flex items-center gap-3">
+<span class="material-symbols-outlined text-secondary text-[28px]">{{ $icon }}</span>
+<div>
+<div class="text-label-caps font-label-caps text-on-surface-variant uppercase">{{ $l }}</div>
+<div class="text-headline-md font-headline-md">{{ number_format($counter[$k]) }}</div>
+</div>
+</div>
+@endforeach
+</div>
+
+{{-- Filter --}}
+<form method="GET" action="{{ $action }}" class="mb-4 bg-surface-container-lowest border border-outline-variant rounded-xl p-4">
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Phân loại</label>
+<select name="phan_loai" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary">
+<option value="all" @selected($phanLoai === 'all')>— Tất cả —</option>
+<option value="K"   @selected($phanLoai === 'K')>Lịch khám (K)</option>
+<option value="TV"  @selected($phanLoai === 'TV')>Lịch tư vấn (TV)</option>
+<option value="DV"  @selected($phanLoai === 'DV')>Lịch dịch vụ (DV)</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Từ ngày</label>
+<input type="date" name="tu" value="{{ $tu }}" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Đến ngày</label>
+<input type="date" name="den" value="{{ $den }}" class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="text-label-caps font-label-caps text-on-surface-variant">Tìm khách / SĐT</label>
+<input type="text" name="q" value="{{ $q }}" placeholder="Tên hoặc SĐT..." class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-lg focus:outline-none focus:border-secondary"/>
+</div>
+</div>
+<div class="flex items-center gap-2 mt-3">
+<button type="submit" class="px-4 py-2 bg-primary text-on-primary font-semibold rounded-lg flex items-center gap-2 hover:opacity-90">
+<span class="material-symbols-outlined text-[20px]">search</span> Lọc
+</button>
+<a href="{{ $action }}" class="px-4 py-2 text-on-surface-variant hover:bg-surface-container-high rounded-lg">Xóa lọc</a>
+<span class="text-body-sm text-on-surface-variant ml-auto">{{ number_format($counter['total']) }} lịch</span>
+</div>
+</form>
+
+{{-- Bảng --}}
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
+<div class="overflow-x-auto">
+<table class="w-full min-w-[900px] text-body-md">
+<thead>
+<tr class="text-left text-label-caps font-label-caps uppercase text-on-surface-variant bg-surface-container-low border-b border-outline-variant">
+<th class="px-4 py-3 whitespace-nowrap">STT</th>
+<th class="px-4 py-3 whitespace-nowrap">Phân loại</th>
+<th class="px-4 py-3 whitespace-nowrap">Mã ĐL</th>
+<th class="px-4 py-3 whitespace-nowrap">Tên khách</th>
+<th class="px-4 py-3 whitespace-nowrap">SĐT</th>
+<th class="px-4 py-3 whitespace-nowrap">Sale chăm sóc</th>
+<th class="px-4 py-3 whitespace-nowrap">Danh mục</th>
+<th class="px-4 py-3 whitespace-nowrap">Giờ hẹn</th>
+<th class="px-4 py-3 whitespace-nowrap">Trạng thái</th>
+<th class="px-4 py-3 whitespace-nowrap">Kết quả</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/60">
+@forelse ($rows as $i => $r)
+<tr class="hover:bg-surface-container-low/40">
+<td class="px-4 py-3 text-on-surface-variant">{{ $i + 1 }}</td>
+<td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-label-caps font-label-caps {{ $badgeClass($r->phan_loai) }}">{{ $r->phan_loai_label }}</span></td>
+<td class="px-4 py-3 font-mono text-body-sm">{{ $r->ma_dl }}</td>
+<td class="px-4 py-3 font-semibold">{{ $r->ten_khach ?? '—' }}</td>
+<td class="px-4 py-3 text-on-surface-variant">{{ $r->sdt ?? '—' }}</td>
+<td class="px-4 py-3">{{ $r->sale ?? '—' }}</td>
+<td class="px-4 py-3 text-on-surface-variant">{{ $r->danh_muc ?? '—' }}</td>
+<td class="px-4 py-3 whitespace-nowrap">
+@if ($r->ngay)
+<span class="font-semibold">{{ \Illuminate\Support\Carbon::parse($r->ngay)->format('d/m') }}</span>
+<span class="text-on-surface-variant"> · {{ $r->gio ? substr($r->gio, 0, 5) : '—' }}</span>
+@else — @endif
+</td>
+<td class="px-4 py-3">
+@php [$ttT, $ttC] = $ttLabel[$r->trang_thai] ?? [$r->trang_thai, 'bg-surface-container-high text-on-surface-variant']; @endphp
+<span class="px-2 py-0.5 rounded-full text-label-caps font-label-caps {{ $ttC }}">{{ $ttT }}</span>
+</td>
+<td class="px-4 py-3 text-on-surface-variant">{{ $r->ket_qua ?? '—' }}</td>
+</tr>
+@empty
+<tr><td colspan="10" class="px-4 py-10 text-center text-on-surface-variant">Chưa có lịch nào khớp bộ lọc.</td></tr>
+@endforelse
+</tbody>
+</table>
+</div>
+</div>
+@endsection
