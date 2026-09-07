@@ -46,6 +46,9 @@
         $external[] = ['ten' => 'Tổng hợp lịch đặt', 'icon' => 'table_view',
             'mota' => 'Gộp Lịch khám / Tư vấn / Dịch vụ của cơ sở này; xuất Excel + nhập Excel (có mẫu). Chỉ admin hệ thống.',
             'href' => '/'.$coSo->slug.'/thiet-lap/tong-hop-lich-dat'];
+        $external[] = ['ten' => 'Danh mục dịch vụ', 'icon' => 'list_alt',
+            'mota' => 'Tra cứu toàn hệ thống: dịch vụ ở cơ sở nào, gắn phòng nào, ai thực hiện. Chỉ đọc, trực tiếp từ DB.',
+            'href' => '/'.$coSo->slug.'/thiet-lap/danh-muc-dich-vu'];
     }
 @endphp
 

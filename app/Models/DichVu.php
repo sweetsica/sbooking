@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class DichVu extends Model
 {
@@ -16,5 +17,15 @@ class DichVu extends Model
     public function coSo(): BelongsTo
     {
         return $this->belongsTo(CoSo::class, 'co_so_id');
+    }
+
+    public function phongs(): BelongsToMany
+    {
+        return $this->belongsToMany(Phong::class, 'dich_vu_phong');
+    }
+
+    public function bacSis(): BelongsToMany
+    {
+        return $this->belongsToMany(BacSi::class, 'dich_vu_bac_si');
     }
 }
