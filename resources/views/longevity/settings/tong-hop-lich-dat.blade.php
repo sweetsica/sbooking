@@ -139,11 +139,42 @@
 </form>
 
 {{-- Bảng --}}
+<div x-data="{
+    selected: [],
+    allKeys: @js($rows->pluck('bulk_key')->all()),
+    toggleAll(e) { this.selected = e.target.checked ? [...this.allKeys] : []; },
+    submitDelete() {
+        if (! this.selected.length) return;
+        if (! confirm(`Xóa ${this.selected.length} lịch đã chọn? (không hoàn tác)`)) return;
+        const f = document.getElementById('form-xoa-hang-loat');
+        f.querySelectorAll('input[name=&quot;items[]&quot;]').forEach(i => i.remove());
+        this.selected.forEach(k => {
+            const i = document.createElement('input');
+            i.type = 'hidden'; i.name = 'items[]'; i.value = k;
+            f.appendChild(i);
+        });
+        f.submit();
+    }
+}">
+<form id="form-xoa-hang-loat" method="POST" action="{{ route('settings.tong-hop-lich-dat.xoahangloat', $coSo->slug) }}" class="hidden">@csrf</form>
+
+{{-- Floating toolbar khi có row chọn --}}
+<div x-show="selected.length > 0" x-cloak class="mb-3 p-3 rounded-xl bg-amber-50 border border-amber-300 flex items-center gap-3 flex-wrap">
+<span class="font-semibold text-amber-900">Đã chọn <span x-text="selected.length"></span> lịch</span>
+<button type="button" @click="submitDelete()" class="px-3 py-1.5 bg-red-600 text-white text-sm font-semibold rounded-lg flex items-center gap-1 hover:bg-red-700">
+<span class="material-symbols-outlined text-[16px]">delete</span> Xóa đã chọn
+</button>
+<button type="button" @click="selected = []" class="px-3 py-1.5 text-amber-900 text-sm hover:bg-amber-100 rounded-lg">Bỏ chọn</button>
+</div>
+
 <div class="bg-surface-container-lowest border border-outline-variant rounded-xl overflow-hidden">
 <div class="overflow-x-auto">
 <table class="w-full min-w-[900px] text-body-md">
 <thead>
 <tr class="text-left text-label-caps font-label-caps uppercase text-on-surface-variant bg-surface-container-low border-b border-outline-variant">
+<th class="px-3 py-3 text-center w-10">
+<input type="checkbox" @change="toggleAll($event)" :checked="selected.length === allKeys.length && allKeys.length > 0" class="w-4 h-4 rounded border-outline text-secondary" title="Chọn tất cả"/>
+</th>
 <th class="px-4 py-3 whitespace-nowrap">STT</th>
 <th class="px-4 py-3 whitespace-nowrap">Phân loại</th>
 <th class="px-4 py-3 whitespace-nowrap">Mã ĐL</th>
@@ -159,7 +190,10 @@
 </thead>
 <tbody class="divide-y divide-outline-variant/60">
 @forelse ($rows as $i => $r)
-<tr class="hover:bg-surface-container-low/40">
+<tr class="hover:bg-surface-container-low/40" :class="selected.includes('{{ $r->bulk_key }}') ? 'bg-amber-50' : ''">
+<td class="px-3 py-3 text-center">
+<input type="checkbox" value="{{ $r->bulk_key }}" x-model="selected" class="w-4 h-4 rounded border-outline text-secondary"/>
+</td>
 <td class="px-4 py-3 text-on-surface-variant">{{ $i + 1 }}</td>
 <td class="px-4 py-3"><span class="px-2 py-0.5 rounded text-label-caps font-label-caps {{ $badgeClass($r->phan_loai) }}">{{ $r->phan_loai_label }}</span></td>
 <td class="px-4 py-3 font-mono text-body-sm">{{ $r->ma_dl }}</td>
@@ -190,10 +224,11 @@
 </td>
 </tr>
 @empty
-<tr><td colspan="11" class="px-4 py-10 text-center text-on-surface-variant">Chưa có lịch nào khớp bộ lọc.</td></tr>
+<tr><td colspan="12" class="px-4 py-10 text-center text-on-surface-variant">Chưa có lịch nào khớp bộ lọc.</td></tr>
 @endforelse
 </tbody>
 </table>
 </div>
 </div>
+</div>{{-- /x-data --}}
 @endsection

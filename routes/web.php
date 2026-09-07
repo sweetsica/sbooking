@@ -297,6 +297,7 @@ Route::prefix('{co_so:slug}')->group(function () {
             Route::get('/tong-hop-lich-dat/mau',    [\App\Http\Controllers\TongHopLichDatController::class, 'mau'])->name('tong-hop-lich-dat.mau');
             Route::post('/tong-hop-lich-dat/nhap',  [\App\Http\Controllers\TongHopLichDatController::class, 'nhap'])->name('tong-hop-lich-dat.nhap');
             Route::get('/tong-hop-lich-dat/nhap/loi/{token}', [\App\Http\Controllers\TongHopLichDatController::class, 'taiFileLoi'])->name('tong-hop-lich-dat.taifileloi');
+            Route::post('/tong-hop-lich-dat/xoa-hang-loat', [\App\Http\Controllers\TongHopLichDatController::class, 'xoaHangLoat'])->name('tong-hop-lich-dat.xoahangloat');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
 
             // Ghi + các mục quản trị khác: CHỈ ADMIN

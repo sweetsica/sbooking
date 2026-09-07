@@ -82,6 +82,7 @@ class TongHopLichDatController extends Controller
                 'trang_thai'   => $b->trang_thai,       // cho_duyet | da_duyet | da_xong | tu_choi
                 'ket_qua'      => $this->ketQuaBooking($b),
                 'sort_key'     => optional($b->ngay_dat)->format('Y-m-d').' '.($b->gio_thuc_hien ?? ''),
+                'bulk_key'     => "booking:{$b->id}",
                 'url_show'     => "/{$slug}/xem-dat-phong/{$b->id}",
                 'url_edit'     => "/{$slug}/sua-dat-phong/{$b->id}",
                 'url_destroy'  => "/{$slug}/xoa-dat-phong/{$b->id}",
@@ -103,6 +104,7 @@ class TongHopLichDatController extends Controller
                 'trang_thai'   => $l->trang_thai,
                 'ket_qua'      => null,   // lich_hen không có "đã xong"
                 'sort_key'     => optional($l->ngay_hen)->format('Y-m-d').' '.(optional($l->caKham)->gio_bat_dau ?? ''),
+                'bulk_key'     => "lichhen:{$l->id}",
                 'url_show'     => "/{$slug}/xem-tu-van/{$l->id}",
                 'url_edit'     => "/{$slug}/sua-tu-van/{$l->id}",
                 'url_destroy'  => "/{$slug}/xoa-tu-van/{$l->id}",
@@ -137,6 +139,35 @@ class TongHopLichDatController extends Controller
         if ($b->trang_thai === 'da_xong') return 'Đã xong';
         if (($b->trang_thai_khach ?? null) === 'huy') return 'Đã huỷ';
         return null;
+    }
+
+    /**
+     * POST /thiet-lap/tong-hop-lich-dat/xoa-hang-loat — xoá bulk theo checkbox.
+     * Input: items[] mỗi phần tử "booking:123" hoặc "lichhen:45".
+     */
+    public function xoaHangLoat(CoSo $co_so, Request $request)
+    {
+        $data = $request->validate([
+            'items'   => ['required', 'array', 'min:1', 'max:500'],
+            'items.*' => ['string', 'regex:/^(booking|lichhen):\d+$/'],
+        ]);
+
+        $bookingIds = [];
+        $lichhenIds = [];
+        foreach ($data['items'] as $it) {
+            [$type, $id] = explode(':', $it, 2);
+            if ($type === 'booking') $bookingIds[] = (int) $id;
+            else $lichhenIds[] = (int) $id;
+        }
+
+        $delB = $bookingIds
+            ? Booking::where('co_so_id', $co_so->id)->whereIn('id', $bookingIds)->delete()
+            : 0;
+        $delL = $lichhenIds
+            ? LichHen::where('co_so_id', $co_so->id)->whereIn('id', $lichhenIds)->delete()
+            : 0;
+
+        return back()->with('import_ok', "Đã xoá {$delB} booking + {$delL} tư vấn.");
     }
 
     /**
