@@ -171,10 +171,7 @@
 <a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=ngay{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'ngay' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo ngày</a>
 <a href="/{{ $coSo->slug }}/lich-hen?ngay={{ $date->format('Y-m-d') }}&view=thang{{ $tlPhong }}{{ $tlStaff }}{{ $kieuQS }}" class="flex-1 sm:flex-none px-4 flex items-center justify-center whitespace-nowrap rounded-md text-body-sm font-semibold transition-all {{ $view === 'thang' ? 'bg-surface-container-lowest shadow-sm text-secondary' : 'text-on-surface-variant hover:text-on-surface' }}">Xem theo tháng</a>
 </div>
-<a href="{{ $createUrl }}" class="h-[42px] px-6 bg-primary text-on-primary font-semibold rounded-lg flex items-center justify-center gap-2 whitespace-nowrap hover:opacity-90 transition-opacity">
-<span class="material-symbols-outlined text-[20px]">add</span>
-<span>{{ $createLabel }}</span>
-</a>
+{{-- Nút đặt lịch: tạm ẩn theo yêu cầu (áp dụng cho cả 3 loại dịch vụ) --}}
 </div>
 </form>
 
@@ -382,11 +379,7 @@
 @endif
 </div>
 </main>
-<!-- Floating Action Button -->
-<button onclick="window.location.href='{{ $createUrl }}'" class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50 group">
-<span class="material-symbols-outlined text-[28px]">add</span>
-<span class="absolute right-full mr-4 px-3 py-1.5 bg-inverse-surface text-inverse-on-surface text-body-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">Tạo nhanh booking</span>
-</button>
+{{-- FAB đặt lịch: tạm ẩn theo yêu cầu (áp dụng cho cả 3 loại dịch vụ) --}}
 @if ($view !== 'thang')
 <script>
         function switchView(view) {
