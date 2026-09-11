@@ -332,7 +332,7 @@
         <select name="nguon" class="{{ $filterInputCls }}">
             <option value="">Tất cả nguồn</option>
             @foreach ($nguons as $ng)
-                <option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ $ng }}</option>
+                <option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ strtoupper($ng) }}</option>
             @endforeach
         </select>
     </x-longevity.filter-field>

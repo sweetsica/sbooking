@@ -62,7 +62,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <select name="nguon" class="w-full border border-outline-variant rounded-lg px-3 py-2 text-body-md focus:border-secondary focus:ring-1 focus:ring-secondary/20 outline-none bg-surface sm:min-w-[160px]">
 <option value="">Tất cả nguồn</option>
 @foreach ($nguons as $ng)
-<option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ $ng }}</option>
+<option value="{{ $ng }}" @selected(($filters['nguon'] ?? '')===$ng)>{{ strtoupper($ng) }}</option>
 @endforeach
 </select>
 </div>
