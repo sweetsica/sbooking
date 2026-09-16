@@ -269,6 +269,12 @@ class PageController extends Controller
                 fn ($q) => $q->whereHas('phong', fn ($qq) => $qq->where('kieu_phong', $kieu))
             );
 
+        // 2026-09-17: "Chờ duyệt" + "Đã từ chối" cross-loại — booking BOD/tư vấn đang chờ duyệt
+        //   phải hiện ngay cả khi user đang ở menu "Lịch khám" (?loai=kham_ls). Trước đây widget
+        //   filter theo loai → user tạo BOD tư vấn từ CRM, vào menu Lịch khám không thấy đâu.
+        $baseCrossLoai = fn () => Booking::where('co_so_id', $co_so->id)
+            ->visibleTo(auth()->user());
+
         $todayCount = (clone $base())->whereDate('ngay_dat', $today)->count();
 
         $processingCount = (clone $base())
@@ -297,12 +303,14 @@ class PageController extends Controller
 
         // 2026-08-05: widget mới "Lịch chờ duyệt" — mọi booking cho_duyet (không giới hạn ngày,
         // vì chờ duyệt có thể là lịch tương lai user cần biết ngay).
-        $approvalCount = (clone $base())->where('trang_thai', 'cho_duyet')->count();
+        // 2026-09-17: đếm cross-loại — booking BOD tư vấn/dịch vụ cũng phải hiện ở mọi tab menu.
+        $approvalCount = (clone $baseCrossLoai())->where('trang_thai', 'cho_duyet')->count();
 
         // 2026-09-04: widget mới "Đã từ chối" — booking tu_choi cập nhật trong 7 ngày qua.
         //   Mục đích: sale/admin thấy ngay số booking bị reject để re-book / gọi lại khách,
         //   không bị lẫn với danh sách chung.
-        $rejectedCount = (clone $base())
+        // 2026-09-17: đếm cross-loại (cùng lý do với approvalCount).
+        $rejectedCount = (clone $baseCrossLoai())
             ->where('trang_thai', 'tu_choi')
             ->where('updated_at', '>=', now()->subDays(7))
             ->count();
@@ -317,7 +325,9 @@ class PageController extends Controller
 
         // 2026-08-09: default list = tất cả lịch hẹn (newest first), không giới hạn hôm nay.
         // Các tab con (approval/processing/upcoming/done) vẫn giữ filter riêng như cũ.
-        $listQ = (clone $base());
+        // 2026-09-17: tab approval / rejected dùng baseCrossLoai — user click widget "Chờ duyệt"
+        //   (cross-loại) phải xem được cả 3 loại kham_ls/tu_van/dich_vu, không bị lock theo menu.
+        $listQ = in_array($tab, ['approval', 'rejected'], true) ? (clone $baseCrossLoai()) : (clone $base());
         if ($nhom) {
             $listQ->whereHas('dichVu', fn ($q) => $q->where('thuoc_nhom', $nhom));
         }
