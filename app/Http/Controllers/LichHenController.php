@@ -222,7 +222,8 @@ class LichHenController extends Controller
             'ho_ten'            => ['required', 'string', 'max:255'],
             'so_dien_thoai'     => ['required', 'string', 'max:30'],
             'email'             => ['nullable', 'email', 'max:255'],
-            'ngay_hen'          => ['required', 'date'],
+            // 2026-09-17: khóa update ngày về quá khứ — đồng bộ với store (line 150) + BookingController.
+            'ngay_hen'          => ['required', 'date', 'after_or_equal:today'],
             'bac_si_id'    => ['required', Rule::exists('bac_si', 'id')],
             'ca_kham_id'        => ['required', Rule::exists('ca_kham', 'id')],
             'sale_id'           => ['required', Rule::exists('users', 'id')],
@@ -231,6 +232,7 @@ class LichHenController extends Controller
         ], [
             'ho_ten.required'           => 'Vui lòng nhập họ tên khách hàng.',
             'so_dien_thoai.required'    => 'Vui lòng nhập số điện thoại.',
+            'ngay_hen.after_or_equal'   => 'Ngày hẹn không được nhỏ hơn ngày hôm nay.',
             'bac_si_id.required'   => 'Vui lòng chọn bác sĩ tư vấn.',
             'ca_kham_id.required'       => 'Vui lòng chọn ca khám.',
             'sale_id.required'          => 'Vui lòng chọn sale phụ trách.',
