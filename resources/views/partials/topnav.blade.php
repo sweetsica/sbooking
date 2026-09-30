@@ -231,6 +231,11 @@
 <div class="text-body-md font-semibold text-on-surface leading-tight">{{ auth()->user()->name }}</div>
 <div class="text-[11px] uppercase tracking-wide text-on-surface-variant mt-0.5">{{ auth()->user()->is_admin ? 'Quản trị viên' : (auth()->user()->phongBan?->ten ?? 'Nhân viên') }}</div>
 </div>
+@if ($canBaoCao)
+<a href="/{{ $coSo->slug }}/bao-cao" class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-[20px] text-on-surface-variant">analytics</span> Báo cáo
+</a>
+@endif
 <a href="/doi-mat-khau" class="flex items-center gap-3 px-4 py-2.5 text-body-md text-on-surface hover:bg-surface-container-low transition-colors">
 <span class="material-symbols-outlined text-[20px] text-on-surface-variant">lock_reset</span> Đổi mật khẩu
 </a>
