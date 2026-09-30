@@ -353,6 +353,10 @@ class PageController extends Controller
             // 2026-08-19: chỉ khi click widget "Lịch hôm nay" mới filter ngay_dat=today.
             //   Default (tab=null) → show tất cả.
             $listQ->whereDate('ngay_dat', $today);
+        } elseif ($tab === null && $ngayFilter) {
+            // 2026-09-30: user chủ động chọn ngày ở form → list phải lọc theo ngày đó
+            //   (trước đây chỉ widget count đổi theo ngày, list vẫn show all → confusing).
+            $listQ->whereDate('ngay_dat', $today);
         }
 
         // 2026-08-19: search theo mã ĐL / tên / SĐT. Áp trước sort để không phá order.

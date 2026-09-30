@@ -47,6 +47,9 @@ body { background-color: #f7f9fb; }
 <span class="material-symbols-outlined">arrow_back</span>
 </a>
 <h2 class="text-headline-md font-headline-md font-extrabold text-on-surface">Chi tiết Lịch Hẹn</h2>
+@if ($booking->ma_booking)
+<span class="ml-1 px-3 py-1 rounded-full bg-surface-container-highest text-on-surface text-body-sm font-mono font-semibold">{{ $booking->ma_booking }}</span>
+@endif
 <span class="ml-1 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container text-body-sm font-semibold">{{ $coSo->ten }}</span>
 @if ($booking->trang_thai)
 @php

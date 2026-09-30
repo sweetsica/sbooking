@@ -104,8 +104,8 @@ $closeHour = end($hours) + 1;
 <div class="grid grid-cols-6 gap-2 p-3 bg-surface-container-low rounded-lg border border-outline-variant" data-bed-grid>
 @for ($i = 0; $i < $beds; $i++)
 @php $on = $i < $defOcc; @endphp
-<div data-bed class="bed-cell aspect-square rounded-sm flex items-center justify-center slot-pill {{ $on ? 'bg-secondary-container' : 'bg-tertiary-fixed-dim/30 border border-on-tertiary-fixed-variant/20' }}">
-<span class="material-symbols-outlined text-[14px] {{ $on ? 'text-on-secondary-container' : 'text-on-tertiary-fixed-variant' }}" style="font-variation-settings: 'FILL' {{ $on ? '1' : '0' }};">person</span>
+<div data-bed class="bed-cell aspect-square rounded-sm flex items-center justify-center slot-pill {{ $on ? 'bg-blue-500' : 'bg-tertiary-fixed-dim/30 border border-on-tertiary-fixed-variant/20' }}">
+<span class="material-symbols-outlined text-[14px] {{ $on ? 'text-white' : 'text-on-tertiary-fixed-variant' }}" style="font-variation-settings: 'FILL' {{ $on ? '1' : '0' }};">person</span>
 </div>
 @endfor
 </div>
@@ -116,8 +116,8 @@ $closeHour = end($hours) + 1;
 @php
 $hd = $hourData[$h];
 $bgClass = match($hd['status']) {
-    'full' => 'bg-secondary-container text-on-secondary-container',
-    'partial' => 'bg-secondary-container/40 text-on-secondary-container',
+    'full' => 'bg-blue-500 text-white',
+    'partial' => 'bg-blue-200 text-blue-900',
     default => 'bg-surface-container-highest text-outline',
 };
 $sel = $h === $defaultHour ? 'ring-2 ring-secondary ring-offset-1' : '';
@@ -157,7 +157,7 @@ $sel = $h === $defaultHour ? 'ring-2 ring-secondary ring-offset-1' : '';
 <span class="font-body-sm text-body-sm text-on-surface font-medium">Sẵn sàng (Trống)</span>
 </div>
 <div class="flex items-center gap-3">
-<div class="w-4 h-4 bg-secondary-container border border-secondary rounded"></div>
+<div class="w-4 h-4 bg-blue-500 border border-blue-600 rounded"></div>
 <span class="font-body-sm text-body-sm text-on-surface font-medium">Đang sử dụng</span>
 </div>
 <div class="flex items-center gap-3">
@@ -173,9 +173,9 @@ function paintBeds(card, occupied) {
     card.querySelectorAll('[data-bed]').forEach((c, i) => {
         const on = i < occupied;
         c.className = 'bed-cell aspect-square rounded-sm flex items-center justify-center slot-pill '
-            + (on ? 'bg-secondary-container' : 'bg-tertiary-fixed-dim/30 border border-on-tertiary-fixed-variant/20');
+            + (on ? 'bg-blue-500' : 'bg-tertiary-fixed-dim/30 border border-on-tertiary-fixed-variant/20');
         const ic = c.querySelector('span');
-        ic.className = 'material-symbols-outlined text-[14px] ' + (on ? 'text-on-secondary-container' : 'text-on-tertiary-fixed-variant');
+        ic.className = 'material-symbols-outlined text-[14px] ' + (on ? 'text-white' : 'text-on-tertiary-fixed-variant');
         ic.style.fontVariationSettings = on ? "'FILL' 1" : "'FILL' 0";
     });
 }
