@@ -26,7 +26,7 @@ new class extends Component
     use WithPagination, WithFileUploads;
 
     /** 2026-10-05: Livewire 3 không serialize Eloquent prop ngon → giữ 3 scalar public:
-     *   coSoId / coSoTen / coSoSlug. Template dùng $this->coSoTen trực tiếp, không cần method call. */
+     *   coSoId / coSoTen / coSoSlug. Template dùng $coSoTen trực tiếp, không cần method call. */
     public int $coSoId;
     public string $coSoTen = '';
     public string $coSoSlug = '';
@@ -319,7 +319,7 @@ new class extends Component
     <div class="flex items-center justify-between gap-3 px-3 py-1.5 border-b border-gray-300 bg-white sticky top-16 z-20">
         <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-gray-800">⚡ Quick Sheets</span>
-            <span class="text-[11px] text-gray-500">Cơ sở <b>{{ $this->coSoTen }}</b> · admin only</span>
+            <span class="text-[11px] text-gray-500">Cơ sở <b>{{ $coSoTen }}</b> · admin only</span>
         </div>
         <div class="flex items-center gap-3 text-[12px]">
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="🔍 Tìm trong tab"
@@ -338,7 +338,7 @@ new class extends Component
                 <span wire:loading.remove wire:target="syncFromScrm">⚡ Sync từ SCRM</span>
                 <span wire:loading wire:target="syncFromScrm">⏳</span>
             </button>
-            <a href="/{{ $this->coSoSlug }}/thiet-lap" class="text-gray-600 hover:text-gray-900 underline">← Thiết lập</a>
+            <a href="/{{ $coSoSlug }}/thiet-lap" class="text-gray-600 hover:text-gray-900 underline">← Thiết lập</a>
         </div>
     </div>
     @if (session('sync_ok'))<div class="bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-[11px] px-3 py-1">✓ {{ session('sync_ok') }}</div>@endif
@@ -638,6 +638,6 @@ new class extends Component
                 {{ $label }}
             </button>
         @endforeach
-        <span class="ml-auto text-[11px] text-gray-500">{{ $rows->total() }} dòng · CS: {{ $this->coSoSlug }}</span>
+        <span class="ml-auto text-[11px] text-gray-500">{{ $rows->total() }} dòng · CS: {{ $coSoSlug }}</span>
     </div>
 </div>
