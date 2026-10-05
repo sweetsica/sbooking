@@ -25,8 +25,11 @@ new class extends Component
 {
     use WithPagination, WithFileUploads;
 
-    /** 2026-10-05: Livewire 3 không serialize tốt Eloquent prop → giữ scalar id, resolve runtime. */
+    /** 2026-10-05: Livewire 3 không serialize Eloquent prop ngon → giữ 3 scalar public:
+     *   coSoId / coSoTen / coSoSlug. Template dùng $this->coSoTen trực tiếp, không cần method call. */
     public int $coSoId;
+    public string $coSoTen = '';
+    public string $coSoSlug = '';
     public string $tab = 'dich_vu';
     public string $search = '';
     public array $draft = [];
@@ -42,11 +45,14 @@ new class extends Component
     {
         abort_unless(auth()->user()?->is_admin, 403);
         $this->coSoId = $coSoId;
+        $co = CoSo::findOrFail($coSoId);
+        $this->coSoTen = $co->ten;
+        $this->coSoSlug = $co->slug;
         $this->resetDraft();
     }
 
-    /** Resolve CoSo mỗi lần cần. Dùng method thường, template gọi $this->getCoSo(). */
-    public function getCoSo(): CoSo
+    /** Resolve CoSo Eloquent khi backend thực cần (export filename, etc.). */
+    protected function getCoSo(): CoSo
     {
         return CoSo::findOrFail($this->coSoId);
     }
@@ -313,7 +319,7 @@ new class extends Component
     <div class="flex items-center justify-between gap-3 px-3 py-1.5 border-b border-gray-300 bg-white sticky top-16 z-20">
         <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-gray-800">⚡ Quick Sheets</span>
-            <span class="text-[11px] text-gray-500">Cơ sở <b>{{ $coSo->ten }}</b> · admin only</span>
+            <span class="text-[11px] text-gray-500">Cơ sở <b>{{ $this->coSoTen }}</b> · admin only</span>
         </div>
         <div class="flex items-center gap-3 text-[12px]">
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="🔍 Tìm trong tab"
@@ -332,7 +338,7 @@ new class extends Component
                 <span wire:loading.remove wire:target="syncFromScrm">⚡ Sync từ SCRM</span>
                 <span wire:loading wire:target="syncFromScrm">⏳</span>
             </button>
-            <a href="/{{ $coSo->slug }}/thiet-lap" class="text-gray-600 hover:text-gray-900 underline">← Thiết lập</a>
+            <a href="/{{ $this->coSoSlug }}/thiet-lap" class="text-gray-600 hover:text-gray-900 underline">← Thiết lập</a>
         </div>
     </div>
     @if (session('sync_ok'))<div class="bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-[11px] px-3 py-1">✓ {{ session('sync_ok') }}</div>@endif
@@ -632,6 +638,6 @@ new class extends Component
                 {{ $label }}
             </button>
         @endforeach
-        <span class="ml-auto text-[11px] text-gray-500">{{ $rows->total() }} dòng · CS: {{ $coSo->slug }}</span>
+        <span class="ml-auto text-[11px] text-gray-500">{{ $rows->total() }} dòng · CS: {{ $this->coSoSlug }}</span>
     </div>
 </div>
