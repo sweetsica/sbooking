@@ -405,7 +405,7 @@ new class extends Component
                                 <td class="{{ $tdCls }} text-center"><input type="checkbox" wire:model="editing.{{ $r->id }}.active"></td>
                                 <td class="{{ $tdCls }} text-center">
                                     <button wire:click="saveEdit({{ $r->id }})" class="text-[11px] text-green-700 hover:underline">💾</button>
-                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">Hủy</button>
+                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">↩ Thoát sửa</button>
                                 </td>
                             @else
                                 <td class="{{ $tdCls }}">{{ $r->ten }}</td>
@@ -470,7 +470,7 @@ new class extends Component
                                 <td class="{{ $tdCls }} text-center"><input type="checkbox" wire:model="editing.{{ $r->id }}.active"></td>
                                 <td class="{{ $tdCls }} text-center">
                                     <button wire:click="saveEdit({{ $r->id }})" class="text-[11px] text-green-700 hover:underline">💾</button>
-                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">Hủy</button>
+                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">↩ Thoát sửa</button>
                                 </td>
                             @else
                                 <td class="{{ $tdCls }} text-[11px]">{{ $r->chuc_danh }}</td>
@@ -556,7 +556,7 @@ new class extends Component
                                 </td>
                                 <td class="{{ $tdCls }} text-center">
                                     <button wire:click="saveEdit({{ $r->id }})" class="text-[11px] text-green-700 hover:underline">💾</button>
-                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">Hủy</button>
+                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">↩ Thoát sửa</button>
                                 </td>
                             @else
                                 <td class="{{ $tdCls }}">{{ $r->ten }}</td>
@@ -613,7 +613,7 @@ new class extends Component
                                 <td class="{{ $tdCls }} text-center"><input type="checkbox" wire:model="editing.{{ $r->id }}.is_admin"></td>
                                 <td class="{{ $tdCls }} text-center">
                                     <button wire:click="saveEdit({{ $r->id }})" class="text-[11px] text-green-700 hover:underline">💾</button>
-                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">Hủy</button>
+                                    <button wire:click="cancelEdit({{ $r->id }})" class="text-[11px] text-gray-600 hover:underline ml-1">↩ Thoát sửa</button>
                                 </td>
                             @else
                                 <td class="{{ $tdCls }}">{{ $r->name }}</td>
