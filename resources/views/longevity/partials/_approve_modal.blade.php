@@ -121,6 +121,13 @@
     var selHtYte = document.getElementById('approve-ho-tro-yte-select');
     function fillBacSi(select, list, placeholder, currentId, excludeId){
         select.innerHTML = '<option value="">' + placeholder + '</option>';
+        // 2026-10-05: option "Random" — Admin tick → submit handler sẽ bốc random 1 id thực.
+        //   Chỉ thêm cho select Hỗ trợ (ho_tro_id) — BS chính (bac_si_id) phải chọn cụ thể.
+        if (select.id === 'approve-ho-tro-yte-select') {
+            var r = document.createElement('option');
+            r.value = 'random'; r.textContent = '🎲 Random (hệ thống tự chọn khi lưu)';
+            select.appendChild(r);
+        }
         (list || []).forEach(function(bs){
             if (excludeId && Number(excludeId) === Number(bs.id)) return;
             var opt = document.createElement('option');
@@ -169,6 +176,12 @@
     }
     function fillOptions(select, list, placeholder, currentId){
         select.innerHTML = '<option value="">' + placeholder + '</option>';
+        // 2026-10-05: option "Random" cho sale hỗ trợ — submit handler sẽ bốc random khi lưu.
+        if (select.id === 'approve-ho-tro-select') {
+            var r = document.createElement('option');
+            r.value = 'random'; r.textContent = '🎲 Random (hệ thống tự chọn khi lưu)';
+            select.appendChild(r);
+        }
         (list || []).forEach(function(u){
             var opt = optionFor(u);
             if (currentId && Number(currentId) === Number(u.id)) opt.selected = true;
@@ -179,6 +192,23 @@
     htToggle.addEventListener('change', function(){
         htWrap.classList.toggle('hidden', ! htToggle.checked);
         if (! htToggle.checked) selHT.value = '';
+    });
+
+    // 2026-10-05: resolve 'random' → id thực lúc submit.
+    //   Bốc 1 option bất kỳ (khác '' và khác 'random') từ chính dropdown.
+    //   Nếu dropdown rỗng → bỏ về '' để backend hiểu "không chọn" thay vì gửi 'random'.
+    function resolveRandom(select){
+        if (! select || select.value !== 'random') return;
+        var pool = Array.from(select.options).filter(function(o){
+            return o.value && o.value !== 'random';
+        });
+        if (pool.length === 0) { select.value = ''; return; }
+        var pick = pool[Math.floor(Math.random() * pool.length)];
+        select.value = pick.value;
+    }
+    f.addEventListener('submit', function(){
+        resolveRandom(selHtYte); // Hỗ trợ y tế (bac_si)
+        resolveRandom(selHT);    // Sale hỗ trợ (user)
     });
 
     /**

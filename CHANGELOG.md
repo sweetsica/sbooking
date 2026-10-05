@@ -2,6 +2,13 @@
 
 Format: mỗi lần chốt tạo 1 block `## vX.Y.Z — YYYY-MM-DD` + bullets. Mới nhất ở trên cùng.
 
+## v0.17.2 — 2026-10-05
+
+- **Rename "TruAge" → "TrueAge"** (sửa chính tả) ở tất cả cơ sở — áp cả 3 variant: TruAge / Gene2 + Gene2 Plus + TruAge / Return TruAge. Migration idempotent, rollback đưa lại TruAge.
+- **Thêm 2 dịch vụ "MetaBoost 150" + "MetaBoost 300"** cho cơ sở có phòng Metaboost (hiện CS1), 120 phút, link tất cả phòng Metaboost cùng cơ sở.
+- **Link BS Ngà (Ngô Thị Ngà) vào phòng Metaboost** — admin thấy BS Ngà trong dropdown khi duyệt lịch MetaBoost.
+- **Approve modal: option "🎲 Random"** trong dropdown Hỗ trợ y tế (`ho_tro_id`) + Sale hỗ trợ (`tiep_don_ho_tro_id`). Chọn Random → submit handler bốc 1 id bất kỳ từ list đang hiện trước khi gửi, backend vẫn validate đúng id thực.
+
 ## v0.17.1 — 2026-10-05
 
 - **Dashboard — cột "Hành động" admin-only (thêm/sửa/xóa booking)**:
