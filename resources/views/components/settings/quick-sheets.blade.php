@@ -128,7 +128,13 @@ new class extends Component
         $this->editing[$id] = $row->only(array_keys($this->draft));
     }
 
-    public function cancelEdit(int $id): void { unset($this->editing[$id]); }
+    public function cancelEdit(int $id): void
+    {
+        // 2026-10-05: Livewire 3 không detect `unset($this->array[k])` → reassign để trigger reactivity.
+        $editing = $this->editing;
+        unset($editing[$id]);
+        $this->editing = $editing;
+    }
 
     public function saveEdit(int $id): void
     {
@@ -142,7 +148,7 @@ new class extends Component
             $this->addError('row_' . $id, $e->getMessage());
             return;
         }
-        unset($this->editing[$id]);
+        $this->cancelEdit($id);
     }
 
     public function deleteRow(int $id): void
@@ -154,7 +160,7 @@ new class extends Component
         } catch (\Throwable $e) {
             $this->addError('row_' . $id, $e->getMessage());
         }
-        unset($this->editing[$id]);
+        $this->cancelEdit($id);
     }
 
     protected function findRow(int $id)
