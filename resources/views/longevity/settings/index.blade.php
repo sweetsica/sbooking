@@ -49,6 +49,10 @@
         $external[] = ['ten' => 'Danh mục dịch vụ', 'icon' => 'list_alt',
             'mota' => 'Tra cứu toàn hệ thống: dịch vụ ở cơ sở nào, gắn phòng nào, ai thực hiện. Chỉ đọc, trực tiếp từ DB.',
             'href' => '/'.$coSo->slug.'/thiet-lap/danh-muc-dich-vu'];
+        // 2026-10-05: Quick Sheets admin — chỉnh nhanh 4 bảng + Export/Import CSV + Sync từ SCRM.
+        $external[] = ['ten' => '⚡ Quick Sheets', 'icon' => 'table_chart',
+            'mota' => 'Chỉnh nhanh dịch vụ / bác sĩ / phòng / nhân sự kiểu Google Sheets. CSV import/export + Sync từ SCRM.',
+            'href' => '/'.$coSo->slug.'/thiet-lap/quick-sheets'];
     }
 @endphp
 

@@ -2,6 +2,18 @@
 
 Format: mỗi lần chốt tạo 1 block `## vX.Y.Z — YYYY-MM-DD` + bullets. Mới nhất ở trên cùng.
 
+## v0.17.3 — 2026-10-05
+
+- **Trang Quick Sheets** `/{{co_so}}/thiet-lap/quick-sheets` (admin only) — chỉnh nhanh 4 bảng kiểu Google Sheets, full CRUD inline:
+  - 💆 Dịch vụ (dich_vu)
+  - 👨‍⚕️ Bác sĩ / KTV / Điều dưỡng (bac_si)
+  - 🚪 Phòng (phong)
+  - 🧑‍💼 Nhân sự sbooking (users)
+- **Export CSV + Import CSV** mỗi tab. Import idempotent theo id (có id → update, không có → create).
+- **Nút "⚡ Sync từ SCRM"**: pull sale list từ SCRM `/api/ups/sales-today` → upsert local users theo email (update name/chuc_danh).
+- Thêm **livewire/livewire 3** + **livewire/volt** làm dependency; VoltServiceProvider mount thêm `resources/views/components`.
+- Card vào từ `/{co_so}/thiet-lap`.
+
 ## v0.17.2 — 2026-10-05
 
 - **Rename "TruAge" → "TrueAge"** (sửa chính tả) ở tất cả cơ sở — áp cả 3 variant: TruAge / Gene2 + Gene2 Plus + TruAge / Return TruAge. Migration idempotent, rollback đưa lại TruAge.

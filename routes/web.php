@@ -298,6 +298,8 @@ Route::prefix('{co_so:slug}')->group(function () {
             Route::post('/tong-hop-lich-dat/nhap',  [\App\Http\Controllers\TongHopLichDatController::class, 'nhap'])->name('tong-hop-lich-dat.nhap');
             Route::get('/tong-hop-lich-dat/nhap/loi/{token}', [\App\Http\Controllers\TongHopLichDatController::class, 'taiFileLoi'])->name('tong-hop-lich-dat.taifileloi');
             Route::post('/tong-hop-lich-dat/xoa-hang-loat', [\App\Http\Controllers\TongHopLichDatController::class, 'xoaHangLoat'])->name('tong-hop-lich-dat.xoahangloat');
+            // 2026-10-05: Quick Sheets — admin chỉnh nhanh dịch vụ/bác sĩ/phòng/users theo cơ sở.
+            Route::get('/quick-sheets', fn (\App\Models\CoSo $co_so) => view('longevity.settings.quick-sheets', ['coSo' => $co_so]))->name('quick-sheets');
             Route::get('/{section}', [SettingsController::class, 'section'])->name('section');
 
             // Ghi + các mục quản trị khác: CHỈ ADMIN
