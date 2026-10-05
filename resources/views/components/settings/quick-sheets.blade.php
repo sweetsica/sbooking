@@ -45,9 +45,8 @@ new class extends Component
         $this->resetDraft();
     }
 
-    /** Resolve CoSo mỗi lần cần — tránh prop serialize. Livewire 3 cần #[Computed]. */
-    #[\Livewire\Attributes\Computed]
-    public function coSo(): CoSo
+    /** Resolve CoSo mỗi lần cần. Dùng method thường, template gọi $this->getCoSo(). */
+    public function getCoSo(): CoSo
     {
         return CoSo::findOrFail($this->coSoId);
     }
@@ -173,7 +172,7 @@ new class extends Component
         foreach ($rows as $r) {
             $csv .= implode(',', array_map(fn ($c) => '"' . str_replace('"', '""', (string) $r->$c) . '"', $cols)) . "\n";
         }
-        $filename = "sbooking-{$this->tab}-{$this->coSo->slug}-" . now()->format('Ymd-His') . '.csv';
+        $filename = "sbooking-{$this->tab}-{$this->getCoSo()->slug}-" . now()->format('Ymd-His') . '.csv';
         return response()->streamDownload(fn () => print($csv), $filename, ['Content-Type' => 'text/csv; charset=utf-8']);
     }
 
@@ -283,7 +282,7 @@ new class extends Component
     {
         return [
             'rows'       => $this->query()->paginate(30),
-            'coSo'       => $this->coSo, // 2026-10-05: expose cho template dùng $coSo trực tiếp.
+            'coSo'       => $this->getCoSo(), // 2026-10-05: expose cho template dùng $coSo trực tiếp.
             'coSoList'   => CoSo::orderBy('id')->get(['id', 'ten', 'slug']),
             'nhomOpts'   => ['tu_van' => 'Tư vấn', 'kham_ls' => 'Khám LS', 'khac' => 'Khác'],
             'kieuOpts'   => ['phong_kham' => 'Phòng khám', 'phong_dich_vu' => 'Phòng dịch vụ'],
@@ -314,7 +313,7 @@ new class extends Component
     <div class="flex items-center justify-between gap-3 px-3 py-1.5 border-b border-gray-300 bg-white sticky top-16 z-20">
         <div class="flex items-center gap-2">
             <span class="text-sm font-semibold text-gray-800">⚡ Quick Sheets</span>
-            <span class="text-[11px] text-gray-500">Cơ sở <b>{{ $this->coSo->ten }}</b> · admin only</span>
+            <span class="text-[11px] text-gray-500">Cơ sở <b>{{ $this->getCoSo()->ten }}</b> · admin only</span>
         </div>
         <div class="flex items-center gap-3 text-[12px]">
             <input type="search" wire:model.live.debounce.300ms="search" placeholder="🔍 Tìm trong tab"
@@ -333,7 +332,7 @@ new class extends Component
                 <span wire:loading.remove wire:target="syncFromScrm">⚡ Sync từ SCRM</span>
                 <span wire:loading wire:target="syncFromScrm">⏳</span>
             </button>
-            <a href="/{{ $this->coSo->slug }}/thiet-lap" class="text-gray-600 hover:text-gray-900 underline">← Thiết lập</a>
+            <a href="/{{ $this->getCoSo()->slug }}/thiet-lap" class="text-gray-600 hover:text-gray-900 underline">← Thiết lập</a>
         </div>
     </div>
     @if (session('sync_ok'))<div class="bg-emerald-50 border-b border-emerald-200 text-emerald-800 text-[11px] px-3 py-1">✓ {{ session('sync_ok') }}</div>@endif
@@ -633,6 +632,6 @@ new class extends Component
                 {{ $label }}
             </button>
         @endforeach
-        <span class="ml-auto text-[11px] text-gray-500">{{ $rows->total() }} dòng · CS: {{ $this->coSo->slug }}</span>
+        <span class="ml-auto text-[11px] text-gray-500">{{ $rows->total() }} dòng · CS: {{ $this->getCoSo()->slug }}</span>
     </div>
 </div>
