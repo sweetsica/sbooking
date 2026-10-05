@@ -25,7 +25,8 @@ new class extends Component
 {
     use WithPagination, WithFileUploads;
 
-    public CoSo $coSo;
+    /** 2026-10-05: Livewire 3 không serialize tốt Eloquent prop → giữ scalar id, resolve runtime. */
+    public int $coSoId;
     public string $tab = 'dich_vu';
     public string $search = '';
     public array $draft = [];
@@ -37,11 +38,17 @@ new class extends Component
         return ['tab' => ['except' => 'dich_vu']];
     }
 
-    public function mount(CoSo $coSo): void
+    public function mount(int $coSoId): void
     {
         abort_unless(auth()->user()?->is_admin, 403);
-        $this->coSo = $coSo;
+        $this->coSoId = $coSoId;
         $this->resetDraft();
+    }
+
+    /** Resolve CoSo mỗi lần cần — tránh prop serialize. */
+    public function getCoSoProperty(): CoSo
+    {
+        return CoSo::findOrFail($this->coSoId);
     }
 
     public function updatedTab(): void
@@ -70,9 +77,9 @@ new class extends Component
     {
         try {
             match ($this->tab) {
-                'dich_vu' => DichVu::create(array_merge($this->validatedDraft(['ten']), ['co_so_id' => $this->coSo->id])),
-                'bac_si'  => BacSi::create(array_merge($this->validatedDraft(['ten']), ['co_so_id' => $this->coSo->id, 'xuat_hien_moi_co_so' => false])),
-                'phong'   => Phong::create(array_merge($this->validatedDraft(['ten']), ['co_so_id' => $this->coSo->id])),
+                'dich_vu' => DichVu::create(array_merge($this->validatedDraft(['ten']), ['co_so_id' => $this->coSoId])),
+                'bac_si'  => BacSi::create(array_merge($this->validatedDraft(['ten']), ['co_so_id' => $this->coSoId, 'xuat_hien_moi_co_so' => false])),
+                'phong'   => Phong::create(array_merge($this->validatedDraft(['ten']), ['co_so_id' => $this->coSoId])),
                 'users'   => $this->addUser(),
                 default   => null,
             };
@@ -101,7 +108,7 @@ new class extends Component
             'email'     => $data['email'],
             'username'  => $data['username'] ?: strtolower(str_replace(' ', '', $data['name'])),
             'chuc_danh' => $data['chuc_danh'] ?: null,
-            'co_so_id'  => $this->coSo->id,
+            'co_so_id'  => $this->coSoId,
             'is_tu_van' => (bool) $data['is_tu_van'],
             'is_admin'  => (bool) $data['is_admin'],
             'password'  => bcrypt(\Illuminate\Support\Str::random(20)),
@@ -147,10 +154,10 @@ new class extends Component
     protected function findRow(int $id)
     {
         return match ($this->tab) {
-            'dich_vu' => DichVu::where('co_so_id', $this->coSo->id)->find($id),
-            'bac_si'  => BacSi::where('co_so_id', $this->coSo->id)->find($id),
-            'phong'   => Phong::where('co_so_id', $this->coSo->id)->find($id),
-            'users'   => User::where('co_so_id', $this->coSo->id)->find($id),
+            'dich_vu' => DichVu::where('co_so_id', $this->coSoId)->find($id),
+            'bac_si'  => BacSi::where('co_so_id', $this->coSoId)->find($id),
+            'phong'   => Phong::where('co_so_id', $this->coSoId)->find($id),
+            'users'   => User::where('co_so_id', $this->coSoId)->find($id),
             default   => null,
         };
     }
@@ -185,10 +192,10 @@ new class extends Component
             $data = array_combine($header, $row);
             if (! $data) { $errors++; continue; }
             try {
-                $data['co_so_id'] = $this->coSo->id;
+                $data['co_so_id'] = $this->coSoId;
                 $id = (int) ($data['id'] ?? 0);
                 unset($data['id']);
-                if ($id && $existing = $modelClass::where('co_so_id', $this->coSo->id)->find($id)) {
+                if ($id && $existing = $modelClass::where('co_so_id', $this->coSoId)->find($id)) {
                     $existing->update($data);
                     $updated++;
                 } else {
@@ -226,7 +233,7 @@ new class extends Component
 
     protected function query()
     {
-        $q = $this->modelClass()::query()->where('co_so_id', $this->coSo->id);
+        $q = $this->modelClass()::query()->where('co_so_id', $this->coSoId);
         if ($this->search !== '') {
             $s = trim($this->search);
             $tenField = $this->tab === 'users' ? 'name' : 'ten';
@@ -247,7 +254,7 @@ new class extends Component
         }
         try {
             $resp = \Illuminate\Support\Facades\Http::timeout(10)
-                ->get("{$scrmUrl}/api/ups/sales-today", ['sbooking_co_so_id' => $this->coSo->id]);
+                ->get("{$scrmUrl}/api/ups/sales-today", ['sbooking_co_so_id' => $this->coSoId]);
             if (! $resp->ok()) throw new \Exception("HTTP {$resp->status()}");
             $data = $resp->json('data') ?? [];
             $matched = 0; $notFound = 0;
@@ -275,6 +282,7 @@ new class extends Component
     {
         return [
             'rows'       => $this->query()->paginate(30),
+            'coSo'       => $this->coSo, // 2026-10-05: expose cho template dùng $coSo trực tiếp.
             'coSoList'   => CoSo::orderBy('id')->get(['id', 'ten', 'slug']),
             'nhomOpts'   => ['tu_van' => 'Tư vấn', 'kham_ls' => 'Khám LS', 'khac' => 'Khác'],
             'kieuOpts'   => ['phong_kham' => 'Phòng khám', 'phong_dich_vu' => 'Phòng dịch vụ'],

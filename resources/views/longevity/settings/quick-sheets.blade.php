@@ -19,7 +19,7 @@
 </head>
 <body class="bg-surface">
 @include('partials.topnav', ['active' => 'thiet-lap'])
-<livewire:settings.quick-sheets :co-so="$coSo" />
+<livewire:settings.quick-sheets :co-so-id="$coSo->id" />
 @livewireScripts
 </body>
 </html>
