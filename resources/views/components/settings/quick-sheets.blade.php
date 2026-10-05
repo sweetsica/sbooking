@@ -45,8 +45,9 @@ new class extends Component
         $this->resetDraft();
     }
 
-    /** Resolve CoSo mỗi lần cần — tránh prop serialize. */
-    public function getCoSoProperty(): CoSo
+    /** Resolve CoSo mỗi lần cần — tránh prop serialize. Livewire 3 cần #[Computed]. */
+    #[\Livewire\Attributes\Computed]
+    public function coSo(): CoSo
     {
         return CoSo::findOrFail($this->coSoId);
     }
