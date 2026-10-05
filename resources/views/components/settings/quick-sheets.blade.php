@@ -304,6 +304,11 @@ new class extends Component
      style="font-family: Arial, Roboto, 'Helvetica Neue', sans-serif;">
 
     @php
+        // 2026-10-05: Volt v1 không inject props/with() vào template Blade section ngon →
+        // query trực tiếp từ coSoId của component instance ($this là Component).
+        $__co = \App\Models\CoSo::find($this->coSoId);
+        $coSoTen = $__co?->ten ?? '—';
+        $coSoSlug = $__co?->slug ?? '';
         $tabs = [
             'dich_vu' => '💆 Dịch vụ',
             'bac_si'  => '👨‍⚕️ Bác sĩ/KTV/ĐD',
