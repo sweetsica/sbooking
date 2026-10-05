@@ -262,18 +262,23 @@
                                 <span class="text-xs font-semibold px-2 py-0.5 rounded {{ $stResult[1] }}">{{ $stResult[0] }}</span>
                             </td>
                             @if (auth()->user()->is_admin)
-                                {{-- 2026-10-05: Hành động — admin sửa/xóa. onclick stopPropagation để không trigger row click. --}}
-                                <td class="px-4 py-2.5 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+                                {{-- 2026-10-05: Hành động — admin sửa/xóa.
+                                     stopPropagation trên CHÍNH button/link để chắc chắn row.onclick không fire
+                                     (td.onclick wrapper không đủ với 1 số browser khi form submit). --}}
+                                <td class="px-4 py-2.5 text-right whitespace-nowrap">
                                     <a href="/{{ $coSo->slug }}/sua-dat-phong/{{ $b->id }}"
+                                       onclick="event.stopPropagation()"
                                        class="inline-flex items-center gap-1 text-xs font-semibold text-secondary border border-secondary/40 hover:bg-secondary/10 px-2 py-1 rounded"
                                        title="Sửa booking">
                                         <span class="material-symbols-outlined text-[16px]">edit</span>Sửa
                                     </a>
                                     <form method="POST" action="/{{ $coSo->slug }}/xoa-dat-phong/{{ $b->id }}" class="inline-block ml-1"
-                                          onsubmit="return confirm('Xóa booking {{ $b->ma_booking ?? '#'.$b->id }} của {{ $b->khachHang?->ho_ten ?? '—' }}? Thao tác không hoàn tác được.');">
+                                          onclick="event.stopPropagation()"
+                                          onsubmit="event.stopPropagation(); return confirm('Xóa booking {{ $b->ma_booking ?? '#'.$b->id }} của {{ $b->khachHang?->ho_ten ?? '—' }}? Thao tác không hoàn tác được.');">
                                         @csrf
                                         @method('DELETE')
                                         <button type="submit"
+                                                onclick="event.stopPropagation()"
                                                 class="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 border border-rose-300 hover:bg-rose-50 px-2 py-1 rounded"
                                                 title="Xóa booking">
                                             <span class="material-symbols-outlined text-[16px]">delete</span>Xóa
@@ -366,15 +371,16 @@
                 const dv = b.dich_vu ? `<span class="text-xs text-on-surface-variant ml-1">· ${esc(b.dich_vu)}</span>` : '';
                 // 2026-10-05: cột Hành động — admin sửa/xóa (mirror server-side blade).
                 const actionTd = isAdmin ? `
-                    <td class="px-4 py-2.5 text-right whitespace-nowrap" onclick="event.stopPropagation()">
-                        <a href="/${slug}/sua-dat-phong/${b.id}" class="inline-flex items-center gap-1 text-xs font-semibold text-secondary border border-secondary/40 hover:bg-secondary/10 px-2 py-1 rounded" title="Sửa booking">
+                    <td class="px-4 py-2.5 text-right whitespace-nowrap">
+                        <a href="/${slug}/sua-dat-phong/${b.id}" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-xs font-semibold text-secondary border border-secondary/40 hover:bg-secondary/10 px-2 py-1 rounded" title="Sửa booking">
                             <span class="material-symbols-outlined text-[16px]">edit</span>Sửa
                         </a>
                         <form method="POST" action="/${slug}/xoa-dat-phong/${b.id}" class="inline-block ml-1"
-                              onsubmit="return confirm('Xóa booking ' + ${JSON.stringify(b.ma_booking || ('#' + b.id))} + ' của ' + ${JSON.stringify(b.ten_khach || '—')} + '? Thao tác không hoàn tác được.');">
+                              onclick="event.stopPropagation()"
+                              onsubmit="event.stopPropagation(); return confirm('Xóa booking ' + ${JSON.stringify(b.ma_booking || ('#' + b.id))} + ' của ' + ${JSON.stringify(b.ten_khach || '—')} + '? Thao tác không hoàn tác được.');">
                             <input type="hidden" name="_token" value="${esc(csrf)}">
                             <input type="hidden" name="_method" value="DELETE">
-                            <button type="submit" class="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 border border-rose-300 hover:bg-rose-50 px-2 py-1 rounded" title="Xóa booking">
+                            <button type="submit" onclick="event.stopPropagation()" class="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 border border-rose-300 hover:bg-rose-50 px-2 py-1 rounded" title="Xóa booking">
                                 <span class="material-symbols-outlined text-[16px]">delete</span>Xóa
                             </button>
                         </form>

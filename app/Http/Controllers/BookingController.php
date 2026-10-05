@@ -1149,7 +1149,18 @@ class BookingController extends Controller
 
         $extra = '';
 
-        return redirect("/{$co_so->slug}/danh-sach")
+        // 2026-10-05: redirect theo referer — admin xóa từ /lich-hen thì về /lich-hen,
+        //   xóa từ /danh-sach thì về /danh-sach. Fallback /lich-hen (dashboard chính).
+        $back = request()->headers->get('referer');
+        $target = "/{$co_so->slug}/lich-hen";
+        if ($back && str_contains($back, "/{$co_so->slug}/")) {
+            $path = parse_url($back, PHP_URL_PATH);
+            // Không bao giờ redirect về /xem-dat-phong/{id} (detail của lịch đã xóa).
+            if ($path && ! str_contains($path, '/xem-dat-phong/') && ! str_contains($path, '/sua-dat-phong/')) {
+                $target = $back;
+            }
+        }
+        return redirect($target)
             ->with('ok', 'Đã xóa lịch hẹn của ' . $ten . '.' . $extra);
     }
 
