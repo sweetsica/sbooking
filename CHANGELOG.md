@@ -2,6 +2,14 @@
 
 Format: mỗi lần chốt tạo 1 block `## vX.Y.Z — YYYY-MM-DD` + bullets. Mới nhất ở trên cùng.
 
+## v0.17.1 — 2026-10-05
+
+- **Dashboard — cột "Hành động" admin-only (thêm/sửa/xóa booking)**:
+  - Header: nút `+ Tư vấn` + `+ Dịch vụ` cho admin (thăm khám đã chuyển sang Datasource).
+  - Mỗi dòng: nút **Sửa** (`sua-dat-phong/{id}`) + **Xóa** (DELETE + confirm). `stopPropagation` trên chính button/link/form để không bị row.onclick nhảy sang detail.
+  - JS poll 15s mirror cột action (dùng `csrf-token` meta có sẵn).
+- **Fix `BookingController@destroy` redirect** — trước luôn về `/danh-sach`. Giờ về đúng trang nguồn theo `referer` (`/lich-hen` hoặc `/danh-sach`), loại trừ cứng URL `/xem-dat-phong/*` & `/sua-dat-phong/*` để không bao giờ bắn vào detail của lịch vừa xóa.
+
 ## v0.17.0 — 2026-09-04
 
 - **Phase 6.26 — Sale làm bên SCRM, sbooking chỉ read-only cho sale**:
