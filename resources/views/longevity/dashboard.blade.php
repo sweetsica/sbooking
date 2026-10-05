@@ -43,6 +43,15 @@
             </p>
         </div>
         <div class="flex items-center gap-2">
+            @if (auth()->user()->is_admin)
+                {{-- 2026-10-05: admin thêm nhanh — 2 loại create còn active (thăm khám đã chuyển sang Datasource). --}}
+                <a href="/{{ $coSo->slug }}/dat-lich-tu-van" class="text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 px-3 py-2 rounded-lg inline-flex items-center gap-1" title="Admin: thêm lịch tư vấn">
+                    <span class="material-symbols-outlined text-[18px]">add</span> Tư vấn
+                </a>
+                <a href="/{{ $coSo->slug }}/dat-lich-dich-vu" class="text-sm font-semibold text-white bg-fuchsia-600 hover:bg-fuchsia-700 px-3 py-2 rounded-lg inline-flex items-center gap-1" title="Admin: thêm lịch dịch vụ">
+                    <span class="material-symbols-outlined text-[18px]">add</span> Dịch vụ
+                </a>
+            @endif
             <a href="/{{ $coSo->slug }}/lich-hen/timeline" class="text-sm font-semibold text-secondary border border-secondary/40 hover:bg-secondary/10 px-4 py-2 rounded-lg inline-flex items-center gap-1.5">
                 <span class="material-symbols-outlined text-[18px]">calendar_month</span> Xem lịch trình
             </a>
@@ -193,6 +202,9 @@
                         </th>
                         <th class="px-4 py-2.5 font-semibold">Trạng thái</th>
                         <th class="px-4 py-2.5 font-semibold">Kết quả</th>
+                        @if (auth()->user()->is_admin)
+                            <th class="px-4 py-2.5 font-semibold text-right">Hành động</th>
+                        @endif
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-outline-variant/60" data-bookings-tbody>
@@ -249,10 +261,30 @@
                             <td class="px-4 py-2.5">
                                 <span class="text-xs font-semibold px-2 py-0.5 rounded {{ $stResult[1] }}">{{ $stResult[0] }}</span>
                             </td>
+                            @if (auth()->user()->is_admin)
+                                {{-- 2026-10-05: Hành động — admin sửa/xóa. onclick stopPropagation để không trigger row click. --}}
+                                <td class="px-4 py-2.5 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+                                    <a href="/{{ $coSo->slug }}/sua-dat-phong/{{ $b->id }}"
+                                       class="inline-flex items-center gap-1 text-xs font-semibold text-secondary border border-secondary/40 hover:bg-secondary/10 px-2 py-1 rounded"
+                                       title="Sửa booking">
+                                        <span class="material-symbols-outlined text-[16px]">edit</span>Sửa
+                                    </a>
+                                    <form method="POST" action="/{{ $coSo->slug }}/xoa-dat-phong/{{ $b->id }}" class="inline-block ml-1"
+                                          onsubmit="return confirm('Xóa booking {{ $b->ma_booking ?? '#'.$b->id }} của {{ $b->khachHang?->ho_ten ?? '—' }}? Thao tác không hoàn tác được.');">
+                                        @csrf
+                                        @method('DELETE')
+                                        <button type="submit"
+                                                class="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 border border-rose-300 hover:bg-rose-50 px-2 py-1 rounded"
+                                                title="Xóa booking">
+                                            <span class="material-symbols-outlined text-[16px]">delete</span>Xóa
+                                        </button>
+                                    </form>
+                                </td>
+                            @endif
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="9" class="px-4 py-12 text-center text-on-surface-variant italic">
+                            <td colspan="{{ auth()->user()->is_admin ? 10 : 9 }}" class="px-4 py-12 text-center text-on-surface-variant italic">
                                 Không có lịch nào khớp bộ lọc.
                             </td>
                         </tr>
@@ -269,6 +301,8 @@
     // 2026-08-05: bán real-time — fetch stats mỗi 15s, update DOM in-place (không reload).
     const slug = @json($coSo->slug);
     const currentTab = @json($tab);
+    const isAdmin = @json((bool) auth()->user()->is_admin);
+    const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
     const url = `/${slug}/lich-hen?tab=${encodeURIComponent(currentTab)}&json=1`;
 
     // 2026-08-19: tách 2 badge — approval + result. Mirror server-side logic.
@@ -320,8 +354,9 @@
             // Update bookings table
             const tbody = document.querySelector('[data-bookings-tbody]');
             if (! tbody) return;
+            const colspan = isAdmin ? 10 : 9;
             if (! d.bookings || d.bookings.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="9" class="px-4 py-12 text-center text-on-surface-variant italic">Không có lịch nào khớp bộ lọc.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="${colspan}" class="px-4 py-12 text-center text-on-surface-variant italic">Không có lịch nào khớp bộ lọc.</td></tr>`;
                 return;
             }
             tbody.innerHTML = d.bookings.map((b, i) => {
@@ -329,6 +364,21 @@
                 const [rsLabel, rsClass] = resultBadge(b.trang_thai, b.trang_thai_khach);
                 const [lLabel, lClass] = loaiBadge(b.loai);
                 const dv = b.dich_vu ? `<span class="text-xs text-on-surface-variant ml-1">· ${esc(b.dich_vu)}</span>` : '';
+                // 2026-10-05: cột Hành động — admin sửa/xóa (mirror server-side blade).
+                const actionTd = isAdmin ? `
+                    <td class="px-4 py-2.5 text-right whitespace-nowrap" onclick="event.stopPropagation()">
+                        <a href="/${slug}/sua-dat-phong/${b.id}" class="inline-flex items-center gap-1 text-xs font-semibold text-secondary border border-secondary/40 hover:bg-secondary/10 px-2 py-1 rounded" title="Sửa booking">
+                            <span class="material-symbols-outlined text-[16px]">edit</span>Sửa
+                        </a>
+                        <form method="POST" action="/${slug}/xoa-dat-phong/${b.id}" class="inline-block ml-1"
+                              onsubmit="return confirm('Xóa booking ' + ${JSON.stringify(b.ma_booking || ('#' + b.id))} + ' của ' + ${JSON.stringify(b.ten_khach || '—')} + '? Thao tác không hoàn tác được.');">
+                            <input type="hidden" name="_token" value="${esc(csrf)}">
+                            <input type="hidden" name="_method" value="DELETE">
+                            <button type="submit" class="inline-flex items-center gap-1 text-xs font-semibold text-rose-700 border border-rose-300 hover:bg-rose-50 px-2 py-1 rounded" title="Xóa booking">
+                                <span class="material-symbols-outlined text-[16px]">delete</span>Xóa
+                            </button>
+                        </form>
+                    </td>` : '';
                 return `
                 <tr class="${rowTintClass(b.trang_thai_khach)} cursor-pointer" onclick="window.location='${esc(b.url)}'">
                     <td class="px-4 py-2.5 text-on-surface-variant">${i + 1}</td>
@@ -340,6 +390,7 @@
                     <td class="px-4 py-2.5 font-mono text-xs">${esc(b.gio || '—')}</td>
                     <td class="px-4 py-2.5"><span class="text-xs font-semibold px-2 py-0.5 rounded ${apClass}">${apLabel}</span></td>
                     <td class="px-4 py-2.5"><span class="text-xs font-semibold px-2 py-0.5 rounded ${rsClass}">${rsLabel}</span></td>
+                    ${actionTd}
                 </tr>`;
             }).join('');
         } catch (e) { /* silent */ }
