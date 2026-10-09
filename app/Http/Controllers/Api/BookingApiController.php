@@ -158,6 +158,53 @@ class BookingApiController extends Controller
         return response()->json(['ok' => true]);
     }
 
+    /**
+     * 2026-10-09 — Preflight bác sĩ (soft). Dùng cho simple-booking data app và
+     * khi admin sbooking đổi giờ. Chỉ cần bac_si_id + ngay_dat + gio_thuc_hien + gio_ket_thuc.
+     * except_booking_id: khi đổi giờ chính booking đó, bỏ qua chính nó trong check overlap.
+     * Luôn trả 200 (soft): {ok, reason}.
+     */
+    public function preflightDoctor(Request $request): JsonResponse
+    {
+        $data = $request->validate([
+            'bac_si_id'          => ['required', 'integer', 'exists:bac_si,id'],
+            'ngay_dat'           => ['required', 'date_format:Y-m-d'],
+            'gio_thuc_hien'      => ['required', 'string'],
+            'gio_ket_thuc'       => ['required', 'string'],
+            'except_booking_id'  => ['nullable', 'integer'],
+        ]);
+
+        $toMin = fn ($t) => (int) substr($t, 0, 2) * 60 + (int) substr($t, 3, 2);
+        $s = $toMin($data['gio_thuc_hien']);
+        $e = $toMin($data['gio_ket_thuc']);
+        if ($e <= $s) {
+            return response()->json(['ok' => false, 'reason' => 'Giờ kết thúc phải sau giờ bắt đầu.']);
+        }
+
+        // Overlap: booking BS cùng ngày, status giữ chỗ, exclude self (nếu có).
+        $overlap = Booking::query()
+            ->where('bac_si_id', $data['bac_si_id'])
+            ->whereDate('ngay_dat', $data['ngay_dat'])
+            ->giuCho()
+            ->when(! empty($data['except_booking_id']), fn ($q) => $q->where('id', '!=', $data['except_booking_id']))
+            ->get(['id', 'gio_thuc_hien', 'gio_ket_thuc'])
+            ->first(function ($b) use ($s, $e, $toMin) {
+                if (! $b->gio_thuc_hien || ! $b->gio_ket_thuc) return false;
+                $os = $toMin($b->gio_thuc_hien);
+                $oe = $toMin($b->gio_ket_thuc);
+                return $s < $oe && $os < $e;
+            });
+
+        if ($overlap) {
+            return response()->json([
+                'ok' => false,
+                'reason' => "Bác sĩ đã có lịch #{$overlap->id} trong khoảng {$overlap->gio_thuc_hien}–{$overlap->gio_ket_thuc} ngày {$data['ngay_dat']}.",
+            ]);
+        }
+
+        return response()->json(['ok' => true, 'reason' => '']);
+    }
+
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([

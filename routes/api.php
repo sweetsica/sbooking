@@ -17,6 +17,9 @@ Route::middleware('scrm.token')->group(function () {
     // 2026-08-19: pre-flight check (dry-run) — SCRM lead-form call trước khi tạo booking
     // để hiển thị lỗi BS trùng lịch / phòng full / khung ngắn ngay tại form, không đợi sync fail.
     Route::post('/bookings/preflight', [BookingApiController::class, 'preflight']);
+    // 2026-10-09: check bác sĩ còn khả dụng không — không cần khung_gio_id, chỉ cần gio_thuc_hien+gio_ket_thuc.
+    // Dùng cho simple-booking data app và admin sbooking đổi giờ. Trả 200 kèm {ok,reason} (soft).
+    Route::post('/bookings/preflight-doctor', [BookingApiController::class, 'preflightDoctor']);
     Route::put('/bookings/{booking}', [BookingApiController::class, 'update']);
     Route::delete('/bookings/{booking}', [BookingApiController::class, 'destroy']);
     Route::post('/bookings/{booking}/comments', [BookingApiController::class, 'comment']);
