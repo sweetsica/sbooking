@@ -262,17 +262,17 @@ class PageController extends Controller
         $loai = in_array($request->query('loai'), ['kham_ls', 'tu_van', 'dich_vu'], true) ? $request->query('loai') : null;
         $kieu = $request->query('kieu') === 'dich_vu' ? 'phong_dich_vu' : 'phong_kham';
 
-        $base = fn () => Booking::where('co_so_id', $co_so->id)
+        // 2026-10-12: aggregate (longevity-vn) → bỏ filter co_so_id, counters gộp toàn công ty.
+        $base = fn () => Booking::query()
+            ->when(! $co_so->is_aggregate, fn ($q) => $q->where('co_so_id', $co_so->id))
             ->visibleTo(auth()->user())
             ->when($loai,
                 fn ($q) => $q->where('loai_dat_lich', $loai),
                 fn ($q) => $q->whereHas('phong', fn ($qq) => $qq->where('kieu_phong', $kieu))
             );
 
-        // 2026-09-17: "Chờ duyệt" + "Đã từ chối" cross-loại — booking BOD/tư vấn đang chờ duyệt
-        //   phải hiện ngay cả khi user đang ở menu "Lịch khám" (?loai=kham_ls). Trước đây widget
-        //   filter theo loai → user tạo BOD tư vấn từ CRM, vào menu Lịch khám không thấy đâu.
-        $baseCrossLoai = fn () => Booking::where('co_so_id', $co_so->id)
+        $baseCrossLoai = fn () => Booking::query()
+            ->when(! $co_so->is_aggregate, fn ($q) => $q->where('co_so_id', $co_so->id))
             ->visibleTo(auth()->user());
 
         $todayCount = (clone $base())->whereDate('ngay_dat', $today)->count();
@@ -380,7 +380,7 @@ class PageController extends Controller
             $listQ->orderByDesc('id');
         }
 
-        $bookings = $listQ->with(['khachHang', 'dichVu', 'sale'])
+        $bookings = $listQ->with(['khachHang', 'dichVu', 'sale', 'coSo'])
             ->limit(100)
             ->get();
 
@@ -667,9 +667,11 @@ class PageController extends Controller
         // 2026-08-10 — Tab "Lịch khám" (mặc định) vs "Lịch dịch vụ" (?kieu=dich_vu) → lọc theo phong.kieu_phong.
         $kieu = $request->query('kieu') === 'dich_vu' ? 'phong_dich_vu' : 'phong_kham';
 
-        $query = Booking::where('co_so_id', $co_so->id)
-            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale'])
-            ->whereHas('phong', fn ($q) => $q->where('kieu_phong', $kieu));
+        // 2026-10-12: aggregate (longevity-vn) → load cross-cơ sở, bỏ filter co_so_id.
+        $query = Booking::query()
+            ->with(['khachHang', 'phong', 'khungGio', 'dichVu', 'bacSi', 'ktv', 'sale', 'coSo'])
+            ->whereHas('phong', fn ($q) => $q->where('kieu_phong', $kieu))
+            ->when(! $co_so->is_aggregate, fn ($q) => $q->where('co_so_id', $co_so->id));
 
         if (! $approvalMode) {
             $this->applyViewScope($query);

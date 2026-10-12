@@ -181,6 +181,9 @@
                 <thead class="text-xs uppercase tracking-wider text-on-surface-variant bg-surface-container-low">
                     <tr class="text-left">
                         <th class="px-4 py-2.5 font-semibold w-12">STT</th>
+                        @if ($coSo->is_aggregate)
+                        <th class="px-4 py-2.5 font-semibold text-amber-800 bg-amber-50">🏥 Cơ sở</th>
+                        @endif
                         <th class="px-4 py-2.5 font-semibold">Mã ĐL</th>
                         <th class="px-4 py-2.5 font-semibold">Tên khách</th>
                         <th class="px-4 py-2.5 font-semibold">SĐT</th>
@@ -244,8 +247,13 @@
                                 default   => 'hover:bg-surface-container-low',
                             };
                         @endphp
-                        <tr class="{{ $rowTint }} cursor-pointer" onclick="window.location='/{{ $coSo->slug }}/xem-dat-phong/{{ $b->id }}'">
+                        {{-- 2026-10-12: aggregate → URL dùng slug của cơ sở gốc booking, không phải slug aggregate. --}}
+                        @php $__rowSlug = $coSo->is_aggregate ? ($b->coSo?->slug ?? $coSo->slug) : $coSo->slug; @endphp
+                        <tr class="{{ $rowTint }} cursor-pointer" onclick="window.location='/{{ $__rowSlug }}/xem-dat-phong/{{ $b->id }}'">
                             <td class="px-4 py-2.5 text-on-surface-variant">{{ $i + 1 }}</td>
+                            @if ($coSo->is_aggregate)
+                            <td class="px-4 py-2.5 font-semibold text-amber-900 bg-amber-50/40 whitespace-nowrap">{{ $b->coSo?->ten ?? '—' }}</td>
+                            @endif
                             <td class="px-4 py-2.5 font-mono text-xs text-secondary">{{ $b->ma_booking ?? '#'.$b->id }}</td>
                             <td class="px-4 py-2.5 font-semibold">{{ $b->khachHang?->ho_ten ?? '—' }}</td>
                             <td class="px-4 py-2.5 font-mono text-xs">{{ $b->khachHang?->so_dien_thoai ?? '—' }}</td>

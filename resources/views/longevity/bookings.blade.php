@@ -398,6 +398,9 @@
 @endphp
 <tr class="bg-surface-container-low border-b border-outline-variant">
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant sticky-col sticky-left-0 bg-surface-container-low shadow-[2px_0_5px_rgba(0,0,0,0.05)]">ID</th>
+@if ($coSo->is_aggregate)
+<th class="px-4 py-4 text-label-caps font-label-caps text-amber-800 bg-amber-50">🏥 CƠ SỞ</th>
+@endif
 <th class="px-4 py-4 text-label-caps font-label-caps text-on-surface-variant">
 <a href="{{ $sortUrl('ngay_dat') }}" class="inline-flex items-center gap-1 hover:text-on-surface transition-colors">NGÀY ĐẶT {!! $sortIcon('ngay_dat') !!}</a>
 </th>
@@ -440,6 +443,9 @@
 @endphp
 <tr data-booking-id="{{ $b->id }}" class="transition-colors {{ $rowBg }} {{ $rowHover }}">
 <td class="px-4 py-4 sticky-col sticky-left-0 {{ $rowBg }} shadow-[2px_0_5px_rgba(0,0,0,0.05)] text-body-sm font-time-slot text-on-surface-variant">#{{ $b->id }}</td>
+@if ($coSo->is_aggregate)
+<td class="px-4 py-4 text-body-sm font-semibold text-amber-900 bg-amber-50/40 whitespace-nowrap">{{ $b->coSo?->ten ?? '—' }}</td>
+@endif
 <td class="px-4 py-4 text-body-sm font-semibold">{{ $b->ngay_dat?->format('d/m/Y') }}</td>
 <td class="px-4 py-4 font-bold text-on-surface">{{ $b->khachHang?->ho_ten }}</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->khachHang?->so_dien_thoai }}</td>
