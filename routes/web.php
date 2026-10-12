@@ -18,7 +18,13 @@ use Illuminate\Support\Facades\Route;
 // 2026-08-18 fix: trước hardcode CoSo::first() → impersonate admin ĐN vẫn mở /59ntn/... .
 Route::get('/', function () {
     $u = auth()->user();
-    $cs = $u?->coSo ?? \App\Models\CoSo::where('active', true)->first();
+    // 2026-10-12: admin hệ thống → mặc định vào "Toàn công ty" (longevity-vn aggregate).
+    if ($u?->is_admin) {
+        $cs = \App\Models\CoSo::where('slug', 'longevity-vn')->first()
+            ?? $u->coSo ?? \App\Models\CoSo::where('active', true)->first();
+    } else {
+        $cs = $u?->coSo ?? \App\Models\CoSo::where('active', true)->first();
+    }
     abort_unless($cs, 404, 'Chưa có cơ sở nào.');
 
     // Vai trò khác nhau có trang chủ khác — bác sĩ về lịch tư vấn, nhân viên về tạo booking.
