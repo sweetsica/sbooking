@@ -20,7 +20,9 @@
         'phut_tu_van' => 30, 'phut_kham_ls' => 5, 'xuat_hien_moi_co_so' => 0, 'nhan_tu_van' => 0, 'nhan_kham_ls' => 0,
         'kieu_phong' => 'phong_kham', 'phut_moi_khach' => 30, 'ktv_mac_dinh_id' => ''];
     $hasExtra = in_array($key, ['phong']);
-    $colspan = count($cols) + ($hasExtra ? 1 : 0) + 1;
+    // 2026-10-12: aggregate thêm cột "Cơ sở" đầu bảng.
+    $aggCol = ($isAggregate ?? false) && ! in_array($key, ['co-so', 'vai-tro']) ? 1 : 0;
+    $colspan = count($cols) + ($hasExtra ? 1 : 0) + 1 + $aggCol;
 @endphp
 
 <div class="flex items-center gap-2 text-body-sm text-on-surface-variant mb-4">
@@ -208,6 +210,18 @@
 <form method="POST" action="{{ $action }}">
 @csrf
 <div class="p-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-4">
+@if ($aggCol)
+<div class="flex flex-col gap-1.5 sm:col-span-2 lg:col-span-3">
+<label class="text-label-caps font-label-caps text-red-600">🏥 Cơ sở<span class="text-red-500 ml-0.5">*</span></label>
+<select name="co_so_id" required class="px-3 py-2 bg-amber-50 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-500">
+<option value="">— Chọn cơ sở —</option>
+@foreach ($allCoSos as $__cs)
+<option value="{{ $__cs->id }}" @selected(old('co_so_id') == $__cs->id)>{{ $__cs->ten }}</option>
+@endforeach
+</select>
+<span class="text-[11px] text-on-surface-variant/70">Bắt buộc khi đang ở chế độ "Toàn công ty".</span>
+</div>
+@endif
 @foreach ($config['fields'] as $fn => $ff)
 @php $isReq = ! empty($ff['required']); @endphp
 <div class="flex flex-col gap-1.5 {{ $ff['type'] === 'toggle' ? 'sm:col-span-2 lg:col-span-3 justify-end' : '' }}">
@@ -285,6 +299,7 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 <table class="w-full min-w-[640px] text-body-md">
 <thead>
 <tr class="text-left text-label-caps font-label-caps uppercase text-on-surface-variant bg-surface-container-low border-b border-outline-variant">
+@if ($aggCol)<th class="px-4 py-3 whitespace-nowrap bg-amber-50">🏥 Cơ sở</th>@endif
 @if ($editable)
 @foreach ($cols as $fn => $ff)<th class="px-4 py-3 whitespace-nowrap">{{ $ff['label'] }}</th>@endforeach
 @if ($key === 'phong')<th class="px-4 py-3 whitespace-nowrap">Khung giờ</th>@endif
@@ -310,6 +325,7 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 @endphp
 <tbody x-data="{ edit: false }" class="border-b border-outline-variant/40">
 <tr x-show="!edit" class="hover:bg-surface-container-low/50">
+@if ($aggCol)<td class="px-4 py-3 bg-amber-50/40 text-body-sm font-semibold text-amber-900 whitespace-nowrap">{{ $r->coSo?->ten ?? '—' }}</td>@endif
 @foreach ($cols as $fn => $ff)
 <td class="px-4 py-3">
 @switch($ff['type'])
@@ -340,6 +356,16 @@ class="px-3 py-2 bg-surface-container-low border border-outline-variant rounded-
 @php $vals = []; foreach ($config['fields'] as $fn => $ff) { $vals[$fn] = data_get($r, $fn); } if ($key === 'phong') { $vals['gio_mo'] = $gmo; $vals['gio_dong'] = $gdong; } @endphp
 <form method="POST" action="{{ $action }}/{{ $r->id }}" class="flex flex-wrap items-end gap-3">
 @csrf @method('PUT')
+@if ($aggCol)
+<div class="flex flex-col gap-1 min-w-[200px]">
+<label class="text-label-caps font-label-caps text-red-600">🏥 Cơ sở<span class="text-red-500 ml-0.5">*</span></label>
+<select name="co_so_id" required class="px-3 py-2 bg-amber-50 border-2 border-amber-300 rounded-lg focus:outline-none focus:border-amber-500">
+@foreach ($allCoSos as $__cs)
+<option value="{{ $__cs->id }}" @selected((int)($r->co_so_id ?? 0) === $__cs->id)>{{ $__cs->ten }}</option>
+@endforeach
+</select>
+</div>
+@endif
 @foreach ($config['fields'] as $fn => $ff)
 @php $isReq = ! empty($ff['required']); @endphp
 <div class="flex flex-col gap-1 {{ $ff['type'] === 'toggle' ? 'justify-end pb-2' : 'min-w-[150px]' }}">

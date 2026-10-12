@@ -205,22 +205,38 @@ class SettingsController extends Controller
         abort_unless(isset(self::SECTIONS[$section]), 404);
         $config = $this->editableConfig($co_so)[$this->resolveSection($section)] ?? null;
 
+        // 2026-10-12: Aggregate mode (longevity-vn) — load CROSS-cơ sở với eager-load coSo
+        //   để view thêm cột "Cơ sở". KHÔNG áp cho section global (vai-tro, co-so).
+        $isAgg = (bool) $co_so->is_aggregate;
+
         $rows = match ($section) {
-            'phong'      => $co_so->phongs()->with('khungGios')->get(),
-            'bac-si'     => BacSi::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
-                ->orderBy('ten')->get(),
-            'ktv'        => Ktv::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
-            'dich-vu'    => \App\Models\DichVu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
-            'menu'       => \App\Models\Menu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
-            'nguoi-dung' => User::with(['phongBan', 'vaiTro'])
-                ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
+            'phong'      => $isAgg
+                ? \App\Models\Phong::with(['khungGios', 'coSo'])->orderBy('co_so_id')->orderBy('ten')->get()
+                : $co_so->phongs()->with('khungGios')->get(),
+            'bac-si'     => $isAgg
+                ? BacSi::with('coSo')->orderBy('co_so_id')->orderBy('ten')->get()
+                : BacSi::where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhere('xuat_hien_moi_co_so', true))
+                    ->orderBy('ten')->get(),
+            'ktv'        => $isAgg
+                ? Ktv::with('coSo')->orderBy('co_so_id')->orderBy('ten')->get()
+                : Ktv::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
+            'dich-vu'    => $isAgg
+                ? \App\Models\DichVu::with('coSo')->orderBy('co_so_id')->orderBy('ten')->get()
+                : \App\Models\DichVu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
+            'menu'       => $isAgg
+                ? \App\Models\Menu::with('coSo')->orderBy('co_so_id')->orderBy('ten')->get()
+                : \App\Models\Menu::where('co_so_id', $co_so->id)->orderBy('ten')->get(),
+            'nguoi-dung' => User::with(['phongBan', 'vaiTro', 'coSo'])
+                ->when(! $isAgg, fn ($q) => $q->where(fn ($qq) => $qq->where('co_so_id', $co_so->id)->orWhereNull('co_so_id')))
                 ->when($request->filled('q'), fn ($q) => $q->where('name', 'like', '%'.$request->query('q').'%'))
                 ->when($request->filled('vai_tro_id'), fn ($q) => $q->where('vai_tro_id', $request->query('vai_tro_id')))
                 ->when($request->filled('chuc_danh'), fn ($q) => $q->where('chuc_danh', $request->query('chuc_danh')))
                 ->when($request->filled('is_tu_van'), fn ($q) => $q->where('is_tu_van', $request->query('is_tu_van') === '1'))
-                ->orderByDesc('is_admin')->orderBy('name')->get(),
-            'co-so'      => CoSo::orderBy('id')->get(),
-            'phong-ban'  => PhongBan::where('co_so_id', $co_so->id)->orderBy('id')->get(),
+                ->orderByDesc('is_admin')->orderBy('co_so_id')->orderBy('name')->get(),
+            'co-so'      => CoSo::where('is_aggregate', false)->orderBy('id')->get(),
+            'phong-ban'  => $isAgg
+                ? PhongBan::with('coSo')->orderBy('co_so_id')->orderBy('id')->get()
+                : PhongBan::where('co_so_id', $co_so->id)->orderBy('id')->get(),
             'vai-tro'    => VaiTro::orderBy('id')->get(),
             default      => collect(),
         };
@@ -267,6 +283,9 @@ class SettingsController extends Controller
             'quyen' => $quyen,
             'userFilters' => $userFilters,
             'baoCao' => $baoCao,
+            // 2026-10-12: aggregate mode — view thêm cột "Cơ sở" + dropdown trong form.
+            'isAggregate' => $isAgg,
+            'allCoSos'    => $isAgg ? CoSo::where('active', true)->where('is_aggregate', false)->orderBy('id')->get() : collect(),
         ]);
     }
 
@@ -391,18 +410,21 @@ class SettingsController extends Controller
     }
 
     // Người dùng thao tác được trong 1 cơ sở = user của cơ sở đó HOẶC quản trị toàn hệ thống (co_so_id NULL).
+    // 2026-10-12: aggregate → thao tác được mọi user (bỏ scope).
     private function findManageableUser(CoSo $co_so, int $id): User
     {
-        return User::where('id', $id)
-            ->where(fn ($q) => $q->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'))
-            ->firstOrFail();
+        $q = User::where('id', $id);
+        if (! $co_so->is_aggregate) {
+            $q->where(fn ($qq) => $qq->where('co_so_id', $co_so->id)->orWhereNull('co_so_id'));
+        }
+        return $q->firstOrFail();
     }
 
     // Bản ghi catalog (Liệu pháp, Menu, Phòng...) chỉ thuộc cơ sở đang xem.
-    // Khớp đúng phạm vi với section() — không cho sửa/xóa bản ghi của cơ sở khác.
+    // 2026-10-12: aggregate → bỏ scope co_so_id (admin hệ thống sửa cross-cơ sở).
     private function findCatalogRecord(string $model, CoSo $co_so, int $id)
     {
-        if (in_array('co_so_id', (new $model)->getFillable())) {
+        if (! $co_so->is_aggregate && in_array('co_so_id', (new $model)->getFillable())) {
             return $model::where('co_so_id', $co_so->id)->findOrFail($id);
         }
 
@@ -443,10 +465,21 @@ class SettingsController extends Controller
         $attrs = $this->modelAttrs($data, $config);
 
         if ($record) {
+            // 2026-10-12: aggregate → cho phép đổi cơ sở của bản ghi khi admin chọn trong form.
+            if ($co_so->is_aggregate && $request->filled('co_so_id') && in_array('co_so_id', (new $model)->getFillable())) {
+                $attrs['co_so_id'] = (int) $request->input('co_so_id');
+            }
             $record->update($attrs);
         } else {
             if (in_array('co_so_id', (new $model)->getFillable())) {
-                $attrs['co_so_id'] = $co_so->id;
+                // 2026-10-12: aggregate → bắt buộc chọn co_so_id trong form, không fallback về aggregate id.
+                if ($co_so->is_aggregate) {
+                    $cid = (int) $request->input('co_so_id');
+                    abort_if(! $cid || ! CoSo::where('id', $cid)->where('is_aggregate', false)->exists(), 422, 'Vui lòng chọn cơ sở hợp lệ.');
+                    $attrs['co_so_id'] = $cid;
+                } else {
+                    $attrs['co_so_id'] = $co_so->id;
+                }
             }
             $record = $model::create($attrs);
         }
@@ -507,8 +540,13 @@ class SettingsController extends Controller
             'phut_kham_ls'   => $request->integer('phut_kham_ls') ?: 5,
             'gio_bat_dau'    => ($data['gio_bat_dau'] ?? null) ?: null,
             'gio_ket_thuc'   => ($data['gio_ket_thuc'] ?? null) ?: null,
-            'co_so_id'       => $isAdmin ? null : $co_so->id,
+            'co_so_id'       => $isAdmin
+                ? null
+                : ($co_so->is_aggregate ? (int) $request->input('co_so_id') : $co_so->id),
         ];
+        if ($co_so->is_aggregate && ! $isAdmin && empty($attrs['co_so_id'])) {
+            return back()->withInput()->withErrors(['co_so_id' => 'Vui lòng chọn cơ sở cho người dùng.']);
+        }
         if (! empty($data['password'])) {
             $attrs['password'] = Hash::make($data['password']);
         }
@@ -568,10 +606,17 @@ class SettingsController extends Controller
             'ma.unique' => 'Mã phòng ban đã tồn tại trong cơ sở này.',
         ]);
 
+        // 2026-10-12: aggregate → co_so_id từ request, bắt buộc chọn.
+        $csId = $co_so->is_aggregate ? (int) $request->input('co_so_id') : $co_so->id;
+        if ($co_so->is_aggregate && (! $csId || ! CoSo::where('id', $csId)->where('is_aggregate', false)->exists())) {
+            return back()->withInput()->withErrors(['co_so_id' => 'Vui lòng chọn cơ sở hợp lệ cho phòng ban.']);
+        }
+
         if ($pb) {
+            if ($co_so->is_aggregate && $csId) $data['co_so_id'] = $csId;
             $pb->update($data);
         } else {
-            PhongBan::create($data + ['co_so_id' => $co_so->id]);
+            PhongBan::create($data + ['co_so_id' => $csId]);
         }
 
         return back()->with('ok', $pb ? 'Đã cập nhật phòng ban.' : 'Đã thêm phòng ban.');
