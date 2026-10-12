@@ -151,6 +151,9 @@
 <div class="relative hidden sm:block shrink min-w-0" title="Chuyển cơ sở">
 <span class="material-symbols-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-secondary text-[18px] pointer-events-none">apartment</span>
 <select onchange="if(this.value)window.location.href=this.value" class="appearance-none w-full max-w-[200px] lg:max-w-[260px] xl:max-w-[320px] pl-9 pr-8 py-1.5 bg-surface-container-low border-none rounded-xl text-body-sm font-semibold text-on-surface focus:ring-2 focus:ring-secondary/20 cursor-pointer transition-all truncate">
+@if ($isAdmin)
+<option value="/longevity-vn{{ $restPath ? '/'.$restPath : '' }}" @selected($coSo->slug === 'longevity-vn')>📋 Toàn công ty</option>
+@endif
 @foreach ($dsCoSo as $cs)
 <option value="/{{ $cs->slug }}{{ $restPath ? '/'.$restPath : '' }}" @selected($cs->id === $coSo->id)>{{ $cs->ten }}</option>
 @endforeach
