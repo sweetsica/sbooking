@@ -143,7 +143,7 @@
 </div>
 </details>
 @php
-    $dsCoSo = \App\Models\CoSo::where('active', true)->orderBy('id')->get();
+    $dsCoSo = \App\Models\CoSo::where('active', true)->where('is_aggregate', false)->orderBy('id')->get();
     // Giữ nguyên trang hiện tại khi đổi cơ sở (bỏ slug ở đầu URL)
     $restPath = implode('/', array_slice(request()->segments(), 1));
 @endphp

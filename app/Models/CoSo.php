@@ -9,9 +9,9 @@ class CoSo extends Model
 {
     protected $table = 'co_so';
 
-    protected $fillable = ['ten', 'slug', 'dia_chi', 'active', 'gio_mo_cua', 'gio_dong_cua', 'thoi_gian_ca_phut'];
+    protected $fillable = ['ten', 'slug', 'dia_chi', 'active', 'is_aggregate', 'gio_mo_cua', 'gio_dong_cua', 'thoi_gian_ca_phut'];
 
-    protected $casts = ['active' => 'boolean', 'thoi_gian_ca_phut' => 'integer'];
+    protected $casts = ['active' => 'boolean', 'is_aggregate' => 'boolean', 'thoi_gian_ca_phut' => 'integer'];
 
     // Route model binding theo slug: /{co_so:slug}/...
     public function getRouteKeyName(): string
