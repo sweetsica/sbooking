@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Seed phòng + dịch vụ + pivot (dv_phong, dv_bac_si, phong_bac_si) cho cơ sở
- * Đà Nẵng (lo23tdn) theo bảng PKD 2026-09-04 (mã tham chiếu spreadsheet 217-267).
+ * Đà Nẵng (11-15tdn) theo bảng PKD 2026-09-04 (mã tham chiếu spreadsheet 217-267).
  *
  * Phụ thuộc: LongevitySeeder (cơ sở DN), BacSiKtvDdSeeder (đủ 8 nhân sự DN).
  *
@@ -34,7 +34,7 @@ class DnDichVuSeeder extends Seeder
 {
     public function run(): void
     {
-        $csDn = CoSo::where('slug', 'lo23tdn')->firstOrFail();
+        $csDn = CoSo::where('slug', '11-15tdn')->firstOrFail();
         $now = now();
 
         // 1) Rename phòng cũ (chỉ update nếu còn tên cũ).

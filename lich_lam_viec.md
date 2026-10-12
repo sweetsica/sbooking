@@ -216,4 +216,4 @@ Khai báo ngày nghỉ theo **khoảng ngày** (`tu_ngay`..`den_ngay`) cho 4 c�
 
 ## 12. Bối cảnh dự án (tóm tắt)
 
-`lara-sbooking` = Laravel 12 + Tailwind Play CDN (KHÔNG npm/Vite). Hệ đặt lịch khám đa cơ sở theo slug `/{slug}/...`. Model tên tiếng Việt (CoSo, Phong, Booking, User...). Phân quyền theo `vai_tro` qua bảng `phan_quyen` + `BookingFields`. Có 4 cơ sở: 59ntn, 207nvt, lo23tdn, 137nct. Excel dùng package `maatwebsite/excel`. Xem thêm bộ nhớ agent (nếu có) hoặc các file controller/booking để hiểu luồng booking.
+`lara-sbooking` = Laravel 12 + Tailwind Play CDN (KHÔNG npm/Vite). Hệ đặt lịch khám đa cơ sở theo slug `/{slug}/...`. Model tên tiếng Việt (CoSo, Phong, Booking, User...). Phân quyền theo `vai_tro` qua bảng `phan_quyen` + `BookingFields`. Có 4 cơ sở: 59ntn, 207nvt, 11-15tdn, 137nct. Excel dùng package `maatwebsite/excel`. Xem thêm bộ nhớ agent (nếu có) hoặc các file controller/booking để hiểu luồng booking.

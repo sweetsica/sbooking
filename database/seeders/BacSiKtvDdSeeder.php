@@ -21,7 +21,7 @@ class BacSiKtvDdSeeder extends Seeder
     {
         $csHn  = CoSo::where('slug', '59ntn')->firstOrFail();
         $csHcm = CoSo::where('slug', '207nvt')->firstOrFail();
-        $csDn  = CoSo::where('slug', 'lo23tdn')->firstOrFail();
+        $csDn  = CoSo::where('slug', '11-15tdn')->firstOrFail();
 
         // Preset field cho từng nhóm.
         $bsThuong = [

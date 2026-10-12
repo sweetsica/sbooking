@@ -32,7 +32,7 @@ class PhongBacSiSeeder extends Seeder
 
     public function run(): void
     {
-        foreach (CoSo::whereIn('slug', ['59ntn', '207nvt', 'lo23tdn'])->get() as $coSo) {
+        foreach (CoSo::whereIn('slug', ['59ntn', '207nvt', '11-15tdn'])->get() as $coSo) {
             $this->seedCoSo($coSo);
         }
     }

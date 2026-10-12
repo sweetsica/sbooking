@@ -63,7 +63,7 @@ class LongevitySeeder extends Seeder
             'ten'     => 'Cơ sở 2 - 207 Nguyễn Văn Thủ',
             'dia_chi' => '207 Nguyễn Văn Thủ, HCM',
         ]);
-        $cslo23tdn = CoSo::firstOrCreate(['slug' => 'lo23tdn'], [
+        $cslo23tdn = CoSo::firstOrCreate(['slug' => '11-15tdn'], [
             'ten'     => 'Cơ sở 3 - Lô 2+3 KĐT Trần Đăng Ninh',
             'dia_chi' => 'Lô 2+3 KĐT Trần Đăng Ninh',
         ]);
@@ -188,7 +188,7 @@ class LongevitySeeder extends Seeder
         // =============================================
         // SALES HÀ NỘI — Team Hợi (cơ sở 59 NTN)
         // 2026-08-09: username theo pattern SCRM.
-        // 2026-08-28: dn.cms01 (Lương Thị Kim Phấn) tách sang cơ sở DN (lo23tdn) — trước
+        // 2026-08-28: dn.cms01 (Lương Thị Kim Phấn) tách sang cơ sở DN (11-15tdn) — trước
         //   để HN vì comment cũ "sbooking không có DN cơ sở", nay sbooking đã có lo23tdn.
         //   Booking cơ sở DN mà tiep_don_user_id thuộc HN → abort 422 "Sale không thuộc cơ sở".
         // =============================================

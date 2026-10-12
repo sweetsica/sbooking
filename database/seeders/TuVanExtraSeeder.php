@@ -19,7 +19,7 @@ class TuVanExtraSeeder extends Seeder
     public function run(): void
     {
         $csHcm = CoSo::where('slug', '207nvt')->firstOrFail();
-        $csDn  = CoSo::where('slug', 'lo23tdn')->firstOrFail();
+        $csDn  = CoSo::where('slug', '11-15tdn')->firstOrFail();
         $now = now();
 
         // [co_so_id, ten]

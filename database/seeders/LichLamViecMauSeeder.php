@@ -16,7 +16,7 @@ use Illuminate\Database\Seeder;
  */
 class LichLamViecMauSeeder extends Seeder
 {
-    private const CO_SO_SLUGS = ['59ntn', '207nvt', 'lo23tdn'];
+    private const CO_SO_SLUGS = ['59ntn', '207nvt', '11-15tdn'];
 
     public function run(): void
     {
