@@ -143,3 +143,21 @@ Nhánh `tenth`. Đi kèm patch bên [lara-scrm](../lara-scrm/result.md) cùng ng
 - Migration chạy OK (580ms).
 - Tinker: tạo được `KhachHang` với `so_dien_thoai=null`, 2 bản ghi KH null song song không gộp — đúng ý.
 - Chưa test end-to-end push từ CRM (cần CRM env chạy song song).
+
+## 2026-10-15 — Hậu Phase 6.27: siết tạo booking tay
+
+### Backend
+- `BookingController@store`: trả lại `so_dien_thoai` `required` + message (store đã abort 410 nhưng giữ cho đồng nhất khi gỡ sau). `@update` giữ `nullable` để save được booking CRM no_phone.
+- `LichHenController` giữ nguyên (store/update đều require SĐT) — tạo tay bắt buộc nhập.
+
+### Form view
+- `create.blade.php` + `lich-hen/create.blade.php`: input `so_dien_thoai` `required` khi tạo mới (`!$editing`), bỏ required khi edit (để lưu được booking CRM no_phone).
+
+### UI gate — chỉ Admin thấy nút tạo tay
+- `bookings.blade.php`: empty-state + FAB → gate `auth()->user()?->is_admin`. Bỏ logic `__saleHideCreate` cũ (sale HC/SHC/CM/DM) vì giờ chặt hơn.
+- `doctors.blade.php`: nút header "Tạo Booking" → gate admin.
+- `rooms.blade.php`: nút header "Tạo booking" → gate admin.
+- `lich-hen/list.blade.php`: empty-state "+ Tạo lịch tư vấn" + FAB → gate admin.
+- `lich-hen/manage.blade.php`: nút "Tạo Booking" + FAB → gate admin.
+- `dashboard.blade.php`: đã có `is_admin` gate — không đụng.
+- `timeline.blade.php`: nút Đặt lịch đã ẩn từ commit bb68e37 (3 dịch vụ).

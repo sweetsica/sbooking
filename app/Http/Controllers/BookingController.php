@@ -738,9 +738,10 @@ class BookingController extends Controller
         // (API `/api/bookings` cho datasource push vẫn hoạt động — route riêng, không đụng.)
         abort(410, 'Tạo booking đã chuyển sang Datasource. Vui lòng mở SCRM để tạo lịch — sbooking không nhận form tạo mới nữa.');
 
+        // 2026-10-15: tạo tay bên sbooking vẫn bắt buộc SĐT (chỉ API push từ CRM mới nullable).
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
-            'so_dien_thoai' => ['nullable', 'string', 'max:30'],
+            'so_dien_thoai' => ['required', 'string', 'max:30'],
             'email'         => ['nullable', 'email', 'max:255'],
             'ngay_dat'      => ['required', 'date', 'after_or_equal:today'],
             'phong_id'      => ['required', Rule::exists('phong', 'id')->where('co_so_id', $co_so->id)],
@@ -767,6 +768,7 @@ class BookingController extends Controller
             'menu_ids.*'    => [Rule::exists('menu', 'id')],
         ], [
             'ho_ten.required'        => 'Vui lòng nhập họ tên khách hàng.',
+            'so_dien_thoai.required' => 'Vui lòng nhập số điện thoại.',
             'phong_id.required'      => 'Vui lòng chọn phòng.',
             'khung_gio_id.required'  => 'Vui lòng chọn khung giờ.',
             'dich_vu_id.required'    => 'Vui lòng chọn liệu pháp/dịch vụ.',
@@ -982,6 +984,7 @@ class BookingController extends Controller
             'menu_ids.*'    => [Rule::exists('menu', 'id')],
         ], [
             'ho_ten.required'        => 'Vui lòng nhập họ tên khách hàng.',
+            'so_dien_thoai.required' => 'Vui lòng nhập số điện thoại.',
             'phong_id.required'      => 'Vui lòng chọn phòng.',
             'khung_gio_id.required'  => 'Vui lòng chọn khung giờ.',
             'dich_vu_id.required'    => 'Vui lòng chọn liệu pháp/dịch vụ.',
