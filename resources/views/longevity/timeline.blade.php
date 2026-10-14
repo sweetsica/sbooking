@@ -253,7 +253,7 @@
    class="absolute rounded-lg px-1.5 py-0.5 shadow-sm border-l-4 overflow-hidden block leading-tight {{ $cardCls }}"
    style="top: {{ $ev['top'] + 1 }}px; height: {{ max($ev['height'] - 2, 15) }}px; left: calc({{ $l }}% + 1px); width: calc({{ $w }}% - 2px);">
 <div class="flex justify-between items-start gap-1">
-<span class="font-bold text-[11px] text-on-surface truncate">{{ $bk->khachHang?->ho_ten }}</span>
+<span class="font-bold text-[11px] text-on-surface truncate">{{ $bk->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $bk->khachHang])</span>
 @if ($pending)
 <span class="text-[8px] bg-amber-400 text-amber-950 px-1 rounded uppercase font-bold shrink-0">Chờ</span>
 @else

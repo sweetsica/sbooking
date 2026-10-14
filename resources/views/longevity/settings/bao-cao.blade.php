@@ -176,7 +176,7 @@ $cards = [
 @forelse ($baoCao['bookings'] as $bk)
 <tr class="hover:bg-surface-container-low/40">
 <td class="px-3 py-2">{{ $bk->ngay_dat?->format('d/m/Y') }}</td>
-<td class="px-3 py-2 font-medium">{{ $bk->khachHang?->ho_ten }}</td>
+<td class="px-3 py-2 font-medium">{{ $bk->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $bk->khachHang])</td>
 <td class="px-3 py-2 text-on-surface-variant">{{ $bk->khachHang?->so_dien_thoai }}</td>
 <td class="px-3 py-2">{{ $bk->phong?->ten }}</td>
 <td class="px-3 py-2">{{ $bk->khungGio?->nhan ?? '' }}</td>
@@ -219,7 +219,7 @@ $cards = [
 @forelse ($baoCao['lichHens'] as $lh)
 <tr class="hover:bg-surface-container-low/40">
 <td class="px-3 py-2">{{ $lh->ngay_hen?->format('d/m/Y') }}</td>
-<td class="px-3 py-2 font-medium">{{ $lh->khachHang?->ho_ten }}</td>
+<td class="px-3 py-2 font-medium">{{ $lh->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $lh->khachHang])</td>
 <td class="px-3 py-2 text-on-surface-variant">{{ $lh->khachHang?->so_dien_thoai }}</td>
 <td class="px-3 py-2">{{ $lh->bacSiTuVan?->ten_day_du ?? '—' }}</td>
 <td class="px-3 py-2">{{ $lh->caKham?->nhan ?? '' }}</td>

@@ -143,7 +143,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
      title="{{ $hasLh ? $lh->khachHang?->ho_ten . ' · ' . $ck->nhan : 'Trống · ' . $ck->nhan }}">
 @if ($hasLh)
 <div class="flex justify-between items-start gap-1">
-<span class="font-bold text-[11px] {{ $textCls }} truncate">{{ $lh->khachHang?->ho_ten }}</span>
+<span class="font-bold text-[11px] {{ $textCls }} truncate">{{ $lh->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $lh->khachHang])</span>
 @if ($approved)
 <span class="material-symbols-outlined text-[14px] text-emerald-600 shrink-0" style="font-variation-settings: 'FILL' 1;">check_circle</span>
 @else

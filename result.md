@@ -111,3 +111,35 @@ Nhánh `tenth`. Đi kèm patch bên [lara-scrm](../lara-scrm/result.md) cùng ng
 
 ### T4 (bên scrm)
 - Nút `↩ Tạo booking khác cho khách này` trong phase 4 (Check-in) của `⚡lead-form.blade.php`, gọi `markReturning(3)` để sale quay về phase 3 tạo booking tiếp.
+
+## 2026-10-15 — Phase 6.27 (CRM-side) → sbooking: Lead thiếu info
+
+### DB
+- `khach_hang.so_dien_thoai`: nullable (giữ index).
+- `khach_hang.missing_info` (boolean, default false): cờ khách thiếu SĐT.
+- `khach_hang.crm_khach_ma` (varchar 40, index): mã khách bên CRM, key gộp 6.27.f.
+
+### API `POST /api/bookings`
+- `so_dien_thoai`: `required` → `nullable`.
+- Logic match khách khi push từ CRM:
+  1. Có SĐT → `firstOrCreate` theo SĐT (như cũ), nếu có `crm_khach_ma` mà khách chưa gắn → bổ sung.
+  2. Không SĐT nhưng có `crm_khach_ma` → `firstOrCreate` theo `(crm_khach_ma, so_dien_thoai=null)` + `missing_info=true`.
+  3. Không cả hai → tạo mới + `missing_info=true` (không gộp nhầm các khách null).
+
+### Form Admin sbooking
+- `BookingController@store/@update`: `so_dien_thoai` nullable (giữ booking chỉnh sửa được).
+- Form view `create.blade.php` + `lich-hen/create.blade.php`: bỏ `required` trên input SĐT.
+- Form tạo tay giữ nguyên UX — admin vẫn nhập được, chỉ không bắt buộc.
+
+### UI
+- Partial mới `resources/views/longevity/partials/_khach_missing_info.blade.php`: icon ⚠️ + tooltip "Khách thiếu SĐT — cần cập nhật".
+- Chèn sau tên khách ở: `bookings`, `dashboard`, `doctors`, `search`, `timeline`, `show`, `lich-hen/list`, `lich-hen/show`, `lich-hen/manage`, `settings/bao-cao`.
+
+### Fix text UPS trong modal duyệt
+- `_approve_modal.blade.php`: thay "Chưa chốt UPS list ngày DD/MM — vui lòng chọn tay..." bằng "UPS list ngày DD/MM chưa được BO/CM chốt bên CRM — vào /settings/ups-list cơ sở này bấm 'Chốt UPS' trước khi duyệt lịch. Trong khi chờ, chọn tay Sale tiếp đón bên dưới."
+- Logic UPS check KHÔNG đổi (CRM xác nhận `ups_daily_confirm` ngày 14/10 thực sự rỗng — đây là design-correct).
+
+### Test
+- Migration chạy OK (580ms).
+- Tinker: tạo được `KhachHang` với `so_dien_thoai=null`, 2 bản ghi KH null song song không gộp — đúng ý.
+- Chưa test end-to-end push từ CRM (cần CRM env chạy song song).

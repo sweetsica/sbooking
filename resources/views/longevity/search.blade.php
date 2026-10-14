@@ -67,7 +67,7 @@ Nhập tên hoặc số điện thoại khách hàng vào ô tìm kiếm phía t
 <tbody class="divide-y divide-outline-variant/40">
 @foreach ($bookings as $b)
 <tr class="hover:bg-surface-variant/10">
-<td class="px-4 py-3 font-semibold text-on-surface">{{ $b->khachHang?->ho_ten }}</td>
+<td class="px-4 py-3 font-semibold text-on-surface">{{ $b->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $b->khachHang])</td>
 <td class="px-4 py-3 font-time-slot text-on-surface-variant">{{ $b->khachHang?->so_dien_thoai }}</td>
 <td class="px-4 py-3 text-on-surface-variant">{{ $b->ngay_dat?->format('d/m/Y') }}</td>
 <td class="px-4 py-3 text-on-surface-variant">{{ $b->phong?->ten }} · {{ $b->khungGio?->nhan ?? ($b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) : '—') }}</td>
@@ -108,7 +108,7 @@ Nhập tên hoặc số điện thoại khách hàng vào ô tìm kiếm phía t
 @foreach ($lichHens as $lh)
 @php $tt = $lh->trang_thai; @endphp
 <tr class="hover:bg-surface-variant/10">
-<td class="px-4 py-3 font-semibold text-on-surface">{{ $lh->khachHang?->ho_ten }}</td>
+<td class="px-4 py-3 font-semibold text-on-surface">{{ $lh->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $lh->khachHang])</td>
 <td class="px-4 py-3 font-time-slot text-on-surface-variant">{{ $lh->khachHang?->so_dien_thoai }}</td>
 <td class="px-4 py-3 text-on-surface-variant">{{ $lh->ngay_hen?->format('d/m/Y') }}</td>
 <td class="px-4 py-3 text-on-surface-variant">{{ $lh->bacSiTuVan?->ten_day_du }} · {{ $lh->caKham?->nhan }}</td>

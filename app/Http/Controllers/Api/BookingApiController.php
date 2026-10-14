@@ -208,7 +208,9 @@ class BookingApiController extends Controller
     public function store(Request $request): JsonResponse
     {
         $data = $request->validate([
-            'so_dien_thoai'  => ['required', 'string', 'max:20'],
+            // Phase 6.27 (2026-10-15): CRM lead no_phone → push kèm so_dien_thoai=null.
+            // Nhận nullable, dựa vào crm_khach_ma để match khách (xem logic trong transaction).
+            'so_dien_thoai'  => ['nullable', 'string', 'max:20'],
             'ho_ten'         => ['required', 'string', 'max:120'],
             'co_so_id'       => ['required', 'integer', 'exists:co_so,id'],
             'ngay_dat'       => ['required', 'date_format:Y-m-d'],
@@ -284,10 +286,44 @@ class BookingApiController extends Controller
 
         try {
             $result = DB::transaction(function () use ($data) {
-                $kh = KhachHang::firstOrCreate(
-                    ['so_dien_thoai' => $data['so_dien_thoai']],
-                    ['ho_ten' => $data['ho_ten'], 'co_so_id' => $data['co_so_id']]
-                );
+                // Phase 6.27 (2026-10-15): lead thiếu info (no_phone) — so_dien_thoai=null.
+                // Thứ tự match khách:
+                //   1) có SĐT → firstOrCreate theo SĐT (như cũ).
+                //   2) không SĐT nhưng có crm_khach_ma → match theo mã CRM; không có thì tạo mới + missing_info=true.
+                //   3) không cả hai → tạo mới + missing_info=true (hiếm, nhưng không được gộp hết khách null thành 1).
+                $sdt = $data['so_dien_thoai'] ?? null;
+                $crmMa = $data['crm_khach_ma'] ?? null;
+
+                if ($sdt !== null && $sdt !== '') {
+                    $kh = KhachHang::firstOrCreate(
+                        ['so_dien_thoai' => $sdt],
+                        [
+                            'ho_ten'       => $data['ho_ten'],
+                            'co_so_id'     => $data['co_so_id'],
+                            'crm_khach_ma' => $crmMa,
+                        ]
+                    );
+                    // Nếu khách đã có nhưng chưa gắn crm_khach_ma, bổ sung.
+                    if ($crmMa && empty($kh->crm_khach_ma)) {
+                        $kh->crm_khach_ma = $crmMa;
+                        $kh->save();
+                    }
+                } elseif ($crmMa) {
+                    $kh = KhachHang::firstOrCreate(
+                        ['crm_khach_ma' => $crmMa, 'so_dien_thoai' => null],
+                        [
+                            'ho_ten'       => $data['ho_ten'],
+                            'co_so_id'     => $data['co_so_id'],
+                            'missing_info' => true,
+                        ]
+                    );
+                } else {
+                    $kh = KhachHang::create([
+                        'ho_ten'       => $data['ho_ten'],
+                        'co_so_id'     => $data['co_so_id'],
+                        'missing_info' => true,
+                    ]);
+                }
 
                 // 2026-08-16: Mọi booking mới đều chờ Admin vận hành sbooking duyệt (dù nguồn nào, loại nào).
                 // 2026-08-19 Phase B: 3 loại chuẩn — 'kham_ls' | 'tu_van' | 'dich_vu'.

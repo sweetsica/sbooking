@@ -740,7 +740,7 @@ class BookingController extends Controller
 
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
-            'so_dien_thoai' => ['required', 'string', 'max:30'],
+            'so_dien_thoai' => ['nullable', 'string', 'max:30'],
             'email'         => ['nullable', 'email', 'max:255'],
             'ngay_dat'      => ['required', 'date', 'after_or_equal:today'],
             'phong_id'      => ['required', Rule::exists('phong', 'id')->where('co_so_id', $co_so->id)],
@@ -767,7 +767,6 @@ class BookingController extends Controller
             'menu_ids.*'    => [Rule::exists('menu', 'id')],
         ], [
             'ho_ten.required'        => 'Vui lòng nhập họ tên khách hàng.',
-            'so_dien_thoai.required' => 'Vui lòng nhập số điện thoại.',
             'phong_id.required'      => 'Vui lòng chọn phòng.',
             'khung_gio_id.required'  => 'Vui lòng chọn khung giờ.',
             'dich_vu_id.required'    => 'Vui lòng chọn liệu pháp/dịch vụ.',
@@ -956,7 +955,7 @@ class BookingController extends Controller
 
         $data = $request->validate([
             'ho_ten'        => ['required', 'string', 'max:255'],
-            'so_dien_thoai' => ['required', 'string', 'max:30'],
+            'so_dien_thoai' => ['nullable', 'string', 'max:30'],
             'email'         => ['nullable', 'email', 'max:255'],
             'ngay_dat'      => ['required', 'date', 'after_or_equal:today'],
             'phong_id'      => ['required', Rule::exists('phong', 'id')->where('co_so_id', $co_so->id)],
@@ -983,7 +982,6 @@ class BookingController extends Controller
             'menu_ids.*'    => [Rule::exists('menu', 'id')],
         ], [
             'ho_ten.required'        => 'Vui lòng nhập họ tên khách hàng.',
-            'so_dien_thoai.required' => 'Vui lòng nhập số điện thoại.',
             'phong_id.required'      => 'Vui lòng chọn phòng.',
             'khung_gio_id.required'  => 'Vui lòng chọn khung giờ.',
             'dich_vu_id.required'    => 'Vui lòng chọn liệu pháp/dịch vụ.',

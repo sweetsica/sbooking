@@ -10,7 +10,11 @@ class KhachHang extends Model
 {
     protected $table = 'khach_hang';
 
-    protected $fillable = ['co_so_id', 'ho_ten', 'so_dien_thoai', 'email'];
+    protected $fillable = ['co_so_id', 'ho_ten', 'so_dien_thoai', 'email', 'missing_info', 'crm_khach_ma'];
+
+    protected $casts = [
+        'missing_info' => 'boolean',
+    ];
 
     public function coSo(): BelongsTo
     {

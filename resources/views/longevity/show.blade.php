@@ -119,7 +119,7 @@ Chế độ xem chi tiết — chỉ đọc, không thể chỉnh sửa.
 <div class="space-y-4">
 <div>
 <label class="block text-body-sm font-semibold text-on-surface-variant mb-1.5">Họ tên KH</label>
-<div class="ro">{{ $booking->khachHang?->ho_ten ?? '—' }}</div>
+<div class="ro">{{ $booking->khachHang?->ho_ten ?? '—' }}@include('longevity.partials._khach_missing_info', ['kh' => $booking->khachHang])</div>
 </div>
 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
 <div>

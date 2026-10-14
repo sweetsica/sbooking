@@ -255,7 +255,7 @@
                             <td class="px-4 py-2.5 font-semibold text-amber-900 bg-amber-50/40 whitespace-nowrap">{{ $b->coSo?->ten ?? '—' }}</td>
                             @endif
                             <td class="px-4 py-2.5 font-mono text-xs text-secondary">{{ $b->ma_booking ?? '#'.$b->id }}</td>
-                            <td class="px-4 py-2.5 font-semibold">{{ $b->khachHang?->ho_ten ?? '—' }}</td>
+                            <td class="px-4 py-2.5 font-semibold">{{ $b->khachHang?->ho_ten ?? '—' }}@include('longevity.partials._khach_missing_info', ['kh' => $b->khachHang])</td>
                             <td class="px-4 py-2.5 font-mono text-xs">{{ $b->khachHang?->so_dien_thoai ?? '—' }}</td>
                             <td class="px-4 py-2.5 text-on-surface-variant">{{ $b->sale?->name ?? '—' }}</td>
                             <td class="px-4 py-2.5">

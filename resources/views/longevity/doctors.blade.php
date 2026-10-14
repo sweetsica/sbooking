@@ -107,7 +107,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 {{ $b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) . ($b->gio_ket_thuc ? '–'.substr($b->gio_ket_thuc,0,5) : '') : ($b->khungGio?->nhan ?? '—') }}
 </div>
 <div class="flex-1 min-w-0">
-<div class="font-semibold text-on-surface truncate">{{ $b->khachHang?->ho_ten ?? '—' }}</div>
+<div class="font-semibold text-on-surface truncate">{{ $b->khachHang?->ho_ten ?? '—' }}@include('longevity.partials._khach_missing_info', ['kh' => $b->khachHang])</div>
 <div class="text-body-sm text-on-surface-variant truncate">{{ $b->phong?->ten ?? '—' }} · {{ $b->dichVu?->ten ?? '—' }}</div>
 </div>
 <div class="flex items-center gap-1.5 shrink-0">
@@ -177,7 +177,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 {{ $b->gio_thuc_hien ? substr($b->gio_thuc_hien,0,5) . ($b->gio_ket_thuc ? '–'.substr($b->gio_ket_thuc,0,5) : '') : ($b->khungGio?->nhan ?? '—') }}
 </div>
 <div class="flex-1 min-w-0">
-<div class="font-semibold text-on-surface truncate">{{ $b->khachHang?->ho_ten ?? '—' }}</div>
+<div class="font-semibold text-on-surface truncate">{{ $b->khachHang?->ho_ten ?? '—' }}@include('longevity.partials._khach_missing_info', ['kh' => $b->khachHang])</div>
 <div class="text-body-sm text-on-surface-variant truncate">{{ $b->phong?->ten ?? '—' }} · {{ $b->dichVu?->ten ?? '—' }}</div>
 </div>
 <div class="flex items-center gap-1.5 shrink-0">

@@ -255,7 +255,7 @@
 @endphp
 <tr class="hover:bg-surface-container-low/60 cursor-pointer" onclick="window.location='{{ $viewUrl }}'">
 <td class="px-5 py-2 font-time-slot text-on-surface font-semibold whitespace-nowrap">{{ substr($cs->gio_thuc_hien, 0, 5) }}{{ $cs->gio_ket_thuc ? '-'.substr($cs->gio_ket_thuc, 0, 5) : '' }}</td>
-<td class="px-3 py-2 font-semibold text-on-surface truncate max-w-[220px]">{{ $cs->khachHang?->ho_ten ?? '—' }}</td>
+<td class="px-3 py-2 font-semibold text-on-surface truncate max-w-[220px]">{{ $cs->khachHang?->ho_ten ?? '—' }}@include('longevity.partials._khach_missing_info', ['kh' => $cs->khachHang])</td>
 <td class="px-3 py-2 text-on-surface-variant font-time-slot whitespace-nowrap">{{ $cs->khachHang?->so_dien_thoai }}</td>
 <td class="px-3 py-2 text-on-surface-variant truncate max-w-[200px]" title="{{ $cs->phong?->ten }}">{{ $cs->phong?->ten ?? '—' }}</td>
 <td class="px-3 py-2 text-on-surface-variant truncate max-w-[200px]" title="{{ $cs->dichVu?->ten }}">{{ $cs->dichVu?->ten ?? '—' }}</td>
@@ -447,7 +447,7 @@
 <td class="px-4 py-4 text-body-sm font-semibold text-amber-900 bg-amber-50/40 whitespace-nowrap">{{ $b->coSo?->ten ?? '—' }}</td>
 @endif
 <td class="px-4 py-4 text-body-sm font-semibold">{{ $b->ngay_dat?->format('d/m/Y') }}</td>
-<td class="px-4 py-4 font-bold text-on-surface">{{ $b->khachHang?->ho_ten }}</td>
+<td class="px-4 py-4 font-bold text-on-surface">{{ $b->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $b->khachHang])</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $b->khachHang?->so_dien_thoai }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant">{{ $b->khachHang?->email ?: '—' }}</td>
 <td class="px-4 py-4 text-body-sm font-semibold">{{ $b->phong?->ten ?? '—' }}</td>

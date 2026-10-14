@@ -132,7 +132,7 @@ body { font-family: 'Inter', sans-serif; background-color: #f7f9fb; }
 <td class="px-4 py-4 sticky-col sticky-left-0 bg-surface-container-lowest shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
 <span class="text-body-sm font-time-slot text-on-surface-variant">{{ $lh->created_at->format('d/m H:i') }}</span>
 </td>
-<td class="px-4 py-4 font-bold text-on-surface">{{ $lh->khachHang?->ho_ten }}</td>
+<td class="px-4 py-4 font-bold text-on-surface">{{ $lh->khachHang?->ho_ten }}@include('longevity.partials._khach_missing_info', ['kh' => $lh->khachHang])</td>
 <td class="px-4 py-4 text-body-sm font-time-slot">{{ $lh->khachHang?->so_dien_thoai }}</td>
 <td class="px-4 py-4 text-body-sm text-on-surface-variant">{{ $lh->khachHang?->email ?: '—' }}</td>
 <td class="px-4 py-4 text-body-sm">{{ $lh->ngay_hen?->format('d/m/Y') }}</td>

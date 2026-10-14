@@ -342,7 +342,7 @@
                     } else if (respSource === 'local' || respSource === 'error') {
                         // UPS chưa chốt hôm nay — cảnh báo, buộc admin chọn tay.
                         var dateLbl = (opts.ngay_dat || '').split('-').reverse().slice(0,2).join('/') || 'hôm nay';
-                        srcNote.textContent = '⚠ Chưa chốt UPS list ngày ' + dateLbl + ' — vui lòng chọn tay Sale tiếp đón bên dưới.';
+                        srcNote.textContent = '⚠ UPS list ngày ' + dateLbl + ' chưa được BO/CM chốt bên CRM — vào /settings/ups-list cơ sở này bấm "Chốt UPS" trước khi duyệt lịch. Trong khi chờ, chọn tay Sale tiếp đón bên dưới.';
                         srcInfo.className = 'p-3 rounded-lg border text-body-sm border-amber-300 bg-amber-50 text-amber-900';
                         srcIcon.textContent = 'warning';
                     }
