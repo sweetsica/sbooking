@@ -1209,17 +1209,27 @@ class BookingController extends Controller
             if (! empty($data['gio_thuc_hien'])) $booking->gio_thuc_hien = $data['gio_thuc_hien'];
             if (! empty($data['gio_ket_thuc']))  $booking->gio_ket_thuc  = $data['gio_ket_thuc'];
             if (array_key_exists('ghi_chu', $data)) $booking->ghi_chu = $data['ghi_chu'];
-            // Q5.2: sale dropdown chỉ hiện sale cùng co_so_id của booking.
-            $saleOk = \App\Models\User::where('id', $data['tiep_don_user_id'])
-                ->where('co_so_id', $booking->co_so_id)->exists();
-            abort_unless($saleOk, 422, 'Sale không thuộc cơ sở của booking này.');
-
             // 2026-08-18: nguồn SA/BA/MKT_BR — tiep_don_user_id fix cứng = creator (nguoi_tao_id).
-            //   Admin không được sửa. Chỉ được thêm sale hỗ trợ.
+            // 2026-11-20: trừ case cross-cơ-sở (sale ĐN đặt khách HCM): booking.co_so_id = HCM,
+            //   creator = sale ĐN. Khi đó admin HCM chọn tay sale cơ sở mình tiếp đón,
+            //   nguoi_tao_id vẫn giữ nguyên để báo cáo quyền sở hữu sale gốc.
             $selfOwnedSources = ['sa', 'ba', 'mkt_br'];
             $isSelfOwned = in_array($booking->nguon, $selfOwnedSources, true);
-            if ($isSelfOwned && $booking->nguoi_tao_id) {
-                // Ignore payload — force = creator để bảo vệ quyền sở hữu sale gốc.
+            $creatorCoSoId = $booking->nguoi_tao_id
+                ? \App\Models\User::where('id', $booking->nguoi_tao_id)->value('co_so_id')
+                : null;
+            $isCreatorCrossCoso = $creatorCoSoId && (int) $creatorCoSoId !== (int) $booking->co_so_id;
+            $forceCreator = $isSelfOwned && $booking->nguoi_tao_id && ! $isCreatorCrossCoso;
+
+            // Q5.2: sale tiếp đón phải cùng co_so_id của booking.
+            //   Skip check khi BE sẽ force = creator (cùng cơ sở), vì khi đó payload không được dùng.
+            if (! $forceCreator) {
+                $saleOk = \App\Models\User::where('id', $data['tiep_don_user_id'])
+                    ->where('co_so_id', $booking->co_so_id)->exists();
+                abort_unless($saleOk, 422, 'Sale không thuộc cơ sở của booking này.');
+            }
+
+            if ($forceCreator) {
                 $booking->tiep_don_user_id = $booking->nguoi_tao_id;
             } else {
                 $booking->tiep_don_user_id = $data['tiep_don_user_id'];

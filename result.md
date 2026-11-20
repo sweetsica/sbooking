@@ -1,5 +1,28 @@
 # lara-sbooking — Nhật ký kết quả
 
+## 2026-11-20 — Luồng cross-cơ-sở: admin cơ sở đích bố trí sale tiếp đón ✅
+
+Nhánh `nineteenth`. Bug: duyệt booking #129 fail 422 "Sale không thuộc cơ sở của booking này.".
+
+Root cause (luồng chưa test): **sale ở cơ sở A đặt booking cho khách ở cơ sở B** — ví dụ sale ĐN đặt khách HCM. Khi đó `booking.co_so_id` = HCM nhưng `nguoi_tao_id` = sale ĐN. Với nguồn self-owned (SA/BA/MKT_BR), BE force `tiep_don_user_id = nguoi_tao_id` → sale ĐN tiếp đón khách HCM (vô lý vận hành) + check cơ sở chặn trước → 422.
+
+Fix: nhận diện **cross-cơ-sở**, tách luồng vận hành.
+
+**BE** `app/Http/Controllers/BookingController.php`:
+- Tính `$isCreatorCrossCoso = User::find(nguoi_tao_id)->co_so_id !== booking.co_so_id`.
+- `$forceCreator = isSelfOwned && nguoi_tao_id && ! isCreatorCrossCoso` — chỉ force khi cùng cơ sở.
+- Cross-cơ-sở: dùng `payload.tiep_don_user_id` (admin cơ sở đích chọn), vẫn check sale cùng cơ sở booking. `nguoi_tao_id` giữ nguyên → quyền sở hữu sale gốc không mất.
+
+**FE** `resources/views/longevity/show.blade.php`: truyền thêm `creator_co_so_id`, `creator_co_so_ten` vào `openApprove()`.
+
+**FE** `resources/views/longevity/partials/_approve_modal.blade.php`:
+- `isCreatorCrossCoso` = self-owned + creator.co_so_id khác booking.co_so_id → **không lock** dropdown.
+- Banner đổi: icon `swap_horiz`, tiêu đề "Lead cross-cơ-sở — sale gửi sang cơ sở khác", ghi rõ "Sale gốc ở [Cơ sở X] gửi khách tới cơ sở này. Admin chọn tay Sale cơ sở mình tiếp đón — quyền sở hữu sale gốc vẫn giữ qua người nhập lead."
+
+Admin cơ sở đích đã nhận được booking sẵn (filter theo `booking.co_so_id`), không cần sửa.
+
+
+
 ## 2026-09-04 — Booking: thêm "Nhân sự hỗ trợ" (KTV/DD) 🚧
 
 Nhánh `eighteenth`. Trạng thái: Phase 1 (backend + schema) + Phase 2 (form create) done. Còn: form edit populate old value + Phase 3 notification + Phase 4 sync SCRM + Phase 5 report.

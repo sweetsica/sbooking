@@ -237,8 +237,12 @@
         }
         // Lock dropdown chỉ khi có sbooking-side user id hợp lệ (nguoi_tao_id hoặc tiep_don_user_id).
         // Nếu cả 2 đều null (booking cũ mapping hụt) → hiện banner nhưng để admin chọn tay.
+        // 2026-11-20: cross-cơ-sở (sale ĐN đặt khách HCM) → KHÔNG lock, admin cơ sở đích
+        //   chọn tay sale cơ sở mình tiếp đón. Creator vẫn giữ quyền sở hữu qua nguoi_tao_id.
+        var isCreatorCrossCoso = isSelfOwned && opts.creator_co_so_id
+            && Number(opts.creator_co_so_id) !== Number(coSoId);
         var lockToSbookingId = null;
-        if (isSelfOwned) {
+        if (isSelfOwned && ! isCreatorCrossCoso) {
             if (opts.creator_id) lockToSbookingId = opts.creator_id;
             else if (tiepDonId)  lockToSbookingId = tiepDonId;
         }
@@ -254,11 +258,17 @@
         srcBadge.textContent = srcLower ? srcLower.toUpperCase().replace('_', ' ') : '—';
 
         if (isSelfOwned) {
-            srcIcon.textContent = 'verified';
-            srcTitle.textContent = 'Lead tự tạo — sale gốc = tiếp đón';
-            srcNote.textContent = lockToSbookingId
-                ? 'Sale gốc được fix cứng để bảo vệ quyền sở hữu. Admin có thể thêm Sale hỗ trợ đón kèm khi bận.'
-                : 'Booking cũ thiếu mapping sale — Admin chọn tay Sale tiếp đón. Booking mới sẽ tự lock.';
+            srcIcon.textContent = isCreatorCrossCoso ? 'swap_horiz' : 'verified';
+            if (isCreatorCrossCoso) {
+                srcTitle.textContent = 'Lead cross-cơ-sở — sale gửi sang cơ sở khác';
+                srcNote.textContent = 'Sale gốc ở ' + (opts.creator_co_so_ten || 'cơ sở khác')
+                    + ' gửi khách tới cơ sở này. Admin chọn tay Sale cơ sở mình tiếp đón — quyền sở hữu sale gốc vẫn được giữ qua người nhập lead.';
+            } else {
+                srcTitle.textContent = 'Lead tự tạo — sale gốc = tiếp đón';
+                srcNote.textContent = lockToSbookingId
+                    ? 'Sale gốc được fix cứng để bảo vệ quyền sở hữu. Admin có thể thêm Sale hỗ trợ đón kèm khi bận.'
+                    : 'Booking cũ thiếu mapping sale — Admin chọn tay Sale tiếp đón. Booking mới sẽ tự lock.';
+            }
         } else {
             srcIcon.textContent = 'info';
             srcTitle.textContent = srcLower ? 'Lead do team chia' : 'Thông tin nguồn';
